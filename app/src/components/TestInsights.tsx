@@ -2,13 +2,18 @@ import { useState, type FormEvent } from 'react'
 import { useData } from '../lib/data'
 import { Field, Modal } from './ui'
 import type { TestDef, TestReport, TestResult } from '../types'
-import { METHOD, computeIndicators, fmt } from '../lib/indicators'
+import { METHOD, PROJECTION, bondsProjection, computeIndicators, fmt, sprintProfile } from '../lib/indicators'
 import { errorMessage, formatDate, todayISO } from '../lib/utils'
 
 /** Indicateurs de lecture (méthode du classeur) : vitesse, essais, rapports de transition */
-export function IndicatorsPanel({ tests, results }: { tests: TestDef[]; results: TestResult[] }) {
+export function IndicatorsPanel({ tests, results, all }: { tests: TestDef[]; results: TestResult[]; all: TestResult[] }) {
   const ind = computeIndicators(tests, results)
-  if (!ind) return null
+  const proj = bondsProjection(tests, results)
+  const sp = sprintProfile(tests, results, all)
+  if (!ind && !proj && !sp) return null
+  const pct = (v: number) => `${v > 0 ? '+' : ''}${fmt(v * 100, 1)} %`
+  const hasBonds = !!proj || Object.values(ind?.ratios ?? {}).some((v) => v != null)
+  const gapClass = (g: number) => (Math.abs(g) >= PROJECTION.strong ? 'danger-text' : Math.abs(g) >= PROJECTION.marked ? 'warn-text' : 'ok-text')
   const ratio = (label: string, v: number | null, threshold: number) => (
     <div className="ind-row">
       <span>{label}</span>
@@ -20,31 +25,58 @@ export function IndicatorsPanel({ tests, results }: { tests: TestDef[]; results:
   return (
     <div className="card indicators">
       <strong>Lecture des tests</strong>
-      {ind.sprint ? (
+
+      <div className="ind-title">⚡ Sprint</div>
+      {ind?.sprint ? (
         <div className="ind-row">
-          <span>20 m lancé · vitesse</span>
+          <span>20 m lancé</span>
           <span><b>{fmt(ind.sprint.kmh, 1)} km/h</b> <span className="tiny muted">({fmt(ind.sprint.best)} s)</span></span>
         </div>
       ) : <div className="ind-row"><span>20 m lancé</span><span className="warn-text">à mesurer</span></div>}
-      {ind.sprint && (
+      {ind?.sprint && (
         <div className="ind-row">
-          <span>Essais</span>
+          <span>Essais 20 m</span>
           <span className={ind.sprint.alert === 'Essais cohérents' ? 'ok-text' : 'warn-text'}>
             {ind.sprint.alert}{ind.sprint.gap != null && ` (${fmt(ind.sprint.gap * 100, 1)} %)`}
           </span>
         </div>
       )}
-      {ratio('Transition mono → triple', ind.ratios.monoTriple, METHOD.monoToTriple)}
-      {ratio('Maintien triple → penta', ind.ratios.triplePenta, METHOD.tripleToPenta)}
-      {ratio('Maintien penta → déca', ind.ratios.pentaDeca, METHOD.pentaToDeca)}
-      <div className="ind-reading">
-        <div><span className="muted small">Lecture :</span> {ind.bondsReading}</div>
-        <div><span className="muted small">Axe suggéré :</span> <b>{ind.focus}</b></div>
-      </div>
-      <p className="tiny muted">
-        Rapports = distance moyenne par contact de la séquence longue ÷ séquence précédente (seuils de ta méthode).
-        Repères de lecture, à comparer d’abord à l’athlète lui-même.
-      </p>
+      {sp?.v30 && <div className="ind-row"><span>30 m lancé</span><span><b>{fmt(sp.v30, 1)} km/h</b> <span className="tiny muted">({fmt(sp.t30!)} s{sp.rep30 != null && ` · essais ±${fmt(sp.rep30)}`})</span></span></div>}
+      {sp?.v40 && <div className="ind-row"><span>40 m départ arrêté</span><span><b>{fmt(sp.v40, 1)} km/h</b> <span className="tiny muted">({fmt(sp.t40!)} s)</span></span></div>}
+      {sp?.maintain != null && <div className="ind-row"><span>Maintien Vmax (v30 / v20)</span><span>{fmt(sp.maintain)}</span></div>}
+      {sp?.startCost != null && <div className="ind-row"><span>Surcoût départ (t40 − 4/3 × t30)</span><span>{fmt(sp.startCost)} s</span></div>}
+      {sp && (
+        <div className="ind-row">
+          <span>Profil sprint{sp.balance != null && <span className="tiny muted"> · balance {sp.balance > 0 ? '+' : ''}{fmt(sp.balance)}</span>}</span>
+          <b className={sp.profile === 'Données incomplètes' ? 'muted' : ''}>{sp.profile}</b>
+        </div>
+      )}
+
+      {hasBonds && <div className="ind-title">🦘 Bonds</div>}
+      {hasBonds && ind && ratio('Transition mono → triple', ind.ratios.monoTriple, METHOD.monoToTriple)}
+      {hasBonds && ind && ratio('Maintien triple → penta', ind.ratios.triplePenta, METHOD.tripleToPenta)}
+      {hasBonds && ind && ratio('Maintien penta → déca', ind.ratios.pentaDeca, METHOD.pentaToDeca)}
+      {proj && proj.gaps.map((g) => (
+        <div key={g.label} className="ind-row">
+          <span>Écart à la projection {g.label.toLowerCase()} <span className="tiny muted">(projeté {fmt(g.projected)} m)</span></span>
+          <span className={gapClass(g.gap)}>{pct(g.gap)}</span>
+        </div>
+      ))}
+      {proj?.profile && <div className="ind-row"><span>Continuité des bonds</span><b>{proj.profile}</b></div>}
+
+      {ind && (
+        <div className="ind-reading">
+          {hasBonds && <div><span className="muted small">Lecture :</span> {ind.bondsReading}</div>}
+          <div><span className="muted small">Axe suggéré :</span> <b>{ind.focus}</b></div>
+        </div>
+      )}
+      <details className="tiny muted">
+        <summary>Comment lire ces indicateurs</summary>
+        <p>Rapports : distance moyenne par contact de la séquence longue ÷ séquence précédente (seuils {fmt(METHOD.monoToTriple)} / {fmt(METHOD.tripleToPenta)} / {fmt(METHOD.pentaToDeca)}).</p>
+        <p>Projections : triple = {PROJECTION.monoTriple[0].toString().replace('.', ',')} × mono + {PROJECTION.monoTriple[1].toString().replace('.', ',')}, etc. Écart ≥ 5 % à surveiller, ≥ 10 % très contrasté.</p>
+        <p>Profil sprint : score du 40 m moins score du sprint lancé, relatifs aux athlètes testés le même jour (≥ +0,5 : accélération relativement forte ; ≤ −0,5 : vitesse lancée dominante).</p>
+        <p>Repères internes, pas des normes : compare d’abord l’athlète à lui-même, dans les mêmes conditions de test.</p>
+      </details>
     </div>
   )
 }

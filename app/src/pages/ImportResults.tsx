@@ -96,9 +96,6 @@ export function ImportResults() {
     return [...map.values()]
   }, [parsed, resIdx, repIdx])
 
-  const resolved = (p: RowPerson): string => choice[p.key] ?? matchAthlete(p, athletes)?.athlete.id ?? 'new'
-  const toCheck = (p: RowPerson) => !choice[p.key] && matchAthlete(p, athletes)?.exact === false
-
   // Résultats à importer
   const plan = useMemo(() => {
     const s = parsed[resIdx]
@@ -134,6 +131,11 @@ export function ImportResults() {
     return { results, reports, testNames: [...new Set(results.map((x) => x.test))] }
   }, [parsed, resIdx, repIdx])
 
+  // Par défaut : fiche reconnue, sinon nouvelle fiche… sauf si la ligne est vide (aucun résultat ni bilan)
+  const hasData = (p: RowPerson) => plan.results.some((x) => x.key === p.key) || plan.reports.some((x) => x.key === p.key)
+  const resolved = (p: RowPerson): string => choice[p.key] ?? matchAthlete(p, athletes)?.athlete.id ?? (hasData(p) ? 'new' : 'skip')
+  const toCheck = (p: RowPerson) => !choice[p.key] && matchAthlete(p, athletes)?.exact === false
+
   const included = people.filter((p) => resolved(p) !== 'skip')
   const newCount = included.filter((p) => resolved(p) === 'new').length
   const missingTests = plan.testNames.filter((n) => !tests.some((t) => t.name === n))
@@ -160,15 +162,23 @@ export function ImportResults() {
       toCreate.forEach((p, i) => ids.set(p.key, created[i].id))
       for (const p of included) if (resolved(p) !== 'new') ids.set(p.key, resolved(p))
 
-      // 3. Résultats (sans doublon même athlète + test + date)
-      const rows = plan.results.flatMap(({ key, test, values }) => {
+      // 3. Résultats : un même test le même jour est mis à jour (ex. 2e essai ajouté), jamais dupliqué
+      let updated = 0
+      const rows = []
+      for (const { key, test, values } of plan.results) {
         const athlete_id = ids.get(key)
         const t = testIds.get(test)
-        if (!athlete_id || !t) return []
-        if (test_results.some((r) => r.athlete_id === athlete_id && r.test_id === t.id && r.date === date)) return []
+        if (!athlete_id || !t) continue
         const best = t.higher_is_better ? Math.max(...values) : Math.min(...values)
-        return [{ athlete_id, test_id: t.id, date, value: best, trials: values.length > 1 ? values : [], notes: '' }]
-      })
+        const trials = values.length > 1 ? values : []
+        const existing = test_results.find((r) => r.athlete_id === athlete_id && r.test_id === t.id && r.date === date)
+        if (existing) {
+          if (existing.value !== best || existing.trials.join() !== trials.join()) {
+            await save('test_results', { id: existing.id, value: best, trials })
+            updated++
+          }
+        } else rows.push({ athlete_id, test_id: t.id, date, value: best, trials, notes: '' })
+      }
       await saveMany('test_results', rows)
 
       // 4. Bilans (message visible par l'athlète) et notes privées
@@ -188,7 +198,7 @@ export function ImportResults() {
       })
       await saveMany('athlete_notes', notes)
       await reload()
-      nav(`/tests/tableau?import=${rows.length}-${reports.length}-${created.length}`)
+      nav(`/tests/tableau?import=${rows.length}-${reports.length}-${created.length}-${updated}`)
     } catch (e) {
       setErr(errorMessage(e))
     } finally {
@@ -282,12 +292,14 @@ export function ImportResults() {
                       const r = resolved(p)
                       const n = plan.results.filter((x) => x.key === p.key).length
                       const check = toCheck(p)
+                      const empty = !hasData(p)
                       return (
                         <tr key={p.key} className={check ? 'to-check' : ''}>
                           <td>
                             <b>{p.first} {p.last}</b>
                             <div className="tiny muted">{[p.age && `${p.age} ans`, p.events, `${n} résultat(s)`].filter(Boolean).join(' · ')}</div>
                             {check && <div className="tiny warn-text">≈ orthographe proche : vérifie que c’est la bonne personne</div>}
+                            {empty && <div className="tiny muted">ligne vide (aucun résultat) : ignorée par défaut</div>}
                           </td>
                           <td>
                             <select value={r} onChange={(e) => setChoice({ ...choice, [p.key]: e.target.value })}>

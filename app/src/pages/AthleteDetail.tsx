@@ -121,7 +121,7 @@ export function AthleteDetail() {
           <Empty>Définis d’abord tes tests dans <Link to="/tests">Tests physiques</Link>.</Empty>
         ) : (
           <>
-            <IndicatorsPanel tests={tests} results={test_results.filter((r) => r.athlete_id === a.id)} />
+            <IndicatorsPanel tests={tests} results={test_results.filter((r) => r.athlete_id === a.id)} all={test_results} />
             <VmaPaces tests={tests} results={test_results.filter((r) => r.athlete_id === a.id)} title="Allures d’entraînement" />
             <TestResults tests={tests} results={test_results.filter((r) => r.athlete_id === a.id)} onDelete={(rid) => remove('test_results', rid)} />
           </>

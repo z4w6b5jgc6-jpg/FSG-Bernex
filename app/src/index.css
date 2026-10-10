@@ -413,3 +413,6 @@ input.attention { border-color: var(--warn); box-shadow: 0 0 0 2px var(--warn-so
 .paces { margin-bottom: 0.6rem; }
 .paces th { font-size: 0.72rem; color: var(--muted); font-weight: 600; text-align: right; padding: 0.2rem 0.3rem; }
 .my-pace { display: inline-block; margin-top: 0.2rem; font-size: 0.82rem; font-weight: 600; color: var(--primary); background: var(--primary-soft); border-radius: 6px; padding: 0.1rem 0.45rem; }
+.ind-title { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--primary); margin-top: 0.5rem; }
+.danger-text { color: var(--danger); font-weight: 600; }
+.indicators details p { margin: 0.3rem 0; }

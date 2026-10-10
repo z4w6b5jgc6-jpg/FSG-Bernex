@@ -20,7 +20,7 @@ export type ColRole =
   | { kind: 'test'; test: string } // nom du test (existant ou à créer)
   | { kind: 'report'; field: 'strengths' | 'priority' | 'training' | 'message' | 'private' }
 
-const COMPUTED = /^(meilleur|ecart|vitesse|alerte|lecture|profil|axesugg|rapport|ratio|moyenne|total|rang|resultatsbonds)/
+const COMPUTED = /^(meilleur|ecart|vitesse|alerte|lecture|profil|axesugg|rapport|ratio|moyenne|total|rang|resultatsbonds|score|repetabilite|balance|surcout|maintien)|meilleur|best|proj/
 
 /** Rapproche un en-tête de colonne d'un test (« Mono (m) » → Monobond, « 20 m essai 1 » → 20 m lancé) */
 export function guessTest(header: string, tests: KnownTest[]): string | null {
@@ -64,7 +64,12 @@ export function guessRole(header: string, tests: KnownTest[]): ColRole {
   // Colonnes calculées par le classeur (rapports « Triple/mono », « Meilleur 20 m », « Vitesse »…)
   if (/[a-zà-ÿ]{3,}\s*\/\s*[a-zà-ÿ]{3,}/i.test(header) || COMPUTED.test(h)) return { kind: 'ignore' }
   const t = guessTest(header, tests)
-  return t ? { kind: 'test', test: t } : { kind: 'ignore' }
+  if (!t) return { kind: 'ignore' }
+  // L'unité entre parenthèses doit être celle du test : « 20 m (km/h) » est une vitesse calculée, pas un chrono
+  const unit = header.match(/\(([^)]*)\)/)?.[1]
+  const def = tests.find((x) => x.name === t)
+  if (unit && def?.unit && normText(unit) !== normText(def.unit)) return { kind: 'ignore' }
+  return { kind: 'test', test: t }
 }
 
 // ----- Feuilles -----

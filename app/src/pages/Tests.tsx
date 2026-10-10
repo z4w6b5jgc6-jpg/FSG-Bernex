@@ -273,7 +273,9 @@ export function TestMatrix() {
       <Link to="/tests" className="muted small">← Tests</Link>
       <h1>Tableau du groupe</h1>
       {imported && (
-        <div className="alert info">✅ Import terminé : {imported[0]} résultat(s), {imported[1]} bilan(s), {imported[2]} nouvelle(s) fiche(s).</div>
+        <div className="alert info">
+          ✅ Import terminé : {imported[0]} résultat(s) ajouté(s){imported[3] ? `, ${imported[3]} mis à jour` : ''}, {imported[1]} bilan(s), {imported[2]} nouvelle(s) fiche(s).
+        </div>
       )}
       <div className="row gap filters">
         <select value={group} onChange={(e) => setGroup(e.target.value)}>

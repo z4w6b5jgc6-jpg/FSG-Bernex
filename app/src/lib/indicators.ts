@@ -83,3 +83,95 @@ export function computeIndicators(tests: TestDef[], results: TestResult[]): Indi
 }
 
 export const fmt = (v: number, digits = 2) => v.toLocaleString('fr-CH', { minimumFractionDigits: digits, maximumFractionDigits: digits })
+
+// ---------------------------------------------------------------------
+// 2e méthode (classeur « Tests d'aptitudes U18 — sprint & sauts ») :
+// écarts aux projections entre bonds et profil sprint (40 m départ arrêté
+// comparé au sprint lancé). Repères internes, pas des normes.
+// ---------------------------------------------------------------------
+
+export const PROJECTION = {
+  /** triple projeté = a × mono + b, etc. */
+  monoTriple: [1.386, 3.204],
+  triplePenta: [1.433, 1.693],
+  pentaDeca: [1.776, 2.69],
+  /** écart « à surveiller » / « très contrasté » */
+  marked: 0.05,
+  strong: 0.1,
+  /** balance accélération – vitesse lancée (écarts-types) */
+  sprintBalance: 0.5,
+}
+
+export interface BondsProjection {
+  gaps: { label: string; observed: number; projected: number; gap: number }[]
+  meanGap: number | null
+  profile: 'Profil homogène' | 'À surveiller' | 'Très contrasté' | null
+}
+
+export function bondsProjection(tests: TestDef[], results: TestResult[]): BondsProjection | null {
+  const v = (k: Key) => latest(results, findTest(tests, k))?.value
+  const mono = v('mono'), triple = v('triple'), penta = v('penta'), deca = v('deca')
+  const gaps: BondsProjection['gaps'] = []
+  const add = (label: string, from: number | undefined, to: number | undefined, [a, b]: number[]) => {
+    if (from == null || to == null) return
+    const projected = from * a + b
+    gaps.push({ label, observed: to, projected, gap: to / projected - 1 })
+  }
+  add('Mono → triple', mono, triple, PROJECTION.monoTriple)
+  add('Triple → penta', triple, penta, PROJECTION.triplePenta)
+  add('Penta → déca', penta, deca, PROJECTION.pentaDeca)
+  if (gaps.length === 0) return null
+  const maxAbs = Math.max(...gaps.map((g) => Math.abs(g.gap)))
+  return {
+    gaps,
+    meanGap: gaps.reduce((s, g) => s + g.gap, 0) / gaps.length,
+    profile: maxAbs >= PROJECTION.strong ? 'Très contrasté' : maxAbs >= PROJECTION.marked ? 'À surveiller' : 'Profil homogène',
+  }
+}
+
+export interface SprintProfile {
+  t20?: number; t30?: number; t40?: number
+  v20?: number; v30?: number; v40?: number
+  rep20?: number; rep30?: number
+  /** v30 / v20 */
+  maintain?: number
+  /** t40 − 4/3 × t30 lancé */
+  startCost?: number
+  z40?: number; zFlying?: number; balance?: number
+  profile: 'Accélération relativement forte' | 'Vitesse lancée dominante' | 'Profil sprint équilibré' | 'Données incomplètes'
+}
+
+/** Score standardisé (z) d'un temps parmi les athlètes testés le même jour : positif = plus rapide que la moyenne */
+function zScore(all: TestResult[], r: TestResult | undefined): number | undefined {
+  if (!r) return undefined
+  const cohort = all.filter((x) => x.test_id === r.test_id && x.date === r.date && x.value > 0).map((x) => x.value)
+  if (cohort.length < 2) return undefined
+  const mean = cohort.reduce((s, x) => s + x, 0) / cohort.length
+  const sd = Math.sqrt(cohort.reduce((s, x) => s + (x - mean) ** 2, 0) / (cohort.length - 1))
+  return sd > 0 ? (mean - r.value) / sd : undefined
+}
+
+export function sprintProfile(tests: TestDef[], mine: TestResult[], all: TestResult[]): SprintProfile | null {
+  const find30 = tests.find((t) => normText(t.name).startsWith('30mlance'))
+  const find40 = tests.find((t) => normText(t.name).startsWith('40m'))
+  const r20 = latest(mine, findTest(tests, 'sprint20')), r30 = latest(mine, find30), r40 = latest(mine, find40)
+  if (!r30 && !r40) return null
+  const rep = (r?: TestResult) => (r && r.trials.length >= 2 ? Math.abs(r.trials[0] - r.trials[1]) : undefined)
+  const p: SprintProfile = { profile: 'Données incomplètes' }
+  p.t20 = r20?.value; p.t30 = r30?.value; p.t40 = r40?.value
+  if (p.t20) p.v20 = 72 / p.t20
+  if (p.t30) p.v30 = 108 / p.t30
+  if (p.t40) p.v40 = 144 / p.t40
+  p.rep20 = rep(r20); p.rep30 = rep(r30)
+  if (p.v20 && p.v30) p.maintain = p.v30 / p.v20
+  if (p.t40 && p.t30) p.startCost = p.t40 - (4 / 3) * p.t30
+  p.z40 = zScore(all, r40)
+  const zs = [zScore(all, r20), zScore(all, r30)].filter((z): z is number => z != null)
+  p.zFlying = zs.length ? zs.reduce((s, z) => s + z, 0) / zs.length : undefined
+  if (p.z40 != null && p.zFlying != null) p.balance = p.z40 - p.zFlying
+  if (p.t20 && p.t30 && p.t40 && p.balance != null) {
+    p.profile = p.balance >= PROJECTION.sprintBalance ? 'Accélération relativement forte'
+      : p.balance <= -PROJECTION.sprintBalance ? 'Vitesse lancée dominante' : 'Profil sprint équilibré'
+  }
+  return p
+}
