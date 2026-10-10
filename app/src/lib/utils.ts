@@ -65,9 +65,10 @@ export function itemSummary(it: SessionItem): string {
   return [volume, it.duration, it.recovery && `récup ${it.recovery}`, it.intensity].filter(Boolean).join(' · ')
 }
 
-export function athleteLink(token: string): string {
+/** Lien d'inscription du club à partager aux athlètes */
+export function inviteLink(code: string): string {
   const base = window.location.href.split('#')[0]
-  return `${base}#/a/${token}`
+  return `${base}#/rejoindre/${code}`
 }
 
 /** Numéro au format international sans "+" (079 123 45 67 → 41791234567) */

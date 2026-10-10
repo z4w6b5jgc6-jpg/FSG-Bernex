@@ -44,7 +44,10 @@ export function Sessions() {
     <div>
       <div className="row between">
         <h1>Séances</h1>
-        <button className="btn primary" onClick={create}>+ Nouvelle séance</button>
+        <div className="row gap">
+          <Link className="btn" to="/exercices">📚 Exercices</Link>
+          <button className="btn primary" onClick={create}>+ Séance</button>
+        </div>
       </div>
       <div className="row gap filters">
         <input placeholder="Rechercher…" value={q} onChange={(e) => setQ(e.target.value)} />

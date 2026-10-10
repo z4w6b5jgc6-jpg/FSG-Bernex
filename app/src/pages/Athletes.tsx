@@ -1,15 +1,15 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useData } from '../lib/data'
-import { AthleteLinkActions } from '../components/AthleteLinkActions'
+import { InviteCard } from '../components/InviteCard'
 import { Empty, Field, GroupBadge, Modal } from '../components/ui'
 import type { Athlete, Group } from '../types'
-import { errorMessage, fullName } from '../lib/utils'
+import { errorMessage, fullName, todayISO, whatsappUrl } from '../lib/utils'
 
 const COLORS = ['#2563eb', '#db2777', '#16a34a', '#ea580c', '#7c3aed', '#0891b2', '#ca8a04', '#64748b']
 
 export function Athletes() {
-  const { athletes, groups, feedback } = useData()
+  const { athletes, groups, feedback, wellness } = useData()
   const [editAthlete, setEditAthlete] = useState<Partial<Athlete> | null>(null)
   const [editGroup, setEditGroup] = useState<Partial<Group> | null>(null)
   const [showInactive, setShowInactive] = useState(false)
@@ -28,14 +28,14 @@ export function Athletes() {
         <h1>Athlètes</h1>
         <div className="row gap">
           <button className="btn" onClick={() => setEditGroup({ color: COLORS[groups.length % COLORS.length] })}>+ Groupe</button>
-          <button className="btn primary" onClick={() => setEditAthlete({ group_id: groups[0]?.id ?? null })}>+ Athlète</button>
         </div>
       </div>
-      <p className="muted small">
-        Chaque athlète a un lien personnel (sans mot de passe) pour consulter ses séances et donner son ressenti. Envoie-le par WhatsApp.
-      </p>
-      {athletes.length === 0 && groups.length === 0 && (
-        <Empty>Commence par créer un groupe (ex. U14, U16, Sprint…), puis ajoute tes athlètes.</Empty>
+      <InviteCard />
+      {groups.length === 0 && (
+        <Empty>Crée d’abord tes groupes (ex. U18, Sprint, Demi-fond…) : les athlètes choisiront le leur en s’inscrivant.</Empty>
+      )}
+      {athletes.length === 0 && groups.length > 0 && (
+        <Empty>Aucun athlète inscrit pour l’instant. Partage le lien d’inscription ci-dessus 👆</Empty>
       )}
       {sections.map(({ group, list }) => {
         if (!group && list.length === 0) return null
@@ -52,17 +52,22 @@ export function Athletes() {
               <div className="cards">
                 {list.map((a) => {
                   const fb = lastFeedback(a.id)
+                  const checkin = wellness.some((w) => w.athlete_id === a.id && w.date === todayISO())
                   return (
                     <div key={a.id} className={`card ${a.active ? '' : 'inactive'}`}>
                       <div className="row between">
-                        <Link to={`/athletes/${a.id}`}><strong>{fullName(a)}</strong></Link>
-                        <span className="muted small">{a.birth_year}</span>
+                        <Link to={`/athletes/${a.id}`} className="row gap"><span className="avatar-sm">{a.avatar}</span><strong>{fullName(a)}</strong></Link>
+                        <span className="muted small">{a.birth_year}{checkin && ' · 🌙'}</span>
                       </div>
                       {a.events && <div className="muted small">{a.events}</div>}
                       <div className="muted small">
                         {fb ? `Dernier retour : ${new Date(fb.updated_at).toLocaleDateString('fr-CH')}` : 'Aucun retour'}
                       </div>
-                      <AthleteLinkActions athlete={a} compact />
+                      <div className="row gap wrap">
+                        <Link className="btn small" to={`/athletes/${a.id}`}>Voir le suivi</Link>
+                        {a.phone && <a className="btn small whatsapp" href={whatsappUrl(`Salut ${a.first_name} !`, a.phone)} target="_blank" rel="noreferrer">📲</a>}
+                        <button className="btn small ghost" onClick={() => setEditAthlete(a)}>Modifier</button>
+                      </div>
                     </div>
                   )
                 })}
@@ -89,7 +94,7 @@ export function AthleteForm({ initial, onClose }: { initial: Partial<Athlete>; o
     try {
       await save('athletes', {
         id: a.id, first_name: a.first_name, last_name: a.last_name ?? '', group_id: a.group_id || null,
-        birth_year: a.birth_year ?? null, events: a.events ?? '', phone: a.phone ?? '', notes: a.notes ?? '', active: a.active ?? true,
+        birth_year: a.birth_year ?? null, events: a.events ?? '', phone: a.phone ?? '', active: a.active ?? true,
       })
       onClose()
     } catch (err) {
@@ -97,7 +102,7 @@ export function AthleteForm({ initial, onClose }: { initial: Partial<Athlete>; o
     }
   }
   return (
-    <Modal title={a.id ? 'Modifier l’athlète' : 'Nouvel athlète'} onClose={onClose}>
+    <Modal title="Modifier l’athlète" onClose={onClose}>
       <form className="form" onSubmit={submit}>
         <div className="grid2">
           <Field label="Prénom"><input value={a.first_name ?? ''} onChange={(e) => set({ first_name: e.target.value })} required autoFocus /></Field>
@@ -115,12 +120,12 @@ export function AthleteForm({ initial, onClose }: { initial: Partial<Athlete>; o
           </Field>
         </div>
         <Field label="Disciplines"><input value={a.events ?? ''} onChange={(e) => set({ events: e.target.value })} placeholder="Ex. 60 m, longueur" /></Field>
-        <Field label="Téléphone WhatsApp" hint="De l’athlète ou d’un parent – pour lui envoyer son lien en un geste">
+        <Field label="Téléphone WhatsApp" hint="De l’athlète ou d’un parent">
           <input type="tel" inputMode="tel" autoComplete="tel" value={a.phone ?? ''} onChange={(e) => set({ phone: e.target.value })} placeholder="079 123 45 67" />
         </Field>
-        <Field label="Notes privées" hint="Visibles uniquement par toi"><textarea rows={2} value={a.notes ?? ''} onChange={(e) => set({ notes: e.target.value })} /></Field>
+
         {a.id && (
-          <label className="check"><input type="checkbox" checked={a.active ?? true} onChange={(e) => set({ active: e.target.checked })} /> Actif (décocher désactive aussi son lien)</label>
+          <label className="check"><input type="checkbox" checked={a.active ?? true} onChange={(e) => set({ active: e.target.checked })} /> Actif (décocher bloque l’accès de l’athlète à l’app)</label>
         )}
         <div className="row gap end">
           <button type="button" className="btn ghost" onClick={onClose}>Annuler</button>

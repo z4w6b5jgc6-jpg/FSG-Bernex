@@ -1,28 +1,39 @@
 // Mode démo : toutes les données restent dans le navigateur (localStorage).
-// Permet d'essayer l'application sans configurer Supabase.
+// Simule les comptes (entraîneur / athlètes) et les règles d'accès de la base.
 import { DEFAULT_EXERCISES } from '../data/defaults'
-import type { Coach, PortalData, TableName, Tables } from '../types'
+import type { Me, TableName, Tables } from '../types'
 import { addDays, athletesFor, emptyItem, todayISO, uid } from '../lib/utils'
 import type { Api, Draft, Row } from './types'
 
-const KEY = 'athle-demo-db-v1'
-const AUTH_KEY = 'athle-demo-coach'
+const KEY = 'athle-demo-db-v2'
+const AUTH_KEY = 'athle-demo-user'
+const COACH_ID = 'demo-coach'
 
-type Db = { [K in TableName]: Tables[K][] }
+interface DemoUser { email: string; id: string; coach: boolean }
+type Db = { [K in TableName]: Tables[K][] } & {
+  club: { coach_id: string; name: string; invite_code: string }
+  users: DemoUser[]
+}
 
 function seed(): Db {
   const today = todayISO()
-  const u14 = { id: uid(), name: 'U14', color: '#2563eb' }
-  const u16 = { id: uid(), name: 'U16', color: '#db2777' }
-  const mk = (first: string, last: string, group: string, year: number, events: string) => ({
-    id: uid(), group_id: group, first_name: first, last_name: last, birth_year: year,
-    events, phone: '', notes: '', access_token: uid(), active: true,
-  })
+  const u18 = { id: uid(), name: 'U18', color: '#2563eb' }
+  const actifs = { id: uid(), name: 'U20 / Actifs', color: '#db2777' }
+  const users: DemoUser[] = []
+  const mk = (first: string, last: string, group: string, year: number, events: string, avatar: string, color: string, goals: string) => {
+    const email = `${first.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')}@demo.ch`
+    const user = { email, id: uid(), coach: false }
+    users.push(user)
+    return {
+      id: uid(), user_id: user.id, group_id: group, first_name: first, last_name: last, birth_year: year,
+      events, phone: '', avatar, color, goals, favorite_tips: [] as string[], active: true,
+    }
+  }
   const athletes = [
-    mk('Léa', 'Martin', u14.id, 2013, '60 m, longueur'),
-    mk('Noah', 'Rossier', u14.id, 2013, '1000 m'),
-    mk('Inès', 'Favre', u16.id, 2011, '80 m haies, hauteur'),
-    mk('Luca', 'Bianchi', u16.id, 2011, 'poids, disque'),
+    mk('Léa', 'Martin', u18.id, 2010, '100 m, longueur', '⚡', '#7c3aed', 'Passer sous les 13" au 100 m cette saison'),
+    mk('Noah', 'Rossier', u18.id, 2009, '800 m, 1500 m', '🦊', '#ea580c', 'Qualif championnats romands'),
+    mk('Inès', 'Favre', actifs.id, 2007, '100 m haies, hauteur', '🦋', '#db2777', ''),
+    mk('Luca', 'Bianchi', actifs.id, 2006, 'poids, disque', '💪', '#16a34a', ''),
   ]
   const item = (name: string, f: Partial<ReturnType<typeof emptyItem>>) => ({ ...emptyItem(name), ...f })
   const vitesse = {
@@ -35,8 +46,8 @@ function seed(): Db {
         item('Skipping', { sets: '2', distance: '20 m' }),
       ] },
       { id: uid(), title: 'Corps de séance', items: [
-        item('Départs en position', { sets: '2', reps: '4', distance: '20 m', recovery: '1\'30', intensity: '100%', notes: 'Départ 3 appuis, au clap.' }),
-        item('Sprint lancé', { reps: '4', distance: '30 m', recovery: '3\'', intensity: '95%' }),
+        item('Départs en position', { sets: '2', reps: '4', distance: '20 m', recovery: "1'30", intensity: '100%', notes: 'Départ 3 appuis, au clap.' }),
+        item('Sprint lancé', { reps: '4', distance: '30 m', recovery: "3'", intensity: '95%' }),
       ] },
       { id: uid(), title: 'Retour au calme', items: [item('Étirements', { duration: '10 min' })] },
     ],
@@ -47,25 +58,51 @@ function seed(): Db {
     blocks: [
       { id: uid(), title: 'Échauffement', items: [item('Footing léger', { duration: '15 min' })] },
       { id: uid(), title: 'Corps de séance', items: [
-        item('Fractionné court', { sets: '2', reps: '8', duration: '30"/30"', recovery: '3\' entre séries', intensity: '100% VMA' }),
+        item('Fractionné court', { sets: '2', reps: '8', duration: '30"/30"', recovery: "3' entre séries", intensity: '100% VMA' }),
       ] },
       { id: uid(), title: 'Retour au calme', items: [item('Retour au calme', { duration: '10 min' })] },
     ],
   }
-  const a1 = { id: uid(), session_id: vitesse.id, date: addDays(today, -2), time: '18:00', location: 'Stade du Bois-des-Frères', group_id: u14.id, athlete_ids: [], note: '' }
-  const a2 = { id: uid(), session_id: endurance.id, date: today, time: '18:00', location: 'Stade', group_id: u16.id, athlete_ids: [], note: 'Prendre des baskets de route.' }
-  const a3 = { id: uid(), session_id: vitesse.id, date: addDays(today, 3), time: '18:00', location: 'Stade', group_id: u16.id, athlete_ids: [athletes[0].id], note: '' }
+  const asg = (session: string, date: string, group: string, ids: string[] = [], note = '') =>
+    ({ id: uid(), session_id: session, date, time: '18:00', location: 'Stade du Bois-des-Frères', group_id: group, athlete_ids: ids, note })
+  const assignments = [
+    asg(vitesse.id, addDays(today, -9), u18.id), asg(endurance.id, addDays(today, -7), u18.id),
+    asg(vitesse.id, addDays(today, -4), u18.id), asg(endurance.id, addDays(today, -2), u18.id),
+    asg(endurance.id, today, actifs.id, [], 'Prendre des baskets de route.'),
+    asg(vitesse.id, addDays(today, 3), u18.id, [athletes[2].id]),
+  ]
   const now = new Date().toISOString()
+  const fb = (a: number, ath: number, rpe: number, fatigue: number, mood: number, comment = '', pain = '') => ({
+    id: uid(), assignment_id: assignments[a].id, athlete_id: athletes[ath].id, completed: true, rpe, fatigue, mood,
+    pain, comment, coach_reply: '', updated_at: addDays(today, -1) + 'T18:00:00.000Z',
+  })
+  const wellness = [6, 5, 4, 3, 2, 1].map((d, i) => ({
+    id: uid(), athlete_id: athletes[0].id, date: addDays(today, -d), sleep_hours: [8, 7.5, 6, 8.5, 7, 9][i],
+    sleep_quality: [4, 4, 2, 5, 3, 5][i], energy: [4, 3, 2, 5, 4, 5][i], soreness: [2, 3, 4, 2, 2, 1][i], stress: [2, 2, 4, 1, 2, 1][i], note: '',
+  }))
   return {
-    groups: [u14, u16],
+    club: { coach_id: COACH_ID, name: 'FSG Bernex (démo)', invite_code: 'DEMO2026' },
+    users,
+    groups: [u18, actifs],
     athletes,
+    athlete_notes: [],
     exercises: DEFAULT_EXERCISES.map((e) => ({ id: uid(), ...e })),
     sessions: [vitesse, endurance],
-    assignments: [a1, a2, a3],
+    assignments,
     feedback: [
-      { id: uid(), assignment_id: a1.id, athlete_id: athletes[0].id, completed: true, rpe: 7, fatigue: 2, mood: 5, pain: '', comment: 'Super séance, les départs au clap c’était cool !', coach_reply: '', updated_at: now },
-      { id: uid(), assignment_id: a1.id, athlete_id: athletes[1].id, completed: true, rpe: 8, fatigue: 4, mood: 3, pain: 'Un peu mal au mollet droit', comment: 'Dur à la fin.', coach_reply: '', updated_at: now },
+      fb(0, 0, 6, 2, 4), fb(1, 0, 8, 3, 4, 'Dur mais j’ai tenu toutes les séries 💪'), fb(2, 0, 7, 2, 5, 'Super séance, les départs au clap c’était cool !'),
+      fb(2, 1, 8, 4, 3, 'Dur à la fin.', 'Un peu mal au mollet droit'),
+    ].map((f) => ({ ...f, updated_at: f.updated_at || now })),
+    tips: [{
+      id: uid(), category: 'Club', emoji: '📣', title: 'Règles du groupe', published: true,
+      summary: 'Ce que j’attends de chacun à l’entraînement.',
+      body: '- Arriver 10 minutes avant le début\n- Prévenir sur WhatsApp en cas d’absence\n- Donner son ressenti dans l’app après chaque séance\n\nMerci à tous 🙌',
+    }],
+    records: [
+      { id: uid(), athlete_id: athletes[0].id, event: '100 m', mark: '13"21', date: addDays(today, -40), competition: 'Meeting de Genève' },
+      { id: uid(), athlete_id: athletes[0].id, event: 'Longueur', mark: '5,12 m', date: addDays(today, -20), competition: 'Championnat cantonal' },
     ],
+    wellness,
   }
 }
 
@@ -73,80 +110,175 @@ function load(): Db {
   try {
     const raw = localStorage.getItem(KEY)
     if (raw) return JSON.parse(raw) as Db
-  } catch {
-    /* ignore */
-  }
+  } catch { /* ignore */ }
   const db = seed()
   persist(db)
   return db
 }
 
 function persist(db: Db) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(db))
-  } catch {
-    /* ignore */
-  }
+  try { localStorage.setItem(KEY, JSON.stringify(db)) } catch { /* ignore */ }
 }
 
-const delay = <T,>(v: T) => new Promise<T>((r) => setTimeout(() => r(structuredClone(v)), 50))
+const delay = <T,>(v: T) => new Promise<T>((r) => setTimeout(() => r(structuredClone(v)), 40))
 
 export function createDemoApi(): Api {
   let db = load()
-  const listeners = new Set<(c: Coach | null) => void>()
-  const currentCoach = (): Coach | null => {
-    try {
-      const email = localStorage.getItem(AUTH_KEY)
-      return email ? { email } : null
-    } catch {
-      return null
-    }
+  const listeners = new Set<() => void>()
+  const currentEmail = (): string | null => {
+    try { return localStorage.getItem(AUTH_KEY) } catch { return null }
   }
-  const setCoach = (email: string | null) => {
+  const setEmail = (email: string | null) => {
     try {
       if (email) localStorage.setItem(AUTH_KEY, email)
       else localStorage.removeItem(AUTH_KEY)
-    } catch {
-      /* ignore */
-    }
-    listeners.forEach((l) => l(currentCoach()))
+    } catch { /* ignore */ }
+    listeners.forEach((l) => l())
   }
+  const currentUser = (): DemoUser | null => {
+    const email = currentEmail()
+    return email ? db.users.find((u) => u.email === email) ?? null : null
+  }
+  const myAthlete = () => {
+    const u = currentUser()
+    return u ? db.athletes.find((a) => a.user_id === u.id) ?? null : null
+  }
+  const role = (): Me['role'] | null => {
+    const u = currentUser()
+    if (!u) return null
+    if (u.coach) return 'coach'
+    const a = myAthlete()
+    if (a) return a.active ? 'athlete' : 'inactive'
+    return 'new'
+  }
+
+  /** Équivalent des règles RLS : ce que l'athlète a le droit de voir */
+  function visible<K extends TableName>(table: K): Row<K>[] {
+    const rows = db[table] as Row<K>[]
+    const r = role()
+    if (r === 'coach') return rows
+    const me = r === 'athlete' ? myAthlete() : null
+    if (!me) return []
+    const mine = db.assignments.filter((a) => athletesFor(a, [me]).length > 0)
+    const filters: { [T in TableName]: (x: Tables[T]) => boolean } = {
+      groups: () => true,
+      athletes: (a) => a.id === me.id,
+      athlete_notes: () => false,
+      exercises: () => false,
+      sessions: (s) => mine.some((a) => a.session_id === s.id),
+      assignments: (a) => mine.includes(a),
+      feedback: (f) => f.athlete_id === me.id,
+      tips: (t) => t.published,
+      records: (x) => x.athlete_id === me.id,
+      wellness: (x) => x.athlete_id === me.id,
+    }
+    return rows.filter(filters[table] as (x: Row<K>) => boolean)
+  }
+
   return {
     mode: 'demo',
-    async getCoach() {
-      return currentCoach()
+
+    async getMe() {
+      db = load()
+      const u = currentUser()
+      const r = role()
+      if (!u || !r) return null
+      const a = myAthlete()
+      return {
+        email: u.email, role: r, athlete_id: a?.id, club_name: db.club.name,
+        invite_code: r === 'coach' ? db.club.invite_code : undefined,
+      }
     },
     onAuthChange(cb) {
       listeners.add(cb)
       return () => listeners.delete(cb)
     },
     async signIn(email) {
-      setCoach(email || 'coach@demo.ch')
+      db = load()
+      const e = (email || 'coach@demo.ch').trim().toLowerCase()
+      // En démo : un email inconnu devient l'entraîneur du club
+      if (!db.users.some((u) => u.email === e)) {
+        db.users.push({ email: e, id: COACH_ID, coach: true })
+        persist(db)
+      }
+      setEmail(e)
     },
     async signUp(email) {
-      setCoach(email || 'coach@demo.ch')
+      db = load()
+      const e = email.trim().toLowerCase()
+      if (db.users.some((u) => u.email === e)) throw new Error('Un compte existe déjà avec cet email. Connecte-toi.')
+      db.users.push({ email: e, id: uid(), coach: false })
+      persist(db)
+      setEmail(e)
+      return true
     },
     async signOut() {
-      setCoach(null)
+      setEmail(null)
+    },
+    async resetPassword() {
+      /* rien à faire en démo */
+    },
+
+    async createClub(name) {
+      db = load()
+      const u = currentUser()
+      if (!u) throw new Error('Non connecté')
+      u.coach = true
+      u.id = COACH_ID
+      db.club.name = name
+      persist(db)
+      listeners.forEach((l) => l())
+    },
+    async clubByCode(code) {
+      db = load()
+      if (code.trim().toUpperCase() !== db.club.invite_code) return null
+      return { name: db.club.name, groups: db.groups.map(({ id, name, color }) => ({ id, name, color })) }
+    },
+    async joinClub(code, p) {
+      db = load()
+      const u = currentUser()
+      if (!u) throw new Error('Non connecté')
+      if (code.trim().toUpperCase() !== db.club.invite_code) throw new Error('Ce code d’invitation n’existe pas.')
+      if (myAthlete()) throw new Error('Ce compte est déjà inscrit dans un club.')
+      db.athletes.push({
+        ...(defaults('athletes') as unknown as Tables['athletes']), id: uid(), user_id: u.id, ...p,
+        group_id: db.groups.some((g) => g.id === p.group_id) ? p.group_id : null,
+      })
+      persist(db)
+      listeners.forEach((l) => l())
+    },
+    async regenerateInviteCode() {
+      db = load()
+      db.club.invite_code = uid().slice(0, 8).toUpperCase()
+      persist(db)
+      return db.club.invite_code
     },
 
     async list<K extends TableName>(table: K) {
       db = load()
-      return delay(db[table] as Row<K>[])
+      return delay(visible(table))
     },
     async save<K extends TableName>(table: K, row: Draft<K>) {
       db = load()
       const rows = db[table] as Row<K>[]
       const extra: Record<string, unknown> = {}
-      if (table === 'sessions' || table === 'feedback') extra.updated_at = new Date().toISOString()
+      if (table === 'sessions' || table === 'feedback' || table === 'tips') extra.updated_at = new Date().toISOString()
       let saved: Row<K>
-      if (row.id) {
+      if (row.id && rows.some((r) => (r as { id: string }).id === row.id)) {
+        if (!visible(table).some((r) => (r as { id: string }).id === row.id)) throw new Error('Accès refusé')
         const i = rows.findIndex((r) => (r as { id: string }).id === row.id)
-        if (i < 0) throw new Error('Introuvable')
-        saved = { ...rows[i], ...row, ...extra }
+        const patch = { ...row } as Record<string, unknown>
+        if (role() === 'athlete') {
+          // Mêmes protections que dans la base
+          if (table === 'athletes') for (const k of ['group_id', 'active', 'user_id']) delete patch[k]
+          if (table === 'feedback') delete patch.coach_reply
+        }
+        saved = { ...rows[i], ...patch, ...extra }
         rows[i] = saved
       } else {
-        saved = { ...defaults(table), ...row, ...extra, id: uid() } as unknown as Row<K>
+        const created = { ...defaults(table), ...row, ...extra, id: row.id ?? uid() } as Record<string, unknown>
+        if (table === 'athlete_notes') created.created_at = new Date().toISOString()
+        saved = created as unknown as Row<K>
         rows.push(saved)
       }
       persist(db)
@@ -168,37 +300,10 @@ export function createDemoApi(): Api {
       const assignmentIds = new Set(db.assignments.map((a) => a.id))
       const athleteIds = new Set(db.athletes.map((a) => a.id))
       db.feedback = db.feedback.filter((f) => assignmentIds.has(f.assignment_id) && athleteIds.has(f.athlete_id))
+      db.records = db.records.filter((x) => athleteIds.has(x.athlete_id))
+      db.wellness = db.wellness.filter((x) => athleteIds.has(x.athlete_id))
+      db.athlete_notes = db.athlete_notes.filter((x) => athleteIds.has(x.athlete_id))
       persist(db)
-    },
-
-    async portal(token) {
-      db = load()
-      const athlete = db.athletes.find((a) => a.access_token === token && a.active)
-      if (!athlete) throw new Error('invalid_token')
-      const minDate = addDays(todayISO(), -60)
-      const data: PortalData = {
-        athlete: {
-          id: athlete.id, first_name: athlete.first_name, last_name: athlete.last_name,
-          group_name: db.groups.find((g) => g.id === athlete.group_id)?.name ?? null,
-        },
-        assignments: db.assignments
-          .filter((a) => a.date >= minDate && athletesFor(a, [athlete]).length > 0)
-          .sort((a, b) => b.date.localeCompare(a.date))
-          .flatMap((a) => {
-            const session = db.sessions.find((s) => s.id === a.session_id)
-            if (!session) return []
-            const fb = db.feedback.find((f) => f.assignment_id === a.id && f.athlete_id === athlete.id)
-            return [{ id: a.id, date: a.date, time: a.time, location: a.location, note: a.note, session, feedback: fb ?? null }]
-          }),
-      }
-      return delay(data)
-    },
-    async submitFeedback(token, assignmentId, input) {
-      db = load()
-      const athlete = db.athletes.find((a) => a.access_token === token && a.active)
-      if (!athlete) throw new Error('invalid_token')
-      const existing = db.feedback.find((f) => f.assignment_id === assignmentId && f.athlete_id === athlete.id)
-      await this.save('feedback', { ...(existing ?? { assignment_id: assignmentId, athlete_id: athlete.id }), ...input })
     },
   }
 }
@@ -206,10 +311,14 @@ export function createDemoApi(): Api {
 function defaults(table: TableName): Record<string, unknown> {
   switch (table) {
     case 'groups': return { color: '#2563eb' }
-    case 'athletes': return { group_id: null, last_name: '', birth_year: null, events: '', phone: '', notes: '', access_token: uid(), active: true }
+    case 'athletes': return { user_id: null, group_id: null, last_name: '', birth_year: null, events: '', phone: '', avatar: '🏃', color: '#e85d04', goals: '', favorite_tips: [], active: true }
+    case 'athlete_notes': return {}
     case 'exercises': return { category: 'Autre', description: '' }
     case 'sessions': return { objective: '', focus: '', duration_min: null, blocks: [] }
     case 'assignments': return { time: '', location: '', group_id: null, athlete_ids: [], note: '' }
     case 'feedback': return { completed: true, rpe: null, fatigue: null, mood: null, pain: '', comment: '', coach_reply: '' }
+    case 'tips': return { category: 'Hygiène de vie', emoji: '💡', summary: '', body: '', published: true }
+    case 'records': return { competition: '', date: todayISO() }
+    case 'wellness': return { sleep_hours: null, sleep_quality: null, energy: null, soreness: null, stress: null, note: '', date: todayISO() }
   }
 }

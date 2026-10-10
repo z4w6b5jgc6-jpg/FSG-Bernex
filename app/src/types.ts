@@ -6,15 +6,64 @@ export interface Group {
 
 export interface Athlete {
   id: string
+  user_id: string | null
   group_id: string | null
   first_name: string
   last_name: string
   birth_year: number | null
   events: string
   phone: string
-  notes: string
-  access_token: string
+  avatar: string
+  color: string
+  goals: string
+  favorite_tips: string[]
   active: boolean
+}
+
+export interface Club {
+  coach_id: string
+  name: string
+  invite_code: string
+}
+
+export interface AthleteNote {
+  id: string
+  athlete_id: string
+  text: string
+  created_at: string
+}
+
+export interface Tip {
+  id: string
+  category: string
+  emoji: string
+  title: string
+  summary: string
+  body: string
+  published: boolean
+  /** true pour les conseils fournis avec l'app (non modifiables) */
+  builtin?: boolean
+}
+
+export interface PersonalRecord {
+  id: string
+  athlete_id: string
+  event: string
+  mark: string
+  date: string
+  competition: string
+}
+
+export interface Wellness {
+  id: string
+  athlete_id: string
+  date: string
+  sleep_hours: number | null
+  sleep_quality: number | null
+  energy: number | null
+  soreness: number | null
+  stress: number | null
+  note: string
 }
 
 export interface Exercise {
@@ -80,38 +129,38 @@ export interface Feedback {
 export interface Tables {
   groups: Group
   athletes: Athlete
+  athlete_notes: AthleteNote
   exercises: Exercise
   sessions: Session
   assignments: Assignment
   feedback: Feedback
+  tips: Tip
+  records: PersonalRecord
+  wellness: Wellness
 }
 
 export type TableName = keyof Tables
 
-export interface FeedbackInput {
-  completed: boolean
-  rpe: number | null
-  fatigue: number | null
-  mood: number | null
-  pain: string
-  comment: string
-}
+export type Role = 'coach' | 'athlete' | 'inactive' | 'new'
 
-export interface PortalAssignment {
-  id: string
-  date: string
-  time: string
-  location: string
-  note: string
-  session: Omit<Session, 'updated_at'>
-  feedback: Omit<Feedback, 'assignment_id' | 'athlete_id'> | null
-}
-
-export interface PortalData {
-  athlete: { id: string; first_name: string; last_name: string; group_name: string | null }
-  assignments: PortalAssignment[]
-}
-
-export interface Coach {
+export interface Me {
   email: string
+  role: Role
+  athlete_id?: string
+  club_name?: string
+  invite_code?: string
+}
+
+export interface JoinProfile {
+  first_name: string
+  last_name: string
+  birth_year: number | null
+  group_id: string | null
+  events: string
+  phone: string
+}
+
+export interface ClubInfo {
+  name: string
+  groups: { id: string; name: string; color: string }[]
 }

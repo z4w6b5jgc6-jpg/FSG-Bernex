@@ -48,48 +48,31 @@ export function isIOS(): boolean {
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 }
 
-/**
- * Sur la page d'un athlète, remplace le manifeste pour que l'app installée
- * s'ouvre directement sur SON espace (et pas sur la connexion entraîneur).
- */
-export function applyAthleteManifest(token: string, firstName: string) {
-  const link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]')
-  if (!link) return
-  const base = window.location.href.split('#')[0]
-  const abs = (p: string) => new URL(p, base).href
-  const manifest = {
-    name: `Coach Athlé – ${firstName}`,
-    short_name: 'Mes entraînements',
-    lang: 'fr',
-    start_url: `${base}#/a/${token}`,
-    scope: abs('./'),
-    display: 'standalone',
-    orientation: 'portrait',
-    background_color: '#f4f6fb',
-    theme_color: '#e85d04',
-    icons: [
-      { src: abs('icon-192.png'), sizes: '192x192', type: 'image/png' },
-      { src: abs('icon-512.png'), sizes: '512x512', type: 'image/png' },
-    ],
-  }
-  link.href = 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify(manifest))
+// Inscription en attente (si l'email doit être confirmé avant de rejoindre le club)
+const PENDING_KEY = 'athle-pending-join'
+
+export interface PendingJoin {
+  code: string
+  profile: import('../types').JoinProfile
 }
 
-// Mémorise le lien de l'athlète sur cet appareil, pour rouvrir directement son espace
-const TOKEN_KEY = 'athle-athlete-token'
+export function savePendingJoin(p: PendingJoin) {
+  try { localStorage.setItem(PENDING_KEY, JSON.stringify(p)) } catch { /* ignore */ }
+}
+export function pendingJoin(): PendingJoin | null {
+  try {
+    const raw = localStorage.getItem(PENDING_KEY)
+    return raw ? (JSON.parse(raw) as PendingJoin) : null
+  } catch { return null }
+}
+export function clearPendingJoin() {
+  try { localStorage.removeItem(PENDING_KEY) } catch { /* ignore */ }
+}
 
-export function rememberAthleteToken(token: string) {
-  try { localStorage.setItem(TOKEN_KEY, token) } catch { /* ignore */ }
-}
-export function rememberedAthleteToken(): string | null {
-  try { return localStorage.getItem(TOKEN_KEY) } catch { return null }
-}
-export function forgetAthleteToken() {
-  try { localStorage.removeItem(TOKEN_KEY) } catch { /* ignore */ }
-}
-
-/** Extrait le jeton d'un lien collé (ou du jeton seul) */
-export function parseAthleteToken(input: string): string | null {
-  const m = input.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)
-  return m ? m[0].toLowerCase() : null
+/** Extrait le code club d'un lien d'invitation collé (ou du code seul) */
+export function parseInviteCode(input: string): string | null {
+  const fromLink = input.match(/rejoindre\/([A-Za-z0-9]+)/)
+  if (fromLink) return fromLink[1].toUpperCase()
+  const raw = input.trim()
+  return /^[A-Za-z0-9]{4,12}$/.test(raw) ? raw.toUpperCase() : null
 }

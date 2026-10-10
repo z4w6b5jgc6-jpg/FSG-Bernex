@@ -11,25 +11,26 @@ Application web pour construire les entraînements d'athlétisme, les mettre à 
 | **Android** (Chrome) | Ouvrir le site → bouton **« 📲 Installer »** dans l'app, ou menu **⋮ → Installer l'application** |
 | **iPhone** (Safari) | Ouvrir le site → bouton **Partager ⬆️ → « Sur l'écran d'accueil »** |
 
-- L'athlète ouvre son lien reçu par WhatsApp puis installe l'app : elle s'ouvrira **directement sur son espace**.
-  Si son téléphone ouvre quand même l'écran de connexion, il colle une fois son lien dans « Tu es athlète ? ».
+- L'athlète ouvre le lien d'inscription reçu dans le groupe WhatsApp, crée son compte, puis installe l'app. Ensuite il reste connecté.
 - Les données se rafraîchissent automatiquement quand on revient dans l'app.
 - Pas de notifications push dans cette version : les annonces passent par WhatsApp (bouton **« Annoncer sur WhatsApp »** ou **« Partager »**).
 
 ## Ce que fait l'application
 
 **Côté entraîneur**
-- **Séances** : construire des séances types en blocs (échauffement, corps de séance, retour au calme…) avec pour chaque exercice séries, répétitions, distance, durée, récupération, intensité et consignes. Dupliquer une séance pour la faire évoluer.
-- **Bibliothèque d'exercices** : 32 exercices d'athlétisme fournis (gammes, vitesse, haies, sauts, lancers, renfo…), à compléter.
-- **Planning** : vue semaine, attribuer une séance à une date / heure / lieu pour un groupe et/ou des athlètes précis, avec un message.
-  Bouton **« Annoncer sur WhatsApp »** pour prévenir le groupe.
-- **Athlètes et groupes** (U14, U16, Sprint…) : chaque athlète a un **lien personnel** à envoyer **par WhatsApp** — directement à son numéro (ou celui d'un parent) s'il est renseigné. Pas de compte, pas de mot de passe, pas d'email nécessaire pour les jeunes.
-- **Retours** : tableau de bord avec les derniers retours, taux de réponse, alertes (douleur, grosse fatigue, effort maximal), possibilité de **répondre** à chaque athlète, historique et graphique d'effort par athlète.
+- **Séances** : construire des séances types en blocs (échauffement, corps de séance, retour au calme…) avec séries, répétitions, distance, durée, récupération, intensité et consignes. Bibliothèque de 32 exercices d'athlétisme.
+- **Planning** : vue semaine, attribuer une séance à un groupe et/ou à des athlètes, avec heure, lieu et message. Annonce en un geste sur WhatsApp.
+- **Athlètes** : un **seul lien d'inscription pour tout le club**, à poster dans le groupe WhatsApp. Chaque athlète crée son compte et choisit son groupe ; tu peux ensuite le changer de groupe ou le désactiver.
+- **Suivi** : retours après séance, check-ins bien-être (sommeil, énergie, courbatures, stress), records, objectifs, alertes sur l'accueil, réponses aux athlètes et notes de suivi privées.
+- **Conseils** : 17 conseils fournis (nutrition, hydratation, sommeil, récupération, prévention, mental, hygiène de vie, compétition), rédigés pour les 15 ans et plus. Tu peux ajouter les tiens (infos club, rappels…).
 
-**Côté athlète** (via son lien)
-- Voir ses séances à venir et passées, avec le détail.
-- Après la séance : « Séance faite ? », difficulté ressentie (1–10), forme/fatigue et humeur (emojis), douleur éventuelle, commentaire.
-- Lire la réponse de l'entraîneur.
+**Côté athlète** (son propre compte)
+- **Accueil personnalisé** : son avatar, sa couleur, son objectif de saison, la séance du jour, la série 🔥 de séances, le conseil du jour.
+- **Check-in bien-être** quotidien en 30 secondes.
+- **Séances** : détail de chaque séance, retour après l'entraînement (effort, forme, plaisir, douleur, commentaire), réponse du coach.
+- **Conseils** : par catégorie, avec favoris ⭐.
+- **Progrès** : records personnels, graphiques d'effort et de sommeil, 12 badges à débloquer.
+- **Profil** : choix de l'avatar et de la couleur de l'app, disciplines, objectif.
 
 ## Essayer tout de suite (mode démo)
 
@@ -41,9 +42,12 @@ npm install
 npm run dev
 ```
 
-Puis ouvrir http://localhost:5173 et se connecter avec n'importe quel email.
+Puis ouvrir http://localhost:5173 :
+- **entraîneur** : n'importe quel email ;
+- **athlète** : `lea@demo.ch` (athlète d'exemple avec un historique) ;
+- **inscription d'un nouvel athlète** : http://localhost:5173/#/rejoindre/DEMO2026
 
-> En mode démo, le lien athlète ne marche que dans le même navigateur. Pour un vrai usage avec les athlètes, il faut connecter Supabase (ci-dessous).
+> En mode démo, tout reste dans le navigateur. Pour un vrai usage avec les athlètes, il faut connecter Supabase (ci-dessous).
 
 ## Mise en ligne (gratuit) – environ 15 minutes
 
@@ -66,17 +70,20 @@ Dans les deux cas, ajouter ces variables d'environnement puis redéployer :
 | `VITE_SUPABASE_ANON_KEY` | la clé *anon public* |
 
 ### 3. Créer son compte entraîneur
-1. Ouvrir le site, cliquer **« Créer un compte entraîneur »**, confirmer via l'email reçu.
-2. Dans Supabase, **Authentication → Sign In / Providers → désactiver « Allow new users to sign up »** pour que personne d'autre ne puisse créer de compte (chaque compte ne voit de toute façon que ses propres données).
-3. Dans **Authentication → URL Configuration**, mettre l'adresse du site comme *Site URL*.
+1. Ouvrir le site → **Créer un compte**, confirmer via l'email reçu, se connecter, puis **« Je suis entraîneur »** et donner le nom du club.
+2. Dans Supabase, **Authentication → URL Configuration** : mettre l'adresse du site comme *Site URL* (pour les emails de confirmation).
+3. Créer les groupes (onglet Athlètes), puis partager le **lien d'inscription du club** dans le groupe WhatsApp.
+
+> Les inscriptions doivent rester ouvertes (« Allow new users to sign up ») pour que les athlètes puissent créer leur compte. Sans le code du club, un nouveau compte ne voit aucune donnée. Si le lien circule trop, crée-en un nouveau (bouton « Nouveau lien ») : les athlètes déjà inscrits ne sont pas touchés.
 
 ## Sécurité et données des jeunes
-- Chaque entraîneur ne voit que ses propres groupes, athlètes, séances et retours (règles *Row Level Security* dans la base).
-- Un athlète n'accède qu'à **ses** séances et **ses** retours, grâce à son lien personnel (identifiant aléatoire impossible à deviner). Les notes privées de l'entraîneur ne lui sont jamais envoyées.
-- Si un lien est partagé par erreur : fiche athlète → **« Nouveau lien »** (l'ancien cesse de fonctionner). Désactiver un athlète coupe aussi son accès.
-- Seuls le prénom, le nom, l'année de naissance et les retours sont stockés. Pense à informer les parents de l'utilisation de l'app.
+- Chaque club est isolé : un entraîneur ne voit que ses groupes, athlètes, séances et retours (règles *Row Level Security* dans la base).
+- Un athlète ne voit que **son** profil, **ses** séances, **ses** retours, records et check-ins, plus les conseils publiés du club. Il ne peut pas changer de groupe ni écrire la réponse du coach.
+- Les **notes de suivi** de l'entraîneur sont stockées à part et ne sont jamais envoyées à l'athlète.
+- À l'inscription, l'athlète accepte que ses données soient visibles par les entraîneurs du club. Désactiver un athlète bloque son accès ; « Retirer du club » supprime ses données.
+- Les conseils sont des repères généraux : ils renvoient vers un médecin ou un·e diététicien·ne pour toute question de santé.
 
 ## Technique
 - `app/` : React + TypeScript + Vite (site statique).
-- `supabase/schema.sql` : tables, sécurité, et fonctions `athlete_portal` / `athlete_submit_feedback` utilisées par l'espace athlète.
+- `supabase/schema.sql` : tables, règles de sécurité et fonctions d'inscription (`whoami`, `create_club`, `club_by_code`, `join_club`).
 - Commandes : `npm run dev`, `npm run build`, `npm run lint`.

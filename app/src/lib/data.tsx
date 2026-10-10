@@ -1,46 +1,52 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { api, type Draft, type Row } from '../api'
-import type { Coach, TableName, Tables } from '../types'
+import type { Me, TableName, Tables } from '../types'
 
 type Store = { [K in TableName]: Tables[K][] }
 
 interface DataCtx extends Store {
-  coach: Coach | null
+  me: Me | null
   loading: boolean
   error: string | null
+  refreshMe: () => Promise<void>
   reload: () => Promise<void>
   save: <K extends TableName>(table: K, row: Draft<K>) => Promise<Row<K>>
   saveMany: <K extends TableName>(table: K, rows: Draft<K>[]) => Promise<Row<K>[]>
   remove: (table: TableName, id: string) => Promise<void>
 }
 
-const empty: Store = { groups: [], athletes: [], exercises: [], sessions: [], assignments: [], feedback: [] }
+const TABLES: TableName[] = ['groups', 'athletes', 'athlete_notes', 'exercises', 'sessions', 'assignments', 'feedback', 'tips', 'records', 'wellness']
+const empty = Object.fromEntries(TABLES.map((t) => [t, []])) as unknown as Store
 const Ctx = createContext<DataCtx | null>(null)
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [coach, setCoach] = useState<Coach | null>(null)
-  const [authReady, setAuthReady] = useState(false)
+  const [me, setMe] = useState<Me | null>(null)
+  const [ready, setReady] = useState(false)
   const [store, setStore] = useState<Store>(empty)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    api.getCoach().then((c) => {
-      setCoach(c)
-      setAuthReady(true)
-    })
-    return api.onAuthChange(setCoach)
+  const refreshMe = useCallback(async () => {
+    try {
+      setMe(await api.getMe())
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setReady(true)
+    }
   }, [])
+
+  useEffect(() => {
+    refreshMe()
+    return api.onAuthChange(refreshMe)
+  }, [refreshMe])
 
   const reload = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const [groups, athletes, exercises, sessions, assignments, feedback] = await Promise.all([
-        api.list('groups'), api.list('athletes'), api.list('exercises'),
-        api.list('sessions'), api.list('assignments'), api.list('feedback'),
-      ])
-      setStore({ groups, athletes, exercises, sessions, assignments, feedback })
+      const results = await Promise.all(TABLES.map((t) => api.list(t)))
+      setStore(Object.fromEntries(TABLES.map((t, i) => [t, results[i]])) as unknown as Store)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     } finally {
@@ -48,26 +54,27 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const active = me?.role === 'coach' || me?.role === 'athlete'
   useEffect(() => {
-    if (coach) reload()
+    if (active) reload()
     else setStore(empty)
-  }, [coach, reload])
+  }, [active, me?.email, reload])
 
   // Rafraîchit les données quand l'app revient au premier plan sur le téléphone
   useEffect(() => {
-    if (!coach) return
+    if (!active) return
     const onVisible = () => document.visibilityState === 'visible' && reload()
     document.addEventListener('visibilitychange', onVisible)
     return () => document.removeEventListener('visibilitychange', onVisible)
-  }, [coach, reload])
+  }, [active, reload])
 
   const save = useCallback(async <K extends TableName>(table: K, row: Draft<K>) => {
     const saved = await api.save(table, row)
+    const id = (saved as { id: string }).id
     setStore((s) => {
       const rows = s[table] as Row<K>[]
-      const exists = rows.some((r) => (r as { id: string }).id === (saved as { id: string }).id)
-      const next = exists
-        ? rows.map((r) => ((r as { id: string }).id === (saved as { id: string }).id ? saved : r))
+      const next = rows.some((r) => (r as { id: string }).id === id)
+        ? rows.map((r) => ((r as { id: string }).id === id ? saved : r))
         : [...rows, saved]
       return { ...s, [table]: next }
     })
@@ -86,10 +93,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     await reload()
   }, [reload])
 
-  if (!authReady) return null
+  if (!ready) return null
 
   return (
-    <Ctx.Provider value={{ ...store, coach, loading, error, reload, save, saveMany, remove }}>
+    <Ctx.Provider value={{ ...store, me, loading, error, refreshMe, reload, save, saveMany, remove }}>
       {children}
     </Ctx.Provider>
   )
@@ -99,4 +106,10 @@ export function useData(): DataCtx {
   const ctx = useContext(Ctx)
   if (!ctx) throw new Error('useData hors DataProvider')
   return ctx
+}
+
+/** Profil de l'athlète connecté */
+export function useMyAthlete() {
+  const { me, athletes } = useData()
+  return athletes.find((a) => a.id === me?.athlete_id) ?? null
 }
