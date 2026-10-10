@@ -33,10 +33,10 @@ export function Login() {
   return (
     <div className="login">
       <div className="login-hero">
-        <img src="logo-symbol.png" alt="FSG Bernex-Confignon" className="club-logo-symbol" />
-        <h1>Coach Athlé</h1>
-        <p className="club-name">FSG Bernex-Confignon · Athlétisme</p>
+        <img src="logo-club.png" alt="FSG Bernex-Confignon" className="club-logo" />
         <div className="stripes" />
+        <h1>Coach Athlé</h1>
+        <p className="club-name">Athlétisme</p>
         <p className="muted">Tes entraînements, tes progrès, tes conseils.</p>
       </div>
       <form className="card login-card" onSubmit={submit}>
