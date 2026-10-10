@@ -435,5 +435,4 @@ input.attention { border-color: var(--warn); box-shadow: 0 0 0 2px var(--warn-so
 .club-name { margin: 0.1rem 0 0; font-weight: 700; color: var(--club-green); letter-spacing: 0.02em; }
 @media (prefers-color-scheme: dark) { .club-name { color: var(--primary); } }
 .login-hero .club-logo { width: min(240px, 68vw); height: auto; display: block; margin: 0 auto; border-radius: 12px; }
-@media (prefers-color-scheme: dark) { .login-hero .club-logo { background: #fff; padding: 0.6rem 0.8rem; } }
 .login-hero .stripes { margin: 0.5rem auto 0.8rem; max-width: min(240px, 68vw); }

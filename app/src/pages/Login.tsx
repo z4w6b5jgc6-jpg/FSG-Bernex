@@ -33,7 +33,10 @@ export function Login() {
   return (
     <div className="login">
       <div className="login-hero">
-        <img src="logo-club.png" alt="FSG Bernex-Confignon" className="club-logo" />
+        <picture>
+          <source srcSet="logo-club-dark.png" media="(prefers-color-scheme: dark)" />
+          <img src="logo-club.png" alt="FSG Bernex-Confignon" className="club-logo" />
+        </picture>
         <div className="stripes" />
         <h1>Coach Athlé</h1>
         <p className="club-name">Athlétisme</p>

@@ -71,7 +71,7 @@ function CoachApp() {
   const { me } = useData()
   useEffect(() => applyAccent(null), [])
   return (
-    <Shell nav={COACH_NAV} brand={<><img src="logo-symbol.png" alt="" className="brand-logo" />{me?.club_name ?? 'Coach Athlé'}</>}
+    <Shell nav={COACH_NAV} brand={<><picture><source srcSet="logo-symbol-dark.png" media="(prefers-color-scheme: dark)" /><img src="logo-symbol.png" alt="" className="brand-logo" /></picture>{me?.club_name ?? 'Coach Athlé'}</>}
       right={<button className="btn ghost small" onClick={() => api.signOut()}>Déconnexion</button>}>
       <InstallPrompt who="coach" />
       <Routes>
@@ -102,7 +102,7 @@ function AthleteApp() {
   useEffect(() => applyAccent(athlete?.color ?? null), [athlete?.color])
   if (!athlete) return <div className="login"><p className="muted">{loading ? 'Chargement…' : 'Profil introuvable.'}</p></div>
   return (
-    <Shell nav={ATHLETE_NAV} brand={<><img src="logo-symbol.png" alt="" className="brand-logo" />{athlete.avatar} {athlete.first_name}</>}>
+    <Shell nav={ATHLETE_NAV} brand={<><picture><source srcSet="logo-symbol-dark.png" media="(prefers-color-scheme: dark)" /><img src="logo-symbol.png" alt="" className="brand-logo" /></picture>{athlete.avatar} {athlete.first_name}</>}>
       <Routes>
         <Route path="/" element={<AthleteHome />} />
         <Route path="/seances" element={<AthleteSessions />} />

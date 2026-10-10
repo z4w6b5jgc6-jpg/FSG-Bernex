@@ -80,7 +80,10 @@ export function Join() {
   return (
     <div className="login">
       <div className="login-hero">
-        <img src="logo-club.png" alt="FSG Bernex-Confignon" className="club-logo" />
+        <picture>
+          <source srcSet="logo-club-dark.png" media="(prefers-color-scheme: dark)" />
+          <img src="logo-club.png" alt="FSG Bernex-Confignon" className="club-logo" />
+        </picture>
         <h1>Rejoins le programme d’entraînement{linkGroup && <> du groupe <span className="nowrap">{linkGroup.name}</span></>}</h1>
         <p className="muted">Crée ton compte pour retrouver tes séances, suivre tes progrès et donner ton ressenti à ton coach.</p>
       </div>
