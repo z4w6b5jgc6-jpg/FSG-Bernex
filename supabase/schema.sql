@@ -27,6 +27,7 @@ create table if not exists athletes (
   last_name     text not null default '',
   birth_year    int,
   events        text not null default '',          -- disciplines (ex. "60m, longueur")
+  phone         text not null default '',          -- numéro WhatsApp (athlète ou parent)
   notes         text not null default '',          -- notes privées de l'entraîneur
   access_token  uuid not null unique default gen_random_uuid(),
   active        boolean not null default true,
@@ -87,6 +88,9 @@ create table if not exists feedback (
   updated_at     timestamptz not null default now(),
   unique (assignment_id, athlete_id)
 );
+
+-- Mise à jour d'une base créée avec une version précédente du schéma
+alter table athletes add column if not exists phone text not null default '';
 
 create index if not exists assignments_date_idx on assignments (coach_id, date);
 create index if not exists athletes_group_idx on athletes (group_id);

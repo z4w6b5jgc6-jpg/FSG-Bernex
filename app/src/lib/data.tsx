@@ -53,6 +53,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
     else setStore(empty)
   }, [coach, reload])
 
+  // Rafraîchit les données quand l'app revient au premier plan sur le téléphone
+  useEffect(() => {
+    if (!coach) return
+    const onVisible = () => document.visibilityState === 'visible' && reload()
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [coach, reload])
+
   const save = useCallback(async <K extends TableName>(table: K, row: Draft<K>) => {
     const saved = await api.save(table, row)
     setStore((s) => {

@@ -4,7 +4,7 @@ import { useData } from '../lib/data'
 import { Empty, Field, Modal } from '../components/ui'
 import { CATEGORIES, FOCUSES } from '../data/defaults'
 import type { Block, Session, SessionItem } from '../types'
-import { emptyItem, errorMessage, uid } from '../lib/utils'
+import { emptyItem, errorMessage, itemSummary, uid } from '../lib/utils'
 
 const ITEM_FIELDS: { key: keyof SessionItem; label: string; placeholder: string }[] = [
   { key: 'sets', label: 'Séries', placeholder: 'ex. 3' },
@@ -31,6 +31,21 @@ export function SessionEditor() {
   const [dirty, setDirty] = useState(false)
   const [saving, setSaving] = useState(false)
   const [picker, setPicker] = useState<string | null>(null) // id du bloc
+  const [openItems, setOpenItems] = useState<Set<string>>(new Set()) // exercices dépliés
+  const toggleItem = (iid: string) =>
+    setOpenItems((o) => {
+      const n = new Set(o)
+      if (n.has(iid)) n.delete(iid)
+      else n.add(iid)
+      return n
+    })
+  const addItems = (bid: string, names: string[]) => {
+    const blk = draft?.blocks.find((x) => x.id === bid)
+    if (!blk) return
+    const items = names.map((n) => emptyItem(n))
+    updBlock(bid, { items: [...blk.items, ...items] })
+    setOpenItems((o) => new Set([...o, ...items.map((i) => i.id)]))
+  }
 
   useEffect(() => {
     if (original && (!draft || draft.id !== original.id)) {
@@ -106,27 +121,42 @@ export function SessionEditor() {
             <button className="btn ghost icon small danger" title="Supprimer le bloc"
               onClick={() => (b.items.length === 0 || confirm('Supprimer ce bloc ?')) && setBlocks(draft.blocks.filter((x) => x.id !== b.id))}>✕</button>
           </div>
-          {b.items.map((it, ii) => (
-            <div key={it.id} className="item-edit">
-              <div className="row gap">
-                <input className="item-name" list="exercise-names" placeholder="Exercice" value={it.name} onChange={(e) => updItem(b.id, it.id, { name: e.target.value })} />
-                <button className="btn ghost icon small" onClick={() => updBlock(b.id, { items: move(b.items, ii, -1) })}>↑</button>
-                <button className="btn ghost icon small" onClick={() => updBlock(b.id, { items: move(b.items, ii, 1) })}>↓</button>
-                <button className="btn ghost icon small danger" onClick={() => updBlock(b.id, { items: b.items.filter((x) => x.id !== it.id) })}>✕</button>
+          {b.items.map((it, ii) => {
+            const open = openItems.has(it.id)
+            return (
+              <div key={it.id} className={`item-edit ${open ? 'open' : ''}`}>
+                <div className="row gap">
+                  {open ? (
+                    <input className="item-name" list="exercise-names" placeholder="Exercice" value={it.name} onChange={(e) => updItem(b.id, it.id, { name: e.target.value })} />
+                  ) : (
+                    <button type="button" className="item-collapsed" onClick={() => toggleItem(it.id)}>
+                      <strong>{it.name || 'Exercice sans nom'}</strong>
+                      <span className="muted small">{itemSummary(it) || 'Toucher pour compléter'}</span>
+                    </button>
+                  )}
+                  {open && <button className="btn ghost icon small" title="Replier" onClick={() => toggleItem(it.id)}>✓</button>}
+                  <button className="btn ghost icon small" title="Monter" onClick={() => updBlock(b.id, { items: move(b.items, ii, -1) })}>↑</button>
+                  <button className="btn ghost icon small" title="Descendre" onClick={() => updBlock(b.id, { items: move(b.items, ii, 1) })}>↓</button>
+                  <button className="btn ghost icon small danger" title="Retirer" onClick={() => updBlock(b.id, { items: b.items.filter((x) => x.id !== it.id) })}>✕</button>
+                </div>
+                {open && (
+                  <>
+                    <div className="item-grid">
+                      {ITEM_FIELDS.map((f) => (
+                        <label key={f.key}>
+                          <span>{f.label}</span>
+                          <input value={it[f.key]} placeholder={f.placeholder} enterKeyHint="next" onChange={(e) => updItem(b.id, it.id, { [f.key]: e.target.value })} />
+                        </label>
+                      ))}
+                    </div>
+                    <input className="item-notes" placeholder="Consignes (facultatif)" value={it.notes} onChange={(e) => updItem(b.id, it.id, { notes: e.target.value })} />
+                  </>
+                )}
               </div>
-              <div className="item-grid">
-                {ITEM_FIELDS.map((f) => (
-                  <label key={f.key}>
-                    <span>{f.label}</span>
-                    <input value={it[f.key]} placeholder={f.placeholder} onChange={(e) => updItem(b.id, it.id, { [f.key]: e.target.value })} />
-                  </label>
-                ))}
-              </div>
-              <input className="item-notes" placeholder="Consignes (facultatif)" value={it.notes} onChange={(e) => updItem(b.id, it.id, { notes: e.target.value })} />
-            </div>
-          ))}
+            )
+          })}
           <div className="row gap wrap">
-            <button className="btn small" onClick={() => updBlock(b.id, { items: [...b.items, emptyItem()] })}>+ Exercice</button>
+            <button className="btn small" onClick={() => addItems(b.id, [''])}>+ Exercice</button>
             <button className="btn small" onClick={() => setPicker(b.id)}>📚 Depuis la bibliothèque</button>
           </div>
         </div>
@@ -137,8 +167,7 @@ export function SessionEditor() {
         <ExercisePicker
           onClose={() => setPicker(null)}
           onPick={(names) => {
-            const blk = draft.blocks.find((x) => x.id === picker)
-            if (blk) updBlock(picker, { items: [...blk.items, ...names.map((n) => emptyItem(n))] })
+            addItems(picker, names)
             setPicker(null)
           }}
         />

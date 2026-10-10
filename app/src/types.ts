@@ -11,6 +11,7 @@ export interface Athlete {
   last_name: string
   birth_year: number | null
   events: string
+  phone: string
   notes: string
   access_token: string
   active: boolean

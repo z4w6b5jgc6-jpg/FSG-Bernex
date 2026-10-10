@@ -252,3 +252,49 @@ button.link.left { text-align: left; color: inherit; flex: 1; }
 .portal .container { max-width: 640px; padding-bottom: 3rem; }
 
 ::placeholder { color: var(--muted); opacity: 0.55; }
+
+/* ---------- Smartphone (Android / iPhone) ---------- */
+html { -webkit-text-size-adjust: 100%; }
+body { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
+.topbar { padding-top: calc(0.7rem + env(safe-area-inset-top)); padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right)); }
+.sticky-bar { top: calc(52px + env(safe-area-inset-top)); }
+.login { flex-direction: column; gap: 1rem; padding-top: calc(1rem + env(safe-area-inset-top)); }
+.login-card h2 { margin: 0; }
+
+.install { display: flex; gap: 0.8rem; align-items: flex-start; margin-bottom: 1rem; border-color: var(--primary); }
+.install img { border-radius: 10px; flex-shrink: 0; }
+.install-text { display: flex; flex-direction: column; gap: 0.2rem; }
+.install-actions { margin-top: 0.3rem; }
+
+.item-collapsed { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; text-align: left; background: none; border: 0; padding: 0.25rem 0; font: inherit; color: var(--text); cursor: pointer; }
+.item-collapsed strong, .item-collapsed span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item-edit:not(.open) { padding: 0.35rem 0.5rem; }
+
+@media (max-width: 720px) {
+  /* 16px minimum : évite le zoom automatique d'iOS sur les champs */
+  input, select, textarea, .item-grid input, .item-notes { font-size: 16px; }
+  .container { padding-left: max(0.85rem, env(safe-area-inset-left)); padding-right: max(0.85rem, env(safe-area-inset-right)); padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)); }
+  h1 { font-size: 1.4rem; }
+  .btn { min-height: 40px; }
+  .btn.small { min-height: 36px; }
+  .btn.icon { min-width: 36px; }
+  .topbar .btn { min-height: 0; }
+
+  /* Fenêtres en plein écran, boutons d'action toujours visibles */
+  .modal-backdrop { padding: 0; align-items: stretch; }
+  .modal { max-width: none; border-radius: 0; min-height: 100%; padding: calc(0.8rem + env(safe-area-inset-top)) 1rem calc(1rem + env(safe-area-inset-bottom)); display: flex; flex-direction: column; }
+  .modal .form > .row.end:last-child, .modal > .row.end:last-child {
+    position: sticky; bottom: 0; background: var(--surface); padding: 0.6rem 0 env(safe-area-inset-bottom); margin-top: auto; border-top: 1px solid var(--border);
+  }
+  .modal .row.end .btn { flex: 1; }
+  .picker-list { max-height: none; flex: 1; }
+  .checklist { grid-template-columns: 1fr 1fr; max-height: none; }
+
+  .week-nav span { min-width: 0; flex: 1; }
+  .day { padding: 0.45rem 0.6rem; }
+  .day:not(:has(.slot)) { flex-direction: row; }
+  .day:not(:has(.slot)) .day-head { flex: 1; }
+  .sticky-bar { margin: 0 -0.85rem; padding: 0.5rem 0.85rem; }
+  .filters { flex-wrap: wrap; }
+  .filters select { max-width: none; }
+}

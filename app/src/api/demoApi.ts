@@ -16,7 +16,7 @@ function seed(): Db {
   const u16 = { id: uid(), name: 'U16', color: '#db2777' }
   const mk = (first: string, last: string, group: string, year: number, events: string) => ({
     id: uid(), group_id: group, first_name: first, last_name: last, birth_year: year,
-    events, notes: '', access_token: uid(), active: true,
+    events, phone: '', notes: '', access_token: uid(), active: true,
   })
   const athletes = [
     mk('Léa', 'Martin', u14.id, 2013, '60 m, longueur'),
@@ -206,7 +206,7 @@ export function createDemoApi(): Api {
 function defaults(table: TableName): Record<string, unknown> {
   switch (table) {
     case 'groups': return { color: '#2563eb' }
-    case 'athletes': return { group_id: null, last_name: '', birth_year: null, events: '', notes: '', access_token: uid(), active: true }
+    case 'athletes': return { group_id: null, last_name: '', birth_year: null, events: '', phone: '', notes: '', access_token: uid(), active: true }
     case 'exercises': return { category: 'Autre', description: '' }
     case 'sessions': return { objective: '', focus: '', duration_min: null, blocks: [] }
     case 'assignments': return { time: '', location: '', group_id: null, athlete_ids: [], note: '' }

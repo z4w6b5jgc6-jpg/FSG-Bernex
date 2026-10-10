@@ -2,7 +2,19 @@
 
 Application web pour construire les entraînements d'athlétisme, les mettre à disposition des athlètes et suivre leurs retours.
 
-Fonctionne sur ordinateur et sur téléphone (on peut l'ajouter à l'écran d'accueil comme une app).
+**Tout se gère depuis un smartphone, Android comme iPhone** : l'app s'installe sur l'écran d'accueil comme une application (icône, plein écran), sans passer par l'App Store ni le Play Store. Elle marche aussi sur ordinateur.
+
+## Installer l'app sur le téléphone
+
+| | Entraîneur et athlètes |
+|---|---|
+| **Android** (Chrome) | Ouvrir le site → bouton **« 📲 Installer »** dans l'app, ou menu **⋮ → Installer l'application** |
+| **iPhone** (Safari) | Ouvrir le site → bouton **Partager ⬆️ → « Sur l'écran d'accueil »** |
+
+- L'athlète ouvre son lien reçu par WhatsApp puis installe l'app : elle s'ouvrira **directement sur son espace**.
+  Si son téléphone ouvre quand même l'écran de connexion, il colle une fois son lien dans « Tu es athlète ? ».
+- Les données se rafraîchissent automatiquement quand on revient dans l'app.
+- Pas de notifications push dans cette version : les annonces passent par WhatsApp (bouton **« Annoncer sur WhatsApp »** ou **« Partager »**).
 
 ## Ce que fait l'application
 
@@ -11,7 +23,7 @@ Fonctionne sur ordinateur et sur téléphone (on peut l'ajouter à l'écran d'ac
 - **Bibliothèque d'exercices** : 32 exercices d'athlétisme fournis (gammes, vitesse, haies, sauts, lancers, renfo…), à compléter.
 - **Planning** : vue semaine, attribuer une séance à une date / heure / lieu pour un groupe et/ou des athlètes précis, avec un message.
   Bouton **« Annoncer sur WhatsApp »** pour prévenir le groupe.
-- **Athlètes et groupes** (U14, U16, Sprint…) : chaque athlète a un **lien personnel** à envoyer **par WhatsApp** (bouton dédié). Pas de compte, pas de mot de passe, pas d'email nécessaire pour les jeunes.
+- **Athlètes et groupes** (U14, U16, Sprint…) : chaque athlète a un **lien personnel** à envoyer **par WhatsApp** — directement à son numéro (ou celui d'un parent) s'il est renseigné. Pas de compte, pas de mot de passe, pas d'email nécessaire pour les jeunes.
 - **Retours** : tableau de bord avec les derniers retours, taux de réponse, alertes (douleur, grosse fatigue, effort maximal), possibilité de **répondre** à chaque athlète, historique et graphique d'effort par athlète.
 
 **Côté athlète** (via son lien)
@@ -35,9 +47,11 @@ Puis ouvrir http://localhost:5173 et se connecter avec n'importe quel email.
 
 ## Mise en ligne (gratuit) – environ 15 minutes
 
+> À faire une seule fois, de préférence sur un ordinateur (possible sur téléphone mais moins confortable). Ensuite, tout se fait depuis le smartphone.
+
 ### 1. Créer la base de données (Supabase)
 1. Créer un compte sur https://supabase.com puis **New project** (région : Zurich/Frankfurt).
-2. Dans le projet : **SQL Editor → New query**, coller le contenu de [`supabase/schema.sql`](supabase/schema.sql), cliquer **Run**.
+2. Dans le projet : **SQL Editor → New query**, coller le contenu de [`supabase/schema.sql`](supabase/schema.sql), cliquer **Run** (le script peut être relancé sans risque après une mise à jour de l'app).
 3. Dans **Project Settings → API**, noter l'**URL** du projet et la clé **anon public**.
 
 ### 2. Héberger le site (Netlify ou Vercel)

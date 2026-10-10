@@ -70,8 +70,30 @@ export function athleteLink(token: string): string {
   return `${base}#/a/${token}`
 }
 
-export function whatsappUrl(text: string): string {
-  return `https://wa.me/?text=${encodeURIComponent(text)}`
+/** Numéro au format international sans "+" (079 123 45 67 → 41791234567) */
+export function normalizePhone(phone: string): string {
+  let d = phone.replace(/[^\d+]/g, '')
+  if (d.startsWith('+')) d = d.slice(1)
+  else if (d.startsWith('00')) d = d.slice(2)
+  else if (d.startsWith('0')) d = '41' + d.slice(1)
+  return d.replace(/\D/g, '')
+}
+
+/** Lien WhatsApp : vers un contact précis si un numéro est donné, sinon choix du contact */
+export function whatsappUrl(text: string, phone = ''): string {
+  const n = normalizePhone(phone)
+  return `https://wa.me/${n}?text=${encodeURIComponent(text)}`
+}
+
+/** Feuille de partage native du téléphone (WhatsApp, SMS, email…) si disponible */
+export async function nativeShare(text: string, url?: string): Promise<boolean> {
+  if (!navigator.share) return false
+  try {
+    await navigator.share({ text, url })
+  } catch {
+    /* partage annulé */
+  }
+  return true
 }
 
 export function errorMessage(e: unknown): string {

@@ -1,9 +1,17 @@
 {
   "name": "Coach Athlé",
   "short_name": "Coach Athlé",
+  "description": "Entraînements d'athlétisme : séances, planning et retours des athlètes",
+  "lang": "fr",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#f4f6fb",
   "theme_color": "#e85d04",
-  "icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
 }

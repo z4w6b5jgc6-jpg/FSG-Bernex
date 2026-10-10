@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { api } from '../api'
+import { useNavigate } from 'react-router-dom'
 import { errorMessage } from '../lib/utils'
+import { parseAthleteToken } from '../lib/pwa'
 
 export function Login() {
   const [mode, setMode] = useState<'in' | 'up'>('in')
@@ -9,6 +11,15 @@ export function Login() {
   const [msg, setMsg] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const demo = api.mode === 'demo'
+  const nav = useNavigate()
+  const [link, setLink] = useState('')
+  const [linkErr, setLinkErr] = useState(false)
+  const openLink = (e: FormEvent) => {
+    e.preventDefault()
+    const token = parseAthleteToken(link)
+    if (token) nav(`/a/${token}`)
+    else setLinkErr(true)
+  }
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -50,9 +61,13 @@ export function Login() {
         <button type="button" className="btn ghost block" onClick={() => setMode(mode === 'in' ? 'up' : 'in')}>
           {mode === 'in' ? 'Première fois ? Créer un compte entraîneur' : 'J’ai déjà un compte'}
         </button>
-        <p className="muted small center">
-          Tu es athlète ? Utilise le lien personnel envoyé par ton entraîneur.
-        </p>
+      </form>
+      <form className="card login-card" onSubmit={openLink}>
+        <h2>Tu es athlète ?</h2>
+        <p className="muted small">Ouvre le lien personnel reçu par WhatsApp, ou colle-le ici :</p>
+        <input value={link} onChange={(e) => { setLink(e.target.value); setLinkErr(false) }} placeholder="https://…/#/a/…" inputMode="url" />
+        {linkErr && <div className="alert warn small">Ce lien ne semble pas correct.</div>}
+        <button className="btn block" disabled={!link}>Ouvrir mes entraînements</button>
       </form>
     </div>
   )

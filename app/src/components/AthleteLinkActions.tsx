@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Athlete } from '../types'
-import { athleteLink, whatsappUrl } from '../lib/utils'
+import { athleteLink, nativeShare, whatsappUrl } from '../lib/utils'
 
 export function AthleteLinkActions({ athlete, compact }: { athlete: Athlete; compact?: boolean }) {
   const [copied, setCopied] = useState(false)
@@ -16,11 +16,15 @@ export function AthleteLinkActions({ athlete, compact }: { athlete: Athlete; com
   }
   const message =
     `Salut ${athlete.first_name} ! 🏃\nVoici ton lien perso pour voir tes entraînements et me donner ton ressenti après chaque séance :\n${link}\n\n` +
-    `Astuce : ouvre-le puis « Ajouter à l’écran d’accueil » pour l’avoir comme une app.`
+    `Astuce : ouvre-le puis installe l’app sur ton écran d’accueil.`
+  const canShare = typeof navigator.share === 'function'
   return (
     <div className="row gap wrap">
-      <a className="btn small whatsapp" href={whatsappUrl(message)} target="_blank" rel="noreferrer">📲 {compact ? 'WhatsApp' : 'Envoyer par WhatsApp'}</a>
-      <button className="btn small" onClick={copy}>{copied ? '✓ Copié' : '🔗 Copier le lien'}</button>
+      <a className="btn small whatsapp" href={whatsappUrl(message, athlete.phone)} target="_blank" rel="noreferrer">
+        📲 {compact ? 'WhatsApp' : athlete.phone ? `WhatsApp à ${athlete.first_name}` : 'Envoyer par WhatsApp'}
+      </a>
+      {canShare && <button className="btn small" onClick={() => nativeShare(message)}>📤 Partager</button>}
+      <button className="btn small" onClick={copy}>{copied ? '✓ Copié' : '🔗 Copier'}</button>
       {!compact && <a className="btn small ghost" href={link} target="_blank" rel="noreferrer">Voir comme l’athlète</a>}
     </div>
   )

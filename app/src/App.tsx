@@ -1,5 +1,7 @@
 import { HashRouter, Navigate, NavLink, Outlet, Route, Routes } from 'react-router-dom'
 import { api } from './api'
+import { rememberedAthleteToken } from './lib/pwa'
+import { InstallPrompt } from './components/InstallPrompt'
 import { DataProvider, useData } from './lib/data'
 import { Login } from './pages/Login'
 import { Dashboard } from './pages/Dashboard'
@@ -22,7 +24,11 @@ const NAV = [
 
 function CoachLayout() {
   const { coach, error } = useData()
-  if (!coach) return <Login />
+  if (!coach) {
+    // Sur le téléphone d'un athlète, l'app rouvre directement son espace
+    const token = rememberedAthleteToken()
+    return token ? <Navigate to={`/a/${token}`} replace /> : <Login />
+  }
   return (
     <div className="app">
       <header className="topbar">
@@ -36,11 +42,12 @@ function CoachLayout() {
       </header>
       {api.mode === 'demo' && (
         <div className="demo-banner">
-          Mode démo : les données sont enregistrées uniquement dans ce navigateur. Voir le README pour connecter Supabase.
+          Mode démo – données enregistrées sur cet appareil uniquement
         </div>
       )}
       {error && <div className="alert danger container">Erreur de chargement : {error}</div>}
       <main className="container">
+        <InstallPrompt who="coach" />
         <Outlet />
       </main>
       <nav className="bottomnav">

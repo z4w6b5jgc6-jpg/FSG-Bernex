@@ -5,7 +5,7 @@ import { AssignmentForm } from '../components/AssignmentForm'
 import { FeedbackCard, FeedbackScores } from '../components/FeedbackCard'
 import { SessionView } from '../components/SessionView'
 import { Empty, GroupBadge } from '../components/ui'
-import { athletesFor, formatDate, fullName, todayISO, whatsappUrl } from '../lib/utils'
+import { athletesFor, formatDate, fullName, nativeShare, todayISO, whatsappUrl } from '../lib/utils'
 
 export function AssignmentDetail() {
   const { id } = useParams()
@@ -23,15 +23,12 @@ export function AssignmentDetail() {
   const rpes = fbs.map((f) => f.rpe).filter((v): v is number => v != null)
   const avgRpe = rpes.length ? (rpes.reduce((x, y) => x + y, 0) / rpes.length).toFixed(1) : null
 
-  const announce = () => {
-    const head = [
-      `🏃 Séance du ${formatDate(a.date)}${a.time ? ` à ${a.time}` : ''}${a.location ? ` – ${a.location}` : ''}`,
-      s && `📋 ${s.title}`,
-      a.note && `ℹ️ ${a.note}`,
-    ].filter(Boolean).join('\n')
-    const text = `${head}\n\nLe détail est sur votre lien personnel. Après la séance, pensez à donner votre ressenti 💬`
-    window.open(whatsappUrl(text), '_blank')
-  }
+  const head = [
+    `🏃 Séance du ${formatDate(a.date)}${a.time ? ` à ${a.time}` : ''}${a.location ? ` – ${a.location}` : ''}`,
+    s && `📋 ${s.title}`,
+    a.note && `ℹ️ ${a.note}`,
+  ].filter(Boolean).join('\n')
+  const announcement = `${head}\n\nLe détail est dans l’app (ton lien perso). Après la séance, pense à donner ton ressenti 💬`
 
   const del = async () => {
     if (!confirm('Supprimer cette planification et les retours associés ?')) return
@@ -52,7 +49,8 @@ export function AssignmentDetail() {
       </div>
       {a.note && <div className="alert info">{a.note}</div>}
       <div className="row gap wrap actions">
-        <button className="btn whatsapp" onClick={announce}>📲 Annoncer sur WhatsApp</button>
+        <a className="btn whatsapp" href={whatsappUrl(announcement)} target="_blank" rel="noreferrer">📲 Annoncer sur WhatsApp</a>
+        {typeof navigator.share === 'function' && <button className="btn" onClick={() => nativeShare(announcement)}>📤 Partager</button>}
         <button className="btn" onClick={() => setEditing(true)}>Modifier</button>
         {s && <Link className="btn" to={`/seances/${s.id}`}>Éditer la séance</Link>}
         <button className="btn danger ghost" onClick={del}>Supprimer</button>

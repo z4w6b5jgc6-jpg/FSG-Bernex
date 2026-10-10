@@ -89,7 +89,7 @@ export function AthleteForm({ initial, onClose }: { initial: Partial<Athlete>; o
     try {
       await save('athletes', {
         id: a.id, first_name: a.first_name, last_name: a.last_name ?? '', group_id: a.group_id || null,
-        birth_year: a.birth_year ?? null, events: a.events ?? '', notes: a.notes ?? '', active: a.active ?? true,
+        birth_year: a.birth_year ?? null, events: a.events ?? '', phone: a.phone ?? '', notes: a.notes ?? '', active: a.active ?? true,
       })
       onClose()
     } catch (err) {
@@ -115,6 +115,9 @@ export function AthleteForm({ initial, onClose }: { initial: Partial<Athlete>; o
           </Field>
         </div>
         <Field label="Disciplines"><input value={a.events ?? ''} onChange={(e) => set({ events: e.target.value })} placeholder="Ex. 60 m, longueur" /></Field>
+        <Field label="Téléphone WhatsApp" hint="De l’athlète ou d’un parent – pour lui envoyer son lien en un geste">
+          <input type="tel" inputMode="tel" autoComplete="tel" value={a.phone ?? ''} onChange={(e) => set({ phone: e.target.value })} placeholder="079 123 45 67" />
+        </Field>
         <Field label="Notes privées" hint="Visibles uniquement par toi"><textarea rows={2} value={a.notes ?? ''} onChange={(e) => set({ notes: e.target.value })} /></Field>
         {a.id && (
           <label className="check"><input type="checkbox" checked={a.active ?? true} onChange={(e) => set({ active: e.target.checked })} /> Actif (décocher désactive aussi son lien)</label>

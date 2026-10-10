@@ -6,19 +6,34 @@ import { FeedbackScores } from '../components/FeedbackCard'
 import { FATIGUE_LABELS, FATIGUE_TEXT, MOOD_LABELS, MOOD_TEXT, RPE_LABELS, Scale } from '../components/ui'
 import type { FeedbackInput, PortalAssignment, PortalData } from '../types'
 import { errorMessage, formatDate, todayISO } from '../lib/utils'
+import { InstallPrompt } from '../components/InstallPrompt'
+import { useData } from '../lib/data'
+import { applyAthleteManifest, rememberAthleteToken, rememberedAthleteToken, forgetAthleteToken } from '../lib/pwa'
 
 function usePortal(token: string) {
+  const { coach } = useData()
   const [data, setData] = useState<PortalData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const load = useCallback(async () => {
     try {
-      setData(await api.portal(token))
+      const d = await api.portal(token)
+      setData(d)
       setError(null)
+      applyAthleteManifest(token, d.athlete.first_name)
+      // Mémorise le lien sur le téléphone de l'athlète (pas sur celui de l'entraîneur qui prévisualise)
+      if (!coach) rememberAthleteToken(token)
     } catch {
       setError('Ce lien n’est pas valide. Demande un nouveau lien à ton entraîneur.')
+      if (rememberedAthleteToken() === token) forgetAthleteToken()
     }
-  }, [token])
-  useEffect(() => { load() }, [load])
+  }, [token, coach])
+  useEffect(() => {
+    load()
+    // Rafraîchit quand l'app revient au premier plan (ex. réponse de l'entraîneur)
+    const onVisible = () => document.visibilityState === 'visible' && load()
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [load])
   return { data, error, reload: load }
 }
 
@@ -57,6 +72,7 @@ export function AthletePortal() {
   return (
     <PortalShell name={data.athlete.first_name}>
       {data.athlete.group_name && <p className="muted">Groupe {data.athlete.group_name}</p>}
+      <InstallPrompt who="athlete" />
       {todo.length > 0 && (
         <div className="alert info">Tu as {todo.length} séance(s) sans retour. Ton ressenti aide ton entraîneur à adapter les entraînements 💪</div>
       )}
@@ -72,7 +88,9 @@ export function AthletePortal() {
           <div className="list">{past.map((a) => <Item key={a.id} a={a} />)}</div>
         )}
       </section>
-      <p className="muted small center">Astuce : ajoute cette page à ton écran d’accueil pour la retrouver facilement.</p>
+      <p className="center small">
+        <Link to="/" className="muted" onClick={() => forgetAthleteToken()}>Ce n’est pas ton espace ? Changer</Link>
+      </p>
     </PortalShell>
   )
 }
