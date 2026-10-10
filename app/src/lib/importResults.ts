@@ -11,6 +11,8 @@ export const normText = (t: unknown) =>
 
 // ----- Colonnes -----
 
+export interface KnownTest { name: string; unit?: string }
+
 export type ColRole =
   | { kind: 'ignore' }
   | { kind: 'name' } | { kind: 'first' } | { kind: 'last' }
@@ -21,7 +23,7 @@ export type ColRole =
 const COMPUTED = /^(meilleur|ecart|vitesse|alerte|lecture|profil|axesugg|rapport|ratio|moyenne|total|rang|resultatsbonds)/
 
 /** Rapproche un en-tête de colonne d'un test (« Mono (m) » → Monobond, « 20 m essai 1 » → 20 m lancé) */
-export function guessTest(header: string, tests: { name: string }[]): string | null {
+export function guessTest(header: string, tests: KnownTest[]): string | null {
   const h = normText(header)
   const exact = tests.find((t) => normText(t.name) === h)
   if (exact) return exact.name
@@ -38,10 +40,13 @@ export function guessTest(header: string, tests: { name: string }[]): string | n
     }
   }
   const contains = tests.find((t) => normText(t.name).length > 3 && h.startsWith(normText(t.name)))
-  return contains?.name ?? null
+  if (contains) return contains.name
+  // En-tête qui n'est qu'une unité (« Km/h ») : le seul test qui a cette unité
+  const byUnit = tests.filter((t) => t.unit && normText(t.unit) === h)
+  return byUnit.length === 1 ? byUnit[0].name : null
 }
 
-export function guessRole(header: string, tests: { name: string }[]): ColRole {
+export function guessRole(header: string, tests: KnownTest[]): ColRole {
   const h = normText(header)
   if (!h) return { kind: 'ignore' }
   if (/^(athlete|nomcomplet|nometprenom|prenomnom|nomprenom)/.test(h)) return { kind: 'name' }
@@ -57,7 +62,7 @@ export function guessRole(header: string, tests: { name: string }[]): ColRole {
   if (/feedback|message|commentaireathlete/.test(h)) return { kind: 'report', field: 'message' }
   if (/^(positionnement|vigilance|remarquecoach|notecoach)/.test(h)) return { kind: 'report', field: 'private' }
   // Colonnes calculées par le classeur (rapports « Triple/mono », « Meilleur 20 m », « Vitesse »…)
-  if (header.includes('/') || COMPUTED.test(h)) return { kind: 'ignore' }
+  if (/[a-zà-ÿ]{3,}\s*\/\s*[a-zà-ÿ]{3,}/i.test(header) || COMPUTED.test(h)) return { kind: 'ignore' }
   const t = guessTest(header, tests)
   return t ? { kind: 'test', test: t } : { kind: 'ignore' }
 }
@@ -89,7 +94,7 @@ export function pickSheets(sheets: ParsedSheet[]): { results: number; reports: n
 }
 
 /** Trouve la ligne d'en-tête : la première ligne qui contient une colonne « athlète » / « prénom » / « nom » */
-export function parseSheet(sheet: SheetIn, tests: { name: string }[]): ParsedSheet {
+export function parseSheet(sheet: SheetIn, tests: KnownTest[]): ParsedSheet {
   let headerRow = sheet.rows.findIndex((r) => r.some((c) => /^(athlete|prenom|nom|nomcomplet)/.test(normText(c))) && r.filter((c) => c != null && c !== '').length >= 2)
   if (headerRow < 0) headerRow = 0
   const headers = (sheet.rows[headerRow] ?? []).map((c) => String(c ?? '').trim())
@@ -165,19 +170,40 @@ export function personOf(row: Cell[], roles: ColRole[]): RowPerson {
   return { key: normText(first) + '|' + normText(last), first, last, age, year, events }
 }
 
-/** Fiche existante correspondante : prénom + nom, sinon prénom seul s'il est unique dans le club */
-export function matchAthlete(p: RowPerson, athletes: Athlete[]): Athlete | null {
+/** Distance d'édition entre deux textes (nombre de lettres à changer) */
+export function editDistance(a: string, b: string): number {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)])
+  for (let j = 1; j <= b.length; j++) d[0][j] = j
+  for (let i = 1; i <= a.length; i++)
+    for (let j = 1; j <= b.length; j++)
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1))
+  return d[a.length][b.length]
+}
+
+export interface AthleteMatch { athlete: Athlete; exact: boolean }
+
+/**
+ * Fiche existante correspondante :
+ *  1. même prénom + même nom (accents, majuscules et espaces ignorés)
+ *  2. même prénom s'il est unique dans le club
+ *  3. prénom très proche (Sarah ↔ Sara, Nathalia ↔ Natalia) s'il est unique — à vérifier
+ */
+export function matchAthlete(p: RowPerson, athletes: Athlete[]): AthleteMatch | null {
   const f = normText(p.first), l = normText(p.last)
-  // Même prénom et même nom (y compris « sans nom », ex. une fiche créée par un import précédent)
   const full = athletes.filter((a) => normText(a.first_name) === f && normText(a.last_name) === l)
-  if (full.length === 1) return full[0]
-  const byFirst = athletes.filter((a) => normText(a.first_name) === f && (!l || !a.last_name || normText(a.last_name).startsWith(l[0] ?? '')))
-  return byFirst.length === 1 ? byFirst[0] : null
+  if (full.length === 1) return { athlete: full[0], exact: true }
+  const lastOk = (a: Athlete) => !l || !a.last_name || normText(a.last_name).startsWith(l[0] ?? '')
+  const byFirst = athletes.filter((a) => normText(a.first_name) === f && lastOk(a))
+  if (byFirst.length === 1) return { athlete: byFirst[0], exact: true }
+  if (byFirst.length > 1) return null
+  const max = f.length <= 4 ? 1 : 2
+  const close = athletes.filter((a) => lastOk(a) && editDistance(normText(a.first_name), f) <= max)
+  return close.length === 1 ? { athlete: close[0], exact: false } : null
 }
 
 /** Tous les tests disponibles pour le rapprochement : ceux du club + ceux de la batterie à créer */
-export function availableTests(tests: TestDef[], templates: TestTemplate[]): { name: string; exists: boolean }[] {
-  const out = tests.map((t) => ({ name: t.name, exists: true }))
-  for (const t of templates) if (!tests.some((x) => normText(x.name) === normText(t.name))) out.push({ name: t.name, exists: false })
+export function availableTests(tests: TestDef[], templates: TestTemplate[]): (KnownTest & { exists: boolean })[] {
+  const out = tests.map((t) => ({ name: t.name, unit: t.unit, exists: true }))
+  for (const t of templates) if (!tests.some((x) => normText(x.name) === normText(t.name))) out.push({ name: t.name, unit: t.unit, exists: false })
   return out
 }

@@ -7,6 +7,7 @@ import { ENERGY, SORENESS, STRESS } from '../components/WellnessCheckin'
 import { Empty, Field, GroupBadge, Modal } from '../components/ui'
 import { RecordForm } from '../components/RecordForm'
 import { TestResults } from '../components/TestResults'
+import { VmaPaces } from '../components/VmaPaces'
 import { IndicatorsPanel, ReportCard, ReportForm } from '../components/TestInsights'
 import { parseValue } from '../lib/tests'
 import type { PersonalRecord } from '../types'
@@ -121,6 +122,7 @@ export function AthleteDetail() {
         ) : (
           <>
             <IndicatorsPanel tests={tests} results={test_results.filter((r) => r.athlete_id === a.id)} />
+            <VmaPaces tests={tests} results={test_results.filter((r) => r.athlete_id === a.id)} title="Allures d’entraînement" />
             <TestResults tests={tests} results={test_results.filter((r) => r.athlete_id === a.id)} onDelete={(rid) => remove('test_results', rid)} />
           </>
         )}

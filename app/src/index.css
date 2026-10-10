@@ -408,3 +408,8 @@ a.left { flex: 1; color: inherit; }
 .report-line { font-size: 0.9rem; }
 .report-line span { display: block; font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
 .speed { margin-bottom: 0.6rem; background: var(--primary-soft); border-color: transparent; }
+tr.to-check td { background: var(--warn-soft); }
+input.attention { border-color: var(--warn); box-shadow: 0 0 0 2px var(--warn-soft); }
+.paces { margin-bottom: 0.6rem; }
+.paces th { font-size: 0.72rem; color: var(--muted); font-weight: 600; text-align: right; padding: 0.2rem 0.3rem; }
+.my-pace { display: inline-block; margin-top: 0.2rem; font-size: 0.82rem; font-weight: 600; color: var(--primary); background: var(--primary-soft); border-radius: 6px; padding: 0.1rem 0.45rem; }

@@ -42,6 +42,7 @@ export function ImportResults() {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [paste, setPaste] = useState('')
+  const [dateFound, setDateFound] = useState(true)
 
   const known = useMemo(() => availableTests(tests, [...DEFAULT_TESTS, ...EXTRA_TESTS]), [tests])
 
@@ -52,7 +53,9 @@ export function ImportResults() {
     setParsed(p)
     setResIdx(pick.results)
     setRepIdx(pick.reports)
-    setDate(findDate(sheets) ?? todayISO())
+    const found = findDate(sheets)
+    setDate(found ?? todayISO())
+    setDateFound(!!found)
     setChoice({})
     setErr(pick.results < 0 && pick.reports < 0 ? 'Je n’ai pas trouvé de tableau avec une colonne « Athlète » (ou « Prénom »). Vérifie les colonnes ci-dessous.' : null)
   }
@@ -93,7 +96,8 @@ export function ImportResults() {
     return [...map.values()]
   }, [parsed, resIdx, repIdx])
 
-  const resolved = (p: RowPerson): string => choice[p.key] ?? matchAthlete(p, athletes)?.id ?? 'new'
+  const resolved = (p: RowPerson): string => choice[p.key] ?? matchAthlete(p, athletes)?.athlete.id ?? 'new'
+  const toCheck = (p: RowPerson) => !choice[p.key] && matchAthlete(p, athletes)?.exact === false
 
   // Résultats à importer
   const plan = useMemo(() => {
@@ -233,7 +237,10 @@ export function ImportResults() {
                 </select>
               </Field>
             </div>
-            <Field label="Date des tests"><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
+            <Field label="Date des tests">
+              <input type="date" value={date} onChange={(e) => { setDate(e.target.value); setDateFound(true) }} className={dateFound ? '' : 'attention'} />
+            </Field>
+            {!dateFound && <div className="alert warn small">📅 Pas de date dans le fichier : indique le jour où le test a été fait (sinon c’est aujourd’hui).</div>}
           </section>
 
           {[resIdx, repIdx].filter((i, k, arr) => i >= 0 && arr.indexOf(i) === k).map((si) => {
@@ -274,9 +281,14 @@ export function ImportResults() {
                     {people.map((p) => {
                       const r = resolved(p)
                       const n = plan.results.filter((x) => x.key === p.key).length
+                      const check = toCheck(p)
                       return (
-                        <tr key={p.key}>
-                          <td><b>{p.first} {p.last}</b><div className="tiny muted">{[p.age && `${p.age} ans`, p.events, `${n} résultat(s)`].filter(Boolean).join(' · ')}</div></td>
+                        <tr key={p.key} className={check ? 'to-check' : ''}>
+                          <td>
+                            <b>{p.first} {p.last}</b>
+                            <div className="tiny muted">{[p.age && `${p.age} ans`, p.events, `${n} résultat(s)`].filter(Boolean).join(' · ')}</div>
+                            {check && <div className="tiny warn-text">≈ orthographe proche : vérifie que c’est la bonne personne</div>}
+                          </td>
                           <td>
                             <select value={r} onChange={(e) => setChoice({ ...choice, [p.key]: e.target.value })}>
                               <option value="new">➕ Nouvelle fiche</option>
@@ -289,7 +301,12 @@ export function ImportResults() {
                     })}
                   </tbody>
                 </table>
-                <p className="tiny muted">Les fiches existantes sont reconnues par prénom + nom (ou prénom seul s’il est unique). Une nouvelle fiche se reliera automatiquement au compte de l’athlète quand il s’inscrira.</p>
+                {people.some(toCheck) && (
+                  <div className="alert warn small">
+                    {people.filter(toCheck).length} prénom(s) écrit(s) un peu différemment de ta liste ont été rapprochés. Vérifie les lignes surlignées avant d’importer.
+                  </div>
+                )}
+                <p className="tiny muted">Les fiches existantes sont reconnues par prénom + nom (ou prénom seul s’il est unique, ou très proche). Une nouvelle fiche se reliera automatiquement au compte de l’athlète quand il s’inscrira.</p>
               </div>
             </section>
           )}

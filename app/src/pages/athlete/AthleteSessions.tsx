@@ -6,6 +6,7 @@ import { FeedbackScores } from '../../components/FeedbackCard'
 import { Empty, FATIGUE_LABELS, FATIGUE_TEXT, MOOD_LABELS, MOOD_TEXT, RPE_LABELS, Scale } from '../../components/ui'
 import type { Assignment, Feedback } from '../../types'
 import { myAssignments } from '../../lib/athlete'
+import { latestVma } from '../../lib/vma'
 import { errorMessage, formatDate, todayISO } from '../../lib/utils'
 
 export function AthleteSessions() {
@@ -50,7 +51,7 @@ export function AthleteSessions() {
 export function AthleteSessionDetail() {
   const { id } = useParams()
   const me = useMyAthlete()
-  const { assignments, sessions, feedback, loading } = useData()
+  const { assignments, sessions, feedback, tests, test_results, loading } = useData()
   const a = assignments.find((x) => x.id === id)
   const s = a && sessions.find((x) => x.id === a.session_id)
   if (!me || !a || !s) return loading ? <p className="muted">Chargement…</p> : <Empty>Séance introuvable. <Link to="/seances">Retour</Link></Empty>
@@ -62,7 +63,7 @@ export function AthleteSessionDetail() {
       <h1>{s.title}</h1>
       <p className="muted">{formatDate(a.date)}{a.time && ` · ${a.time}`}{a.location && ` · ${a.location}`}</p>
       {a.note && <div className="alert info">{a.note}</div>}
-      <div className="card"><SessionView session={s} /></div>
+      <div className="card"><SessionView session={s} vma={latestVma(tests, test_results)?.value} /></div>
       <section>
         <h2>Mon retour</h2>
         {fb?.coach_reply && <div className="reply">💬 <strong>Message de ton coach :</strong> {fb.coach_reply}</div>}

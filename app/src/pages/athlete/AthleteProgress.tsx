@@ -5,6 +5,7 @@ import { Empty } from '../../components/ui'
 import { RecordForm } from '../../components/RecordForm'
 import { TestResults } from '../../components/TestResults'
 import { ReportCard } from '../../components/TestInsights'
+import { VmaPaces } from '../../components/VmaPaces'
 import { computeIndicators, fmt } from '../../lib/indicators'
 import { checkinStreak, computeBadges, feedbackStreak, myAssignments } from '../../lib/athlete'
 import type { PersonalRecord } from '../../types'
@@ -82,6 +83,7 @@ export function AthleteProgress() {
           const sp = computeIndicators(tests, test_results)?.sprint
           return sp ? <div className="speed card">⚡ Ta vitesse lancée : <b>{fmt(sp.kmh, 1)} km/h</b> <span className="muted small">(20 m en {fmt(sp.best)} s)</span></div> : null
         })()}
+        <VmaPaces tests={tests} results={test_results} />
         <TestResults tests={tests} results={test_results} />
         {test_results.length > 0 && <p className="tiny muted">Saisis par ton coach · ▲ = progrès par rapport au test précédent</p>}
       </section>
