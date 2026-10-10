@@ -379,11 +379,6 @@ code.block { display: block; padding: 0.5rem; }
 .pending-row { border-top: 1px solid var(--border); padding-top: 0.6rem; display: flex; flex-direction: column; gap: 0.45rem; }
 .pending-row select { max-width: 260px; }
 .import-preview { max-height: 220px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; padding: 0.3rem 0.5rem; }
-.test-card summary { list-style: none; cursor: pointer; }
-.test-card summary::-webkit-details-marker { display: none; }
-.test-card[open] summary { margin-bottom: 0.5rem; }
-.test-value { text-align: right; display: flex; flex-direction: column; }
-.test-value b { font-size: 1.15rem; }
 .up { color: var(--ok); font-weight: 600; font-size: 0.8rem; }
 .down { color: var(--danger); font-weight: 600; font-size: 0.8rem; }
 .right { text-align: right; }
@@ -430,3 +425,33 @@ input.attention { border-color: var(--warn); box-shadow: 0 0 0 2px var(--warn-so
 @media (prefers-color-scheme: dark) { .club-name { color: var(--primary); } }
 .login-hero .club-logo { width: min(240px, 68vw); height: auto; display: block; margin: 0 auto; border-radius: 12px; }
 .login-hero .stripes { margin: 0.5rem auto 0.8rem; max-width: min(240px, 68vw); }
+
+/* ---------- Résultats de tests : tuiles visuelles ---------- */
+.test-families { display: flex; flex-direction: column; gap: 0.9rem; }
+.family-title { font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.4rem; }
+.test-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.55rem; }
+@media (max-width: 420px) { .test-tiles { grid-template-columns: 1fr 1fr; } }
+.test-tile {
+  font: inherit; color: var(--text); text-align: left; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  padding: 0.65rem 0.7rem 0.45rem; display: flex; flex-direction: column; gap: 0.15rem; min-width: 0;
+  box-shadow: var(--shadow);
+}
+.test-tile:active { transform: scale(0.98); }
+.test-tile.record { border-color: var(--club-yellow); box-shadow: inset 0 3px 0 var(--club-yellow), var(--shadow); }
+.tt-name { font-size: 0.8rem; font-weight: 600; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tt-value { font-size: 1.7rem; font-weight: 800; line-height: 1.1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.tt-value small { font-size: 0.85rem; font-weight: 700; color: var(--muted); margin-left: 0.2rem; }
+.tt-meta { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; font-size: 0.75rem; min-height: 1.2rem; }
+.tt-trend { font-weight: 700; padding: 0.05rem 0.35rem; border-radius: 6px; }
+.tt-trend.good { color: var(--ok); background: var(--ok-soft); }
+.tt-trend.bad { color: var(--danger); background: var(--danger-soft); }
+.tt-record { font-weight: 700; color: var(--text); background: color-mix(in srgb, var(--club-yellow) 30%, var(--surface)); padding: 0.05rem 0.35rem; border-radius: 6px; }
+.spark { width: 100%; height: 34px; display: block; margin-top: auto; padding-top: 0.2rem; overflow: visible; }
+.history { display: flex; flex-direction: column; gap: 0.7rem; }
+.history-head { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; text-align: center; }
+.history-head > div { background: var(--bg); border-radius: 10px; padding: 0.45rem 0.3rem; display: flex; flex-direction: column; }
+.history-head b { font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.history-chart { width: 100%; height: auto; overflow: visible; }
+.hc-value { font-size: 11px; font-weight: 700; fill: var(--text); }
+.hc-date { font-size: 10px; fill: var(--muted); }

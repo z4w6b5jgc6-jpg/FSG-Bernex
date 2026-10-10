@@ -4,7 +4,7 @@ import { useData } from '../lib/data'
 import { Empty, Field, GroupBadge, Modal } from '../components/ui'
 import { DEFAULT_TESTS, EXTRA_TESTS, type TestTemplate } from '../data/defaults'
 import type { TestDef } from '../types'
-import { MAX_TRIAL_GAP, formatValue, parseValue, summarize, trendLabel, trialGap } from '../lib/tests'
+import { formatValue, parseValue, summarize, trendLabel } from '../lib/tests'
 import { errorMessage, formatShort, fullName, todayISO } from '../lib/utils'
 
 const CATS = ['Vitesse', 'Bondissement', 'Endurance', 'Lancers', 'Explosivité', 'Force', 'Mobilité', 'Technique', 'Autre']
@@ -303,7 +303,6 @@ export function TestMatrix() {
                       <td key={t.id} className={top ? 'top' : ''} title={formatShort(s.last.date)}>
                         {formatValue(s.last.value, t.unit === 's' && s.last.value >= 60 ? 's' : '') /* unité dans l'en-tête */}
                         {s.trend !== 0 && <span className={s.trend > 0 ? 'up' : 'down'}>{s.trend > 0 ? ' ▲' : ' ▼'}</span>}
-                        {trialGap(s.last.trials) > MAX_TRIAL_GAP && <span title="Écart entre essais > 3 %"> ⚠️</span>}
                       </td>
                     )
                   })}
@@ -313,7 +312,7 @@ export function TestMatrix() {
           </table>
         </div>
       )}
-      <p className="tiny muted">Dernier résultat de chacun · en couleur : meilleur du groupe · ▲▼ progression depuis le test précédent · ⚠️ écart entre essais &gt; 3 %</p>
+      <p className="tiny muted">Dernier résultat de chacun · en couleur : meilleur du groupe · ▲▼ progression depuis le test précédent</p>
     </div>
   )
 }
