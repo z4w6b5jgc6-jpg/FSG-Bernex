@@ -32,7 +32,7 @@ const EMPTY = /^[-–—]?$/
 /** Import d'un classeur de résultats de tests (Excel ou CSV), avec bilans individuels */
 export function ImportResults() {
   const data = useData()
-  const { tests, athletes, test_results, test_reports, athlete_notes, save, saveMany, reload } = data
+  const { tests, athletes, groups, test_results, test_reports, athlete_notes, save, saveMany, reload } = data
   const nav = useNavigate()
   const [raw, setRaw] = useState<SheetIn[] | null>(null)
   const [parsed, setParsed] = useState<ParsedSheet[]>([])
@@ -46,6 +46,10 @@ export function ImportResults() {
   const [dateFound, setDateFound] = useState(true)
   // Si la séance a déjà été importée : le nouveau fichier fait foi (remplace) ou la complète
   const [mode, setMode] = useState<'replace' | 'merge'>('replace')
+  // Groupe attribué aux fiches créées par l'import ('' = sans groupe, '+' = nouveau groupe)
+  const [newGroup, setNewGroup] = useState<string | null>(null)
+  const [newGroupName, setNewGroupName] = useState('U18')
+  const groupChoice = newGroup ?? (groups[0]?.id ?? '+')
 
   const known = useMemo(() => availableTests(tests, [...DEFAULT_TESTS, ...EXTRA_TESTS]), [tests])
 
@@ -158,12 +162,16 @@ export function ImportResults() {
         const t = await save('tests', tpl ?? { name, unit: '', higher_is_better: true, category: 'Autre', description: '' })
         testIds.set(t.name, t)
       }
-      // 2. Nouvelles fiches
+      // 2. Nouvelles fiches (dans le groupe choisi, créé si besoin)
+      let groupId: string | null = groupChoice || null
+      if (groupChoice === '+' && newGroupName.trim() && included.some((p) => resolved(p) === 'new')) {
+        groupId = (await save('groups', { name: newGroupName.trim(), color: '#2563eb' })).id
+      } else if (groupChoice === '+') groupId = null
       const year = Number(date.slice(0, 4))
       const ids = new Map<string, string>()
       const toCreate = included.filter((p) => resolved(p) === 'new')
       const created = await saveMany('athletes', toCreate.map((p): Partial<Athlete> => ({
-        first_name: p.first, last_name: p.last, events: p.events,
+        first_name: p.first, last_name: p.last, events: p.events, group_id: groupId,
         birth_year: p.year ?? (p.age ? year - p.age : null),
       })))
       toCreate.forEach((p, i) => ids.set(p.key, created[i].id))
@@ -314,6 +322,20 @@ export function ImportResults() {
           {people.length > 0 && (
             <section>
               <h2>Athlètes ({people.length})</h2>
+              {newCount > 0 && (
+                <div className="card form new-group">
+                  <Field label={`Groupe des ${newCount} nouvelle(s) fiche(s)`}>
+                    <select value={groupChoice} onChange={(e) => setNewGroup(e.target.value)}>
+                      {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+                      <option value="+">➕ Nouveau groupe…</option>
+                      <option value="">Sans groupe</option>
+                    </select>
+                  </Field>
+                  {groupChoice === '+' && (
+                    <Field label="Nom du nouveau groupe"><input value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} /></Field>
+                  )}
+                </div>
+              )}
               <div className="card">
                 <table className="table small">
                   <tbody>
