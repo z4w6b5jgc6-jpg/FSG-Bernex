@@ -2,10 +2,12 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { configProblems } from './api'
+import { ConfigError } from './components/ConfigError'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    {configProblems ? <ConfigError problems={configProblems} /> : <App />}
   </StrictMode>,
 )
 
