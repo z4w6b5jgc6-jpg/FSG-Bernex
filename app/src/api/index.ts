@@ -3,7 +3,11 @@ import { createSupabaseApi } from './supabaseApi'
 import { readConfig } from './config'
 import type { Api } from './types'
 
-const config = readConfig(import.meta.env.VITE_SUPABASE_URL as string | undefined, import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)
+const env = import.meta.env as Record<string, string | undefined>
+// Priorité à la configuration du dépôt (netlify.toml), sinon aux variables saisies dans Netlify
+const config = env.COACH_SUPABASE_URL
+  ? readConfig(env.COACH_SUPABASE_URL, env.COACH_SUPABASE_ANON_KEY)
+  : readConfig(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY)
 
 /** Problèmes de configuration à afficher à la place de l'app (null si tout va bien) */
 export let configProblems: string[] | null = config.kind === 'error' ? config.problems : null

@@ -69,12 +69,7 @@ Puis ouvrir http://localhost:5173 :
 - **Netlify** : *Add new site → Import from GitHub*, choisir ce dépôt (le fichier `netlify.toml` configure tout).
 - **Vercel** : *New Project*, choisir ce dépôt, mettre **Root Directory = `app`**.
 
-Dans les deux cas, ajouter ces variables d'environnement puis redéployer :
-
-| Variable | Valeur |
-|---|---|
-| `VITE_SUPABASE_URL` | l'URL du projet Supabase |
-| `VITE_SUPABASE_ANON_KEY` | la clé *anon public* |
+La connexion à Supabase est définie dans [`netlify.toml`](netlify.toml) (`COACH_SUPABASE_URL` et `COACH_SUPABASE_ANON_KEY`, la clé **publishable**, publique par conception). Pour un autre projet Supabase, remplacer ces deux valeurs. On peut aussi utiliser les variables `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` dans l'interface Netlify, si `netlify.toml` n'en définit pas. Si une valeur est mal renseignée, l'app affiche un écran « Configuration à corriger » qui explique le problème.
 
 ### 3. Créer son compte entraîneur
 1. Ouvrir le site → **Créer un compte**, confirmer via l'email reçu, se connecter, puis **« Je suis entraîneur »** et donner le nom du club.
