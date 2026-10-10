@@ -23,6 +23,9 @@ export function parseValue(s: string): number | null {
   return Number.isFinite(n) ? n : null
 }
 
+/** Au-delà de 3 % d'écart entre essais : à confirmer (3e essai) */
+export const MAX_TRIAL_GAP = 0.03
+
 /** Écart relatif entre le plus mauvais et le meilleur essai (0 si moins de 2 essais) */
 export function trialGap(trials: number[]): number {
   if (trials.length < 2) return 0
