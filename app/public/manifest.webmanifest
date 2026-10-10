@@ -1,0 +1,9 @@
+{
+  "name": "Coach Athlé",
+  "short_name": "Coach Athlé",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f4f6fb",
+  "theme_color": "#e85d04",
+  "icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
