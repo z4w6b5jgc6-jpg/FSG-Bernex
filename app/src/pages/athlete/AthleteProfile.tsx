@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { api } from '../../api'
 import { useData, useMyAthlete } from '../../lib/data'
 import { Field } from '../../components/ui'
-import { ACCENTS, AVATARS, applyAccent } from '../../lib/athlete'
+import { ACCENTS, AVATARS, applyAccent, shownColor } from '../../lib/athlete'
 import type { Athlete } from '../../types'
 import { errorMessage } from '../../lib/utils'
 
@@ -52,7 +52,7 @@ export function AthleteProfile() {
         <h2>Ma couleur</h2>
         <div className="row gap wrap">
           {ACCENTS.map((c) => (
-            <button key={c} className={`swatch big ${p.color === c ? 'active' : ''}`} style={{ background: c }} onClick={() => set({ color: c })} aria-label={c} />
+            <button key={c} className={`swatch big ${shownColor(p.color) === c ? 'active' : ''}`} style={{ background: c }} onClick={() => set({ color: c })} aria-label={c} />
           ))}
         </div>
       </section>

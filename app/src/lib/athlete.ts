@@ -3,14 +3,24 @@ import { BUILTIN_TIPS } from '../data/tips'
 import { addDays, athletesFor, todayISO } from './utils'
 
 export const AVATARS = ['🏃', '🏃‍♀️', '⚡', '🔥', '🚀', '🦊', '🐆', '🦅', '🐺', '🦋', '🐬', '💪', '🌟', '🎯', '🏹', '🥇', '👟', '🌈', '🍀', '😎']
-export const ACCENTS = ['#e85d04', '#dc2626', '#db2777', '#7c3aed', '#2563eb', '#0891b2', '#059669', '#16a34a', '#ca8a04', '#475569']
+/** Couleur du club (par défaut) puis couleurs au choix de l'athlète */
+export const CLUB_COLOR = '#1a8526'
+/** Ancienne couleur par défaut (orange) : affichée comme la couleur du club */
+const LEGACY_DEFAULT = '#e85d04'
+export const ACCENTS = [CLUB_COLOR, '#ea580c', '#dc2626', '#db2777', '#7c3aed', '#2563eb', '#0891b2', '#059669', '#16a34a', '#ca8a04', '#475569']
 
 /** Applique la couleur choisie par l'athlète à toute l'app */
 export function applyAccent(color: string | null) {
   const root = document.documentElement
-  if (color) root.style.setProperty('--primary', color)
+  const custom = color && color !== LEGACY_DEFAULT && color !== CLUB_COLOR ? color : null
+  if (custom) root.style.setProperty('--primary', custom)
   else root.style.removeProperty('--primary')
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', color ?? '#e85d04')
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', custom ?? '#22a02f')
+}
+
+/** Couleur affichée comme sélectionnée dans le profil */
+export function shownColor(color: string | null | undefined): string {
+  return !color || color === LEGACY_DEFAULT ? CLUB_COLOR : color
 }
 
 export function myAssignments(assignments: Assignment[], me: Athlete): Assignment[] {
