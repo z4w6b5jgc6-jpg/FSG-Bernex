@@ -365,3 +365,6 @@ a.goal:hover { text-decoration: none; }
 .checkin .scale-btn { min-width: 2.4rem; height: 2.4rem; }
 .bar-col small { font-size: 0.65rem; color: var(--muted); }
 .stat b { white-space: nowrap; }
+.nowrap { white-space: nowrap; }
+.fixed-value { display: flex; align-items: center; gap: 0.5rem; padding: 0.55rem 0.7rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); font-weight: 600; }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }

@@ -53,7 +53,7 @@ export function Login() {
         )}
         {mode === 'up' && (
           <p className="small muted">
-            Tu es <b>athlète</b> ? Utilise plutôt le <b>lien d’inscription</b> envoyé par ton entraîneur : tu rejoindras directement ton club.
+            Tu es <b>athlète</b> ? Utilise plutôt le <b>lien d’inscription</b> envoyé par ton entraîneur : tu rejoindras directement ton programme d’entraînement.
           </p>
         )}
         <label className="field">

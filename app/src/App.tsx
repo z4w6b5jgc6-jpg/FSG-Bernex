@@ -124,6 +124,7 @@ export default function App() {
       <DataProvider>
         <Routes>
           <Route path="/rejoindre/:code" element={<Join />} />
+          <Route path="/rejoindre/:code/:group" element={<Join />} />
           <Route path="*" element={<RoleGate />} />
         </Routes>
       </DataProvider>

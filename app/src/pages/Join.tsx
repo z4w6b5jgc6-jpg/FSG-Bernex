@@ -7,9 +7,9 @@ import type { ClubInfo, JoinProfile } from '../types'
 import { clearPendingJoin, savePendingJoin } from '../lib/pwa'
 import { errorMessage } from '../lib/utils'
 
-/** Page d'inscription des athlètes : #/rejoindre/<CODE> (un seul lien pour tout le club) */
+/** Page d'inscription des athlètes : #/rejoindre/<CODE> ou #/rejoindre/<CODE>/<groupe> */
 export function Join() {
-  const { code = '' } = useParams()
+  const { code = '', group: groupParam } = useParams()
   const { me, refreshMe } = useData()
   const [club, setClub] = useState<ClubInfo | null | undefined>(undefined)
   const [hasAccount, setHasAccount] = useState(false)
@@ -21,8 +21,14 @@ export function Join() {
   const [msg, setMsg] = useState<{ kind: 'warn' | 'info'; text: string } | null>(null)
 
   useEffect(() => {
-    api.clubByCode(code).then(setClub).catch(() => setClub(null))
-  }, [code])
+    api.clubByCode(code)
+      .then((c) => {
+        setClub(c)
+        const g = c?.groups.find((x) => x.id === groupParam)
+        if (g) setP((x) => ({ ...x, group_id: g.id }))
+      })
+      .catch(() => setClub(null))
+  }, [code, groupParam])
 
   if (me?.role === 'athlete' || me?.role === 'coach') return <Navigate to="/" replace />
   const set = (patch: Partial<JoinProfile>) => setP({ ...p, ...patch })
@@ -69,12 +75,14 @@ export function Join() {
   }
 
   const year = new Date().getFullYear()
+  // Lien d'un groupe précis : le groupe est déjà choisi
+  const linkGroup = club.groups.find((g) => g.id === groupParam)
   return (
     <div className="login">
       <div className="login-hero">
         <img src="icon-192.png" alt="" width={64} height={64} />
-        <h1>Rejoins {club.name}</h1>
-        <p className="muted">Crée ton compte pour retrouver tes entraînements, suivre tes progrès et donner ton ressenti à ton coach.</p>
+        <h1>Rejoins le programme d’entraînement{linkGroup && <> du groupe <span className="nowrap">{linkGroup.name}</span></>}</h1>
+        <p className="muted">Crée ton compte pour retrouver tes séances, suivre tes progrès et donner ton ressenti à ton coach.</p>
       </div>
       <form className="card login-card form" onSubmit={submit}>
         {!loggedIn && (
@@ -100,12 +108,18 @@ export function Join() {
             <input type="number" inputMode="numeric" min={year - 80} max={year - 10} value={p.birth_year ?? ''}
               onChange={(e) => set({ birth_year: e.target.value ? Number(e.target.value) : null })} required />
           </Field>
-          <Field label="Groupe">
-            <select value={p.group_id ?? ''} onChange={(e) => set({ group_id: e.target.value || null })}>
-              <option value="">Je ne sais pas</option>
-              {club.groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
-            </select>
-          </Field>
+          {linkGroup ? (
+            <Field label="Groupe">
+              <div className="fixed-value"><span className="dot" style={{ background: linkGroup.color }} />{linkGroup.name}</div>
+            </Field>
+          ) : (
+            <Field label="Groupe">
+              <select value={p.group_id ?? ''} onChange={(e) => set({ group_id: e.target.value || null })}>
+                <option value="">Je ne sais pas</option>
+                {club.groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+              </select>
+            </Field>
+          )}
         </div>
         <Field label="Tes disciplines"><input value={p.events} onChange={(e) => set({ events: e.target.value })} placeholder="Ex. 100 m, longueur" /></Field>
         <Field label="Téléphone (facultatif)" hint="Pour que ton coach puisse te contacter sur WhatsApp">
@@ -113,10 +127,10 @@ export function Join() {
         </Field>
         <label className="check small">
           <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required />
-          J’accepte que mes entraînements, mes retours et mes check-ins bien-être soient visibles par les entraîneurs du club.
+          J’accepte que mes entraînements, mes retours et mes check-ins bien-être soient visibles par mes entraîneurs.
         </label>
         {msg && <div className={`alert ${msg.kind}`}>{msg.text}</div>}
-        <button className="btn primary block" disabled={busy || !consent}>{busy ? '…' : 'Rejoindre le club 🚀'}</button>
+        <button className="btn primary block" disabled={busy || !consent}>{busy ? '…' : 'Rejoindre le programme 🚀'}</button>
       </form>
     </div>
   )

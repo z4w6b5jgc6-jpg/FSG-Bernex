@@ -69,10 +69,10 @@ export function clearPendingJoin() {
   try { localStorage.removeItem(PENDING_KEY) } catch { /* ignore */ }
 }
 
-/** Extrait le code club d'un lien d'invitation collé (ou du code seul) */
-export function parseInviteCode(input: string): string | null {
-  const fromLink = input.match(/rejoindre\/([A-Za-z0-9]+)/)
-  if (fromLink) return fromLink[1].toUpperCase()
+/** Chemin d'inscription à partir d'un lien collé (avec son groupe éventuel) ou du code seul */
+export function parseInvitePath(input: string): string | null {
+  const fromLink = input.match(/rejoindre\/([A-Za-z0-9]+)(?:\/([0-9a-f-]{36}))?/i)
+  if (fromLink) return `/rejoindre/${fromLink[1].toUpperCase()}${fromLink[2] ? `/${fromLink[2].toLowerCase()}` : ''}`
   const raw = input.trim()
-  return /^[A-Za-z0-9]{4,12}$/.test(raw) ? raw.toUpperCase() : null
+  return /^[A-Za-z0-9]{4,12}$/.test(raw) ? `/rejoindre/${raw.toUpperCase()}` : null
 }

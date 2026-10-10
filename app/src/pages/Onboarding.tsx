@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useData } from '../lib/data'
 import { Field } from '../components/ui'
-import { clearPendingJoin, parseInviteCode, pendingJoin } from '../lib/pwa'
+import { clearPendingJoin, parseInvitePath, pendingJoin } from '../lib/pwa'
 import { errorMessage } from '../lib/utils'
 
 /** Compte créé mais pas encore rattaché à un club */
@@ -42,8 +42,8 @@ export function Onboarding() {
 
   const join = (e: FormEvent) => {
     e.preventDefault()
-    const code = parseInviteCode(link)
-    if (code) nav(`/rejoindre/${code}`)
+    const path = parseInvitePath(link)
+    if (path) nav(path)
     else setErr('Ce lien ou ce code ne semble pas correct.')
   }
   const create = async (e: FormEvent) => {

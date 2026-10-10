@@ -11,7 +11,7 @@ Application web pour construire les entraînements d'athlétisme, les mettre à 
 | **Android** (Chrome) | Ouvrir le site → bouton **« 📲 Installer »** dans l'app, ou menu **⋮ → Installer l'application** |
 | **iPhone** (Safari) | Ouvrir le site → bouton **Partager ⬆️ → « Sur l'écran d'accueil »** |
 
-- L'athlète ouvre le lien d'inscription reçu dans le groupe WhatsApp, crée son compte, puis installe l'app. Ensuite il reste connecté.
+- L'athlète ouvre le lien d'inscription de son groupe reçu sur WhatsApp, crée son compte, puis installe l'app. Ensuite il reste connecté.
 - Les données se rafraîchissent automatiquement quand on revient dans l'app.
 - Pas de notifications push dans cette version : les annonces passent par WhatsApp (bouton **« Annoncer sur WhatsApp »** ou **« Partager »**).
 
@@ -20,7 +20,7 @@ Application web pour construire les entraînements d'athlétisme, les mettre à 
 **Côté entraîneur**
 - **Séances** : construire des séances types en blocs (échauffement, corps de séance, retour au calme…) avec séries, répétitions, distance, durée, récupération, intensité et consignes. Bibliothèque de 32 exercices d'athlétisme.
 - **Planning** : vue semaine, attribuer une séance à un groupe et/ou à des athlètes, avec heure, lieu et message. Annonce en un geste sur WhatsApp.
-- **Athlètes** : un **seul lien d'inscription pour tout le club**, à poster dans le groupe WhatsApp. Chaque athlète crée son compte et choisit son groupe ; tu peux ensuite le changer de groupe ou le désactiver.
+- **Athlètes** : un **lien d'inscription par groupe** (ex. « Rejoins le programme d'entraînement du groupe U18 »), à poster dans le groupe WhatsApp. L'athlète crée son compte et arrive directement dans le bon groupe. Un lien général permet aussi de choisir son groupe. Tu peux ensuite changer un athlète de groupe ou le désactiver.
 - **Suivi** : retours après séance, check-ins bien-être (sommeil, énergie, courbatures, stress), records, objectifs, alertes sur l'accueil, réponses aux athlètes et notes de suivi privées.
 - **Conseils** : 17 conseils fournis (nutrition, hydratation, sommeil, récupération, prévention, mental, hygiène de vie, compétition), rédigés pour les 15 ans et plus. Tu peux ajouter les tiens (infos club, rappels…).
 
@@ -72,9 +72,9 @@ Dans les deux cas, ajouter ces variables d'environnement puis redéployer :
 ### 3. Créer son compte entraîneur
 1. Ouvrir le site → **Créer un compte**, confirmer via l'email reçu, se connecter, puis **« Je suis entraîneur »** et donner le nom du club.
 2. Dans Supabase, **Authentication → URL Configuration** : mettre l'adresse du site comme *Site URL* (pour les emails de confirmation).
-3. Créer les groupes (onglet Athlètes), puis partager le **lien d'inscription du club** dans le groupe WhatsApp.
+3. Créer les groupes (onglet Athlètes), puis partager le **lien d'inscription de chaque groupe** dans le groupe WhatsApp correspondant.
 
-> Les inscriptions doivent rester ouvertes (« Allow new users to sign up ») pour que les athlètes puissent créer leur compte. Sans le code du club, un nouveau compte ne voit aucune donnée. Si le lien circule trop, crée-en un nouveau (bouton « Nouveau lien ») : les athlètes déjà inscrits ne sont pas touchés.
+> Les inscriptions doivent rester ouvertes (« Allow new users to sign up ») pour que les athlètes puissent créer leur compte. Sans le code du club, un nouveau compte ne voit aucune donnée. Si un lien circule trop, crée-en de nouveaux (bouton « Nouveaux liens ») : les athlètes déjà inscrits ne sont pas touchés.
 
 ## Sécurité et données des jeunes
 - Chaque club est isolé : un entraîneur ne voit que ses groupes, athlètes, séances et retours (règles *Row Level Security* dans la base).
