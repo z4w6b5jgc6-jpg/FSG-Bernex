@@ -28,6 +28,10 @@ export function readConfig(rawUrl: string | undefined, rawKey: string | undefine
     problems.push('⚠️ VITE_SUPABASE_ANON_KEY contient la clé SECRÈTE. Remplace-la immédiatement par la clé publique (sb_publishable_… ou anon public), puis régénère la clé secrète dans Supabase.')
   else if (!/^(sb_publishable_|eyJ)/.test(key))
     problems.push(`VITE_SUPABASE_ANON_KEY ne ressemble pas à une clé publique Supabase : ${mask(key)}. Elle doit commencer par sb_publishable_ (ou eyJ pour l’ancienne clé « anon »).`)
+  else if (key.length < 30 || /…|\.\.\./.test(key))
+    problems.push(`VITE_SUPABASE_ANON_KEY est incomplète : ${mask(key)}. Copie la clé publique en entier depuis Supabase (bouton Connect), sans « … ».`)
+  if (url && /^(sb_|eyJ)/.test(url))
+    problems.push('VITE_SUPABASE_URL contient une clé au lieu de l’adresse du projet : mets-y l’URL https://….supabase.co (et la clé dans VITE_SUPABASE_ANON_KEY).')
   if (/\s/.test(key)) problems.push('VITE_SUPABASE_ANON_KEY contient un espace ou un retour à la ligne : recolle-la en une seule fois.')
   return problems.length ? { kind: 'error', problems } : { kind: 'ok', config: { url, key } }
 }
