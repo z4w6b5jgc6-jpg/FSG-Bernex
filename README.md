@@ -21,6 +21,8 @@ Application web pour construire les entraînements d'athlétisme, les mettre à 
 - **Séances** : construire des séances types en blocs (échauffement, corps de séance, retour au calme…) avec séries, répétitions, distance, durée, récupération, intensité et consignes. Bibliothèque de 32 exercices d'athlétisme.
 - **Planning** : vue semaine, attribuer une séance à un groupe et/ou à des athlètes, avec heure, lieu et message. Annonce en un geste sur WhatsApp.
 - **Athlètes** : un **lien d'inscription par groupe** (ex. « Rejoins le programme d'entraînement du groupe U18 »), à poster dans le groupe WhatsApp. L'athlète crée son compte et arrive directement dans le bon groupe. Un lien général permet aussi de choisir son groupe. Tu peux ensuite changer un athlète de groupe ou le désactiver.
+- **Ta liste d'athlètes** : crée les fiches à la main ou **importe ta liste** par copier-coller depuis Excel (Prénom, Nom, Année, Groupe, Email, Téléphone). Quand un athlète s'inscrit, son compte est **relié automatiquement à sa fiche** : par l'email si tu l'as saisi, sinon par prénom + nom + année de naissance (accents et majuscules ignorés). Chaque inscription apparaît dans « Nouvelles inscriptions » : tu confirmes, tu délies si ce n'est pas la bonne personne, ou tu relies à la bonne fiche (fusion sans perte de données) en cas de faute de frappe.
+- **Fiche athlète** : records et résultats de compétition, **tests physiques** (30 m, VMA, détente, multibonds, médecine-ball…), avec saisie rapide pour tout un groupe le jour du test, classement par test et progression (▲/▼). L'athlète voit ses résultats dans « Mes progrès ».
 - **Suivi** : retours après séance, check-ins bien-être (sommeil, énergie, courbatures, stress), records, objectifs, alertes sur l'accueil, réponses aux athlètes et notes de suivi privées.
 - **Conseils** : 17 conseils fournis (nutrition, hydratation, sommeil, récupération, prévention, mental, hygiène de vie, compétition), rédigés pour les 15 ans et plus. Tu peux ajouter les tiens (infos club, rappels…).
 
@@ -29,7 +31,7 @@ Application web pour construire les entraînements d'athlétisme, les mettre à 
 - **Check-in bien-être** quotidien en 30 secondes.
 - **Séances** : détail de chaque séance, retour après l'entraînement (effort, forme, plaisir, douleur, commentaire), réponse du coach.
 - **Conseils** : par catégorie, avec favoris ⭐.
-- **Progrès** : records personnels, graphiques d'effort et de sommeil, 12 badges à débloquer.
+- **Progrès** : records et résultats (saisis par lui ou par toi), résultats de ses tests avec progression, graphiques d'effort et de sommeil, 12 badges à débloquer.
 - **Profil** : choix de l'avatar et de la couleur de l'app, disciplines, objectif.
 
 ## Essayer tout de suite (mode démo)
@@ -72,7 +74,7 @@ Dans les deux cas, ajouter ces variables d'environnement puis redéployer :
 ### 3. Créer son compte entraîneur
 1. Ouvrir le site → **Créer un compte**, confirmer via l'email reçu, se connecter, puis **« Je suis entraîneur »** et donner le nom du club.
 2. Dans Supabase, **Authentication → URL Configuration** : mettre l'adresse du site comme *Site URL* (pour les emails de confirmation).
-3. Créer les groupes (onglet Athlètes), puis partager le **lien d'inscription de chaque groupe** dans le groupe WhatsApp correspondant.
+3. Importer ta liste d'athlètes (onglet Athlètes → « Importer ma liste », les groupes sont créés automatiquement), puis partager le **lien d'inscription de chaque groupe** dans le groupe WhatsApp correspondant.
 
 > Les inscriptions doivent rester ouvertes (« Allow new users to sign up ») pour que les athlètes puissent créer leur compte. Sans le code du club, un nouveau compte ne voit aucune donnée. Si un lien circule trop, crée-en de nouveaux (bouton « Nouveaux liens ») : les athlètes déjà inscrits ne sont pas touchés.
 
@@ -85,5 +87,5 @@ Dans les deux cas, ajouter ces variables d'environnement puis redéployer :
 
 ## Technique
 - `app/` : React + TypeScript + Vite (site statique).
-- `supabase/schema.sql` : tables, règles de sécurité et fonctions d'inscription (`whoami`, `create_club`, `club_by_code`, `join_club`).
+- `supabase/schema.sql` : tables, règles de sécurité et fonctions d'inscription (`whoami`, `create_club`, `club_by_code`, `join_club` avec liaison à la liste, `merge_athletes`).
 - Commandes : `npm run dev`, `npm run build`, `npm run lint`.

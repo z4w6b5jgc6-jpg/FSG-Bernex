@@ -16,6 +16,7 @@ import { Athletes } from './pages/Athletes'
 import { AthleteDetail } from './pages/AthleteDetail'
 import { Exercises } from './pages/Exercises'
 import { Tips, TipDetail } from './pages/Tips'
+import { Tests, TestDetail, TestEntry } from './pages/Tests'
 import { AthleteHome } from './pages/athlete/AthleteHome'
 import { AthleteSessions, AthleteSessionDetail } from './pages/athlete/AthleteSessions'
 import { AthleteProgress } from './pages/athlete/AthleteProgress'
@@ -83,6 +84,9 @@ function CoachApp() {
         <Route path="/athletes/:id" element={<AthleteDetail />} />
         <Route path="/conseils" element={<Tips />} />
         <Route path="/conseils/:id" element={<TipDetail />} />
+        <Route path="/tests" element={<Tests />} />
+        <Route path="/tests/saisie" element={<TestEntry />} />
+        <Route path="/tests/:id" element={<TestDetail />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Shell>

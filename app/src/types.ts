@@ -17,7 +17,31 @@ export interface Athlete {
   color: string
   goals: string
   favorite_tips: string[]
+  /** email saisi par l'entraîneur : sert à relier automatiquement l'inscription */
+  email: string
+  linked_at: string | null
+  /** false = nouvelle inscription à vérifier par l'entraîneur */
+  signup_reviewed: boolean
   active: boolean
+  created_at?: string
+}
+
+export interface TestDef {
+  id: string
+  name: string
+  unit: string
+  higher_is_better: boolean
+  category: string
+  description: string
+}
+
+export interface TestResult {
+  id: string
+  athlete_id: string
+  test_id: string
+  date: string
+  value: number
+  notes: string
 }
 
 export interface Club {
@@ -137,6 +161,8 @@ export interface Tables {
   tips: Tip
   records: PersonalRecord
   wellness: Wellness
+  tests: TestDef
+  test_results: TestResult
 }
 
 export type TableName = keyof Tables

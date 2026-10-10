@@ -1,10 +1,14 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useData } from '../lib/data'
 import { FeedbackCard } from '../components/FeedbackCard'
 import { EffortBars, SleepBars } from '../components/Charts'
 import { ENERGY, SORENESS, STRESS } from '../components/WellnessCheckin'
-import { Empty, GroupBadge } from '../components/ui'
+import { Empty, Field, GroupBadge, Modal } from '../components/ui'
+import { RecordForm } from '../components/RecordForm'
+import { TestResults } from '../components/TestResults'
+import { parseValue } from '../lib/tests'
+import type { PersonalRecord } from '../types'
 import { AthleteForm } from './Athletes'
 import { feedbackStreak } from '../lib/athlete'
 import { athletesFor, errorMessage, formatShort, fullName, todayISO, whatsappUrl } from '../lib/utils'
@@ -12,9 +16,11 @@ import { athletesFor, errorMessage, formatShort, fullName, todayISO, whatsappUrl
 export function AthleteDetail() {
   const { id } = useParams()
   const nav = useNavigate()
-  const { athletes, groups, assignments, sessions, feedback, wellness, records, athlete_notes, save, remove, loading } = useData()
+  const { athletes, groups, assignments, sessions, feedback, wellness, records, athlete_notes, tests, test_results, save, remove, loading } = useData()
   const [editing, setEditing] = useState(false)
   const [note, setNote] = useState('')
+  const [editRecord, setEditRecord] = useState<Partial<PersonalRecord> | null>(null)
+  const [addResult, setAddResult] = useState(false)
   const a = athletes.find((x) => x.id === id)
   if (!a) return loading ? <p className="muted">Chargement…</p> : <Empty>Athlète introuvable. <Link to="/athletes">Retour</Link></Empty>
 
@@ -62,6 +68,9 @@ export function AthleteDetail() {
         </div>
       </div>
       {a.goals && <div className="goal">🎯 <b>Objectif :</b> {a.goals}</div>}
+      <div className="small">
+        {a.user_id ? <span className="pill ok">✓ Inscrit·e dans l’app</span> : <span className="pill">⏳ Pas encore inscrit·e — sa fiche se remplira dès son inscription</span>}
+      </div>
       <div className="row gap wrap actions">
         {a.phone && <a className="btn small whatsapp" href={whatsappUrl(`Salut ${a.first_name} !`, a.phone)} target="_blank" rel="noreferrer">📲 WhatsApp</a>}
         <button className="btn small" onClick={() => setEditing(true)}>Modifier / groupe</button>
@@ -101,12 +110,35 @@ export function AthleteDetail() {
       </section>
 
       <section>
-        <h2>🏅 Records</h2>
-        {recs.length === 0 ? <p className="muted small">Aucun record saisi.</p> : (
+        <div className="row between">
+          <h2>📏 Tests physiques</h2>
+          <button className="btn small primary" onClick={() => setAddResult(true)} disabled={tests.length === 0}>+ Résultat</button>
+        </div>
+        {tests.length === 0 ? (
+          <Empty>Définis d’abord tes tests dans <Link to="/tests">Tests physiques</Link>.</Empty>
+        ) : (
+          <TestResults tests={tests} results={test_results.filter((r) => r.athlete_id === a.id)} onDelete={(rid) => remove('test_results', rid)} />
+        )}
+      </section>
+
+      <section>
+        <div className="row between">
+          <h2>🏅 Records & résultats</h2>
+          <button className="btn small primary" onClick={() => setEditRecord({ date: today, event: a.events.split(',')[0]?.trim() ?? '' })}>+ Perf</button>
+        </div>
+        {recs.length === 0 ? <p className="muted small">Aucune performance saisie (par toi ou l’athlète).</p> : (
           <div className="card">
             <ul className="plain rows">
               {recs.map((r) => (
-                <li key={r.id} className="row between"><span><b>{r.event}</b> <span className="muted small">{formatShort(r.date)}{r.competition && ` · ${r.competition}`}</span></span><span className="record-mark">{r.mark}</span></li>
+                <li key={r.id} className="row between">
+                  <button className="link left" onClick={() => setEditRecord(r)}>
+                    <b>{r.event}</b> <span className="muted small">{formatShort(r.date)}{r.competition && ` · ${r.competition}`}</span>
+                  </button>
+                  <span className="row gap">
+                    <span className="record-mark">{r.mark}</span>
+                    <button className="btn ghost icon small danger" onClick={() => confirm('Supprimer cette performance ?') && remove('records', r.id)}>✕</button>
+                  </span>
+                </li>
               ))}
             </ul>
           </div>
@@ -150,6 +182,44 @@ export function AthleteDetail() {
       </section>
 
       {editing && <AthleteForm initial={a} onClose={() => setEditing(false)} />}
+      {editRecord && <RecordForm initial={editRecord} athleteId={a.id} onClose={() => setEditRecord(null)} />}
+      {addResult && <ResultForm athleteId={a.id} onClose={() => setAddResult(false)} />}
     </div>
+  )
+}
+
+function ResultForm({ athleteId, onClose }: { athleteId: string; onClose: () => void }) {
+  const { tests, save } = useData()
+  const [testId, setTestId] = useState(tests[0]?.id ?? '')
+  const [date, setDate] = useState(todayISO())
+  const [value, setValue] = useState('')
+  const [notes, setNotes] = useState('')
+  const test = tests.find((t) => t.id === testId)
+  const submit = async (e: FormEvent) => {
+    e.preventDefault()
+    const v = parseValue(value)
+    if (v == null) return alert('Résultat invalide')
+    try {
+      await save('test_results', { athlete_id: athleteId, test_id: testId, date, value: v, notes })
+      onClose()
+    } catch (err) {
+      alert(errorMessage(err))
+    }
+  }
+  return (
+    <Modal title="Nouveau résultat de test" onClose={onClose}>
+      <form className="form" onSubmit={submit}>
+        <Field label="Test"><select value={testId} onChange={(e) => setTestId(e.target.value)}>{tests.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></Field>
+        <div className="grid2">
+          <Field label={`Résultat${test?.unit ? ` (${test.unit})` : ''}`}><input inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} required autoFocus /></Field>
+          <Field label="Date"><input type="date" value={date} onChange={(e) => setDate(e.target.value)} required /></Field>
+        </div>
+        <Field label="Note (facultatif)"><input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ex. vent de face, chrono manuel" /></Field>
+        <div className="row gap end">
+          <button type="button" className="btn ghost" onClick={onClose}>Annuler</button>
+          <button className="btn primary">Enregistrer</button>
+        </div>
+      </form>
+    </Modal>
   )
 }

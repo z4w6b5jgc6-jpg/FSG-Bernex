@@ -1,11 +1,11 @@
 // Mode démo : toutes les données restent dans le navigateur (localStorage).
 // Simule les comptes (entraîneur / athlètes) et les règles d'accès de la base.
-import { DEFAULT_EXERCISES } from '../data/defaults'
+import { DEFAULT_EXERCISES, DEFAULT_TESTS } from '../data/defaults'
 import type { Me, TableName, Tables } from '../types'
 import { addDays, athletesFor, emptyItem, todayISO, uid } from '../lib/utils'
 import type { Api, Draft, Row } from './types'
 
-const KEY = 'athle-demo-db-v2'
+const KEY = 'athle-demo-db-v3'
 const AUTH_KEY = 'athle-demo-user'
 const COACH_ID = 'demo-coach'
 
@@ -27,14 +27,26 @@ function seed(): Db {
     return {
       id: uid(), user_id: user.id, group_id: group, first_name: first, last_name: last, birth_year: year,
       events, phone: '', avatar, color, goals, favorite_tips: [] as string[], active: true,
+      email, linked_at: new Date().toISOString() as string | null, signup_reviewed: true,
     }
   }
+  // Athlètes de la liste de l'entraîneur, pas encore inscrits dans l'app
+  const roster = (first: string, last: string, group: string, year: number, events: string, email = '') => ({
+    id: uid(), user_id: null as string | null, group_id: group, first_name: first, last_name: last, birth_year: year,
+    events, phone: '', avatar: '🏃', color: '#e85d04', goals: '', favorite_tips: [] as string[], active: true,
+    email, linked_at: null as string | null, signup_reviewed: true, created_at: addDays(today, -30) + 'T12:00:00.000Z',
+  })
   const athletes = [
     mk('Léa', 'Martin', u18.id, 2010, '100 m, longueur', '⚡', '#7c3aed', 'Passer sous les 13" au 100 m cette saison'),
     mk('Noah', 'Rossier', u18.id, 2009, '800 m, 1500 m', '🦊', '#ea580c', 'Qualif championnats romands'),
     mk('Inès', 'Favre', actifs.id, 2007, '100 m haies, hauteur', '🦋', '#db2777', ''),
     mk('Luca', 'Bianchi', actifs.id, 2006, 'poids, disque', '💪', '#16a34a', ''),
+    roster('Emma', 'Rochat', u18.id, 2009, '400 m'),
+    roster('Samuel', 'Keller', actifs.id, 2007, 'longueur, triple saut', 'samuel@demo.ch'),
   ]
+  const tests = DEFAULT_TESTS.slice(0, 7).map((t) => ({ id: uid(), ...t }))
+  const res = (ath: number, test: number, daysAgo: number, value: number) =>
+    ({ id: uid(), athlete_id: athletes[ath].id, test_id: tests[test].id, date: addDays(today, -daysAgo), value, notes: '' })
   const item = (name: string, f: Partial<ReturnType<typeof emptyItem>>) => ({ ...emptyItem(name), ...f })
   const vitesse = {
     id: uid(), title: 'Vitesse – départs et accélérations', objective: 'Améliorer la mise en action et la réaction au signal.',
@@ -103,8 +115,16 @@ function seed(): Db {
       { id: uid(), athlete_id: athletes[0].id, event: 'Longueur', mark: '5,12 m', date: addDays(today, -20), competition: 'Championnat cantonal' },
     ],
     wellness,
+    tests,
+    test_results: [
+      res(0, 0, 60, 4.92), res(0, 0, 10, 4.78), res(0, 5, 60, 34), res(0, 5, 10, 37), res(0, 3, 60, 13.5), res(0, 3, 10, 14),
+      res(1, 0, 60, 4.85), res(1, 0, 10, 4.81), res(1, 3, 10, 16.5), res(4, 0, 10, 5.02), res(2, 0, 10, 4.71),
+    ],
   }
 }
+
+const norm = (t: string | null | undefined) =>
+  (t ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '')
 
 function load(): Db {
   try {
@@ -169,6 +189,8 @@ export function createDemoApi(): Api {
       assignments: (a) => mine.includes(a),
       feedback: (f) => f.athlete_id === me.id,
       tips: (t) => t.published,
+      tests: () => true,
+      test_results: (x) => x.athlete_id === me.id,
       records: (x) => x.athlete_id === me.id,
       wellness: (x) => x.athlete_id === me.id,
     }
@@ -240,12 +262,51 @@ export function createDemoApi(): Api {
       if (!u) throw new Error('Non connecté')
       if (code.trim().toUpperCase() !== db.club.invite_code) throw new Error('Ce code d’invitation n’existe pas.')
       if (myAthlete()) throw new Error('Ce compte est déjà inscrit dans un club.')
-      db.athletes.push({
-        ...(defaults('athletes') as unknown as Tables['athletes']), id: uid(), user_id: u.id, ...p,
-        group_id: db.groups.some((g) => g.id === p.group_id) ? p.group_id : null,
-      })
+      const group_id = db.groups.some((g) => g.id === p.group_id) ? p.group_id : null
+      // Même logique que la base : email, puis prénom + nom (+ année)
+      const free = db.athletes.filter((a) => !a.user_id)
+      let match = free.find((a) => a.email && a.email.trim().toLowerCase() === u.email)
+      if (!match) {
+        const byName = free.filter((a) => norm(a.first_name) === norm(p.first_name) && norm(a.last_name) === norm(p.last_name) &&
+          (a.birth_year == null || p.birth_year == null || a.birth_year === p.birth_year))
+        if (byName.length === 1) match = byName[0]
+      }
+      const now = new Date().toISOString()
+      if (match) {
+        Object.assign(match, {
+          user_id: u.id, linked_at: now, signup_reviewed: false, active: true,
+          group_id: match.group_id ?? group_id, birth_year: match.birth_year ?? p.birth_year,
+          events: match.events || p.events, phone: match.phone || p.phone,
+        })
+      } else {
+        db.athletes.push({
+          ...(defaults('athletes') as unknown as Tables['athletes']), id: uid(), user_id: u.id, ...p, group_id,
+          email: u.email, linked_at: now, signup_reviewed: false, created_at: now,
+        })
+      }
       persist(db)
       listeners.forEach((l) => l())
+    },
+    async mergeAthletes(fromId, intoId) {
+      db = load()
+      const from = db.athletes.find((a) => a.id === fromId)
+      const into = db.athletes.find((a) => a.id === intoId)
+      if (!from || !into || fromId === intoId) throw new Error('Introuvable')
+      if (into.user_id) throw new Error('Ce profil est déjà relié à un autre compte.')
+      db.feedback = db.feedback.filter((f) => !(f.athlete_id === fromId && db.feedback.some((g) => g.athlete_id === intoId && g.assignment_id === f.assignment_id)))
+      db.wellness = db.wellness.filter((w) => !(w.athlete_id === fromId && db.wellness.some((x) => x.athlete_id === intoId && x.date === w.date)))
+      for (const t of ['feedback', 'wellness', 'records', 'test_results', 'athlete_notes'] as const) {
+        for (const r of db[t] as { athlete_id: string }[]) if (r.athlete_id === fromId) r.athlete_id = intoId
+      }
+      for (const a of db.assignments) a.athlete_ids = a.athlete_ids.map((x) => (x === fromId ? intoId : x))
+      Object.assign(into, {
+        user_id: from.user_id, linked_at: new Date().toISOString(), signup_reviewed: true, active: true,
+        group_id: into.group_id ?? from.group_id, birth_year: into.birth_year ?? from.birth_year,
+        events: into.events || from.events, phone: into.phone || from.phone, email: into.email || from.email,
+        avatar: from.avatar, color: from.color, goals: from.goals, favorite_tips: from.favorite_tips,
+      })
+      db.athletes = db.athletes.filter((a) => a.id !== fromId)
+      persist(db)
     },
     async regenerateInviteCode() {
       db = load()
@@ -270,14 +331,17 @@ export function createDemoApi(): Api {
         const patch = { ...row } as Record<string, unknown>
         if (role() === 'athlete') {
           // Mêmes protections que dans la base
-          if (table === 'athletes') for (const k of ['group_id', 'active', 'user_id']) delete patch[k]
+          if (table === 'athletes') for (const k of ['group_id', 'active', 'user_id', 'email', 'signup_reviewed']) delete patch[k]
           if (table === 'feedback') delete patch.coach_reply
+        } else if (table === 'athletes' && patch.user_id) {
+          delete patch.user_id // l'entraîneur peut délier un compte, pas en relier un
         }
+        if (table === 'athletes' && patch.user_id === null) patch.linked_at = null
         saved = { ...rows[i], ...patch, ...extra }
         rows[i] = saved
       } else {
         const created = { ...defaults(table), ...row, ...extra, id: row.id ?? uid() } as Record<string, unknown>
-        if (table === 'athlete_notes') created.created_at = new Date().toISOString()
+        if (table === 'athlete_notes' || table === 'athletes') created.created_at = new Date().toISOString()
         saved = created as unknown as Row<K>
         rows.push(saved)
       }
@@ -303,6 +367,8 @@ export function createDemoApi(): Api {
       db.records = db.records.filter((x) => athleteIds.has(x.athlete_id))
       db.wellness = db.wellness.filter((x) => athleteIds.has(x.athlete_id))
       db.athlete_notes = db.athlete_notes.filter((x) => athleteIds.has(x.athlete_id))
+      const testIds = new Set(db.tests.map((t) => t.id))
+      db.test_results = db.test_results.filter((x) => athleteIds.has(x.athlete_id) && testIds.has(x.test_id))
       persist(db)
     },
   }
@@ -311,7 +377,7 @@ export function createDemoApi(): Api {
 function defaults(table: TableName): Record<string, unknown> {
   switch (table) {
     case 'groups': return { color: '#2563eb' }
-    case 'athletes': return { user_id: null, group_id: null, last_name: '', birth_year: null, events: '', phone: '', avatar: '🏃', color: '#e85d04', goals: '', favorite_tips: [], active: true }
+    case 'athletes': return { user_id: null, group_id: null, last_name: '', birth_year: null, events: '', phone: '', avatar: '🏃', color: '#e85d04', goals: '', favorite_tips: [], active: true, email: '', linked_at: null, signup_reviewed: true }
     case 'athlete_notes': return {}
     case 'exercises': return { category: 'Autre', description: '' }
     case 'sessions': return { objective: '', focus: '', duration_min: null, blocks: [] }
@@ -319,6 +385,8 @@ function defaults(table: TableName): Record<string, unknown> {
     case 'feedback': return { completed: true, rpe: null, fatigue: null, mood: null, pain: '', comment: '', coach_reply: '' }
     case 'tips': return { category: 'Hygiène de vie', emoji: '💡', summary: '', body: '', published: true }
     case 'records': return { competition: '', date: todayISO() }
+    case 'tests': return { unit: '', higher_is_better: true, category: 'Autre', description: '' }
+    case 'test_results': return { notes: '', date: todayISO() }
     case 'wellness': return { sleep_hours: null, sleep_quality: null, energy: null, soreness: null, stress: null, note: '', date: todayISO() }
   }
 }

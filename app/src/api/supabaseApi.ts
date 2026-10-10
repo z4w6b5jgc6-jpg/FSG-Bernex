@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import type { ClubInfo, Me, TableName } from '../types'
 import type { Api, Draft, Row } from './types'
 
-const ORDER: Partial<Record<TableName, string>> = { assignments: 'date', wellness: 'date', records: 'date' }
+const ORDER: Partial<Record<TableName, string>> = { assignments: 'date', wellness: 'date', records: 'date', test_results: 'date' }
 
 const ERRORS: Record<string, string> = {
   'Invalid login credentials': 'Email ou mot de passe incorrect.',
@@ -12,6 +12,7 @@ const ERRORS: Record<string, string> = {
   already_member: 'Ce compte est déjà inscrit dans un club.',
   is_coach: 'Ce compte est un compte entraîneur.',
   already_athlete: 'Ce compte est déjà un compte athlète.',
+  target_has_account: 'Ce profil est déjà relié à un autre compte.',
 }
 
 function fail(message: string): never {
@@ -73,6 +74,9 @@ export function createSupabaseApi(url: string, key: string): Api {
         p_code: code, p_first_name: p.first_name, p_last_name: p.last_name, p_birth_year: p.birth_year,
         p_group_id: p.group_id, p_events: p.events, p_phone: p.phone,
       }))
+    },
+    async mergeAthletes(fromId, intoId) {
+      check(await sb.rpc('merge_athletes', { p_from: fromId, p_into: intoId }))
     },
     async regenerateInviteCode() {
       return check(await sb.rpc('regenerate_invite_code')) as string

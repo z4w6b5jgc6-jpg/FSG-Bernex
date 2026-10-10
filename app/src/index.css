@@ -368,3 +368,28 @@ a.goal:hover { text-decoration: none; }
 .nowrap { white-space: nowrap; }
 .fixed-value { display: flex; align-items: center; gap: 0.5rem; padding: 0.55rem 0.7rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); font-weight: 600; }
 .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+/* ---------- Liste, inscriptions, tests ---------- */
+code.block { display: block; padding: 0.5rem; }
+.pending { border-color: var(--warn); display: flex; flex-direction: column; gap: 0.7rem; margin-bottom: 1rem; }
+.pending-row { border-top: 1px solid var(--border); padding-top: 0.6rem; display: flex; flex-direction: column; gap: 0.45rem; }
+.pending-row select { max-width: 260px; }
+.import-preview { max-height: 220px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; padding: 0.3rem 0.5rem; }
+.test-card summary { list-style: none; cursor: pointer; }
+.test-card summary::-webkit-details-marker { display: none; }
+.test-card[open] summary { margin-bottom: 0.5rem; }
+.test-value { text-align: right; display: flex; flex-direction: column; }
+.test-value b { font-size: 1.15rem; }
+.up { color: var(--ok); font-weight: 600; font-size: 0.8rem; }
+.down { color: var(--danger); font-weight: 600; font-size: 0.8rem; }
+.right { text-align: right; }
+a.left { flex: 1; color: inherit; }
+.entry-list { display: flex; flex-direction: column; gap: 0.1rem; padding: 0.4rem 0.8rem; margin-top: 0.8rem; }
+.entry-row { display: grid; grid-template-columns: 1fr 6.5rem; grid-template-areas: 'name value' 'note note'; gap: 0.3rem 0.5rem; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+.entry-row:last-child { border-bottom: 0; }
+.entry-name { grid-area: name; }
+.entry-value { grid-area: value; text-align: right; font-weight: 700; }
+.entry-note { grid-area: note; font-size: 0.85rem; padding: 0.3rem 0.5rem; }
+@media (min-width: 721px) { .entry-row { grid-template-columns: 1fr 8rem 12rem; grid-template-areas: 'name value note'; } }
+.sticky-actions { position: sticky; bottom: calc(4.2rem + env(safe-area-inset-bottom)); padding: 0.6rem 0; z-index: 4; }
+@media (min-width: 721px) { .sticky-actions { bottom: 0; } }

@@ -4,38 +4,53 @@ import { useData } from '../lib/data'
 import { InviteCard } from '../components/InviteCard'
 import { Empty, Field, GroupBadge, Modal } from '../components/ui'
 import type { Athlete, Group } from '../types'
-import { errorMessage, fullName, todayISO, whatsappUrl } from '../lib/utils'
+import { api } from '../api'
+import { errorMessage, fullName, inviteLink, todayISO, whatsappUrl } from '../lib/utils'
+import { ImportRoster } from '../components/ImportRoster'
 
 const COLORS = ['#2563eb', '#db2777', '#16a34a', '#ea580c', '#7c3aed', '#0891b2', '#ca8a04', '#64748b']
 
 export function Athletes() {
-  const { athletes, groups, feedback, wellness } = useData()
+  const { athletes, groups, feedback, wellness, me } = useData()
   const [editAthlete, setEditAthlete] = useState<Partial<Athlete> | null>(null)
   const [editGroup, setEditGroup] = useState<Partial<Group> | null>(null)
+  const [importing, setImporting] = useState(false)
   const [showInactive, setShowInactive] = useState(false)
+  const [q, setQ] = useState('')
 
-  const visible = athletes.filter((a) => showInactive || a.active)
+  const visible = athletes.filter((a) => (showInactive || a.active) && fullName(a).toLowerCase().includes(q.toLowerCase()))
   const sections: { group: Group | null; list: Athlete[] }[] = [
     ...groups.map((g) => ({ group: g, list: visible.filter((a) => a.group_id === g.id) })),
     { group: null, list: visible.filter((a) => !a.group_id || !groups.some((g) => g.id === a.group_id)) },
   ]
   const lastFeedback = (id: string) =>
     feedback.filter((f) => f.athlete_id === id).sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0]
+  const registered = athletes.filter((a) => a.user_id).length
+
+  const inviteMessage = (a: Athlete) => {
+    const link = me?.invite_code ? inviteLink(me.invite_code, a.group_id) : ''
+    return `Salut ${a.first_name} ! 🏃\nInscris-toi sur l’app d’entraînement pour retrouver tes séances, tes résultats de tests et tes progrès :\n${link}\n\nUtilise ton vrai prénom et nom (${fullName(a)}) pour retrouver ton profil.`
+  }
 
   return (
     <div>
       <div className="row between">
         <h1>Athlètes</h1>
-        <div className="row gap">
-          <button className="btn" onClick={() => setEditGroup({ color: COLORS[groups.length % COLORS.length] })}>+ Groupe</button>
-        </div>
+        <Link className="btn" to="/tests">📏 Tests</Link>
       </div>
+      <PendingSignups />
       <InviteCard />
-      {groups.length === 0 && (
-        <Empty>Crée d’abord tes groupes (ex. U18, Sprint, Demi-fond…) : les athlètes choisiront le leur en s’inscrivant.</Empty>
+      <div className="row gap wrap actions">
+        <button className="btn primary" onClick={() => setEditAthlete({ group_id: groups[0]?.id ?? null })}>+ Athlète</button>
+        <button className="btn" onClick={() => setImporting(true)}>📥 Importer ma liste</button>
+        <button className="btn" onClick={() => setEditGroup({ color: COLORS[groups.length % COLORS.length] })}>+ Groupe</button>
+      </div>
+      {athletes.length > 0 && (
+        <p className="muted small">{athletes.length} athlète(s) · {registered} inscrit(s) dans l’app · {athletes.length - registered} pas encore inscrit(s)</p>
       )}
-      {athletes.length === 0 && groups.length > 0 && (
-        <Empty>Aucun athlète inscrit pour l’instant. Partage le lien d’inscription ci-dessus 👆</Empty>
+      {athletes.length > 8 && <input className="search" placeholder="Rechercher un athlète…" value={q} onChange={(e) => setQ(e.target.value)} />}
+      {groups.length === 0 && (
+        <Empty>Crée d’abord tes groupes (ex. U18, Sprint, Demi-fond…), ou importe directement ta liste d’athlètes : les groupes seront créés automatiquement.</Empty>
       )}
       {sections.map(({ group, list }) => {
         if (!group && list.length === 0) return null
@@ -60,12 +75,18 @@ export function Athletes() {
                         <span className="muted small">{a.birth_year}{checkin && ' · 🌙'}</span>
                       </div>
                       {a.events && <div className="muted small">{a.events}</div>}
-                      <div className="muted small">
-                        {fb ? `Dernier retour : ${new Date(fb.updated_at).toLocaleDateString('fr-CH')}` : 'Aucun retour'}
+                      <div className="small">
+                        {a.user_id
+                          ? <span className="pill ok">✓ Inscrit·e</span>
+                          : <span className="pill">⏳ Pas encore inscrit·e</span>}
+                        {a.user_id && <span className="muted"> {fb ? `· retour le ${new Date(fb.updated_at).toLocaleDateString('fr-CH')}` : '· aucun retour'}</span>}
                       </div>
                       <div className="row gap wrap">
-                        <Link className="btn small" to={`/athletes/${a.id}`}>Voir le suivi</Link>
-                        {a.phone && <a className="btn small whatsapp" href={whatsappUrl(`Salut ${a.first_name} !`, a.phone)} target="_blank" rel="noreferrer">📲</a>}
+                        <Link className="btn small" to={`/athletes/${a.id}`}>Fiche</Link>
+                        {!a.user_id && a.phone && (
+                          <a className="btn small whatsapp" href={whatsappUrl(inviteMessage(a), a.phone)} target="_blank" rel="noreferrer">📲 Inviter</a>
+                        )}
+                        {a.user_id && a.phone && <a className="btn small whatsapp" href={whatsappUrl(`Salut ${a.first_name} !`, a.phone)} target="_blank" rel="noreferrer">📲</a>}
                         <button className="btn small ghost" onClick={() => setEditAthlete(a)}>Modifier</button>
                       </div>
                     </div>
@@ -81,6 +102,68 @@ export function Athletes() {
       )}
       {editAthlete && <AthleteForm initial={editAthlete} onClose={() => setEditAthlete(null)} />}
       {editGroup && <GroupForm initial={editGroup} onClose={() => setEditGroup(null)} />}
+      {importing && <ImportRoster onClose={() => setImporting(false)} />}
+    </div>
+  )
+}
+
+/** Nouvelles inscriptions à vérifier : reliées automatiquement à la liste, ou nouveaux profils */
+function PendingSignups() {
+  const { athletes, groups, save, reload } = useData()
+  const [target, setTarget] = useState<Record<string, string>>({})
+  const [busy, setBusy] = useState(false)
+  const pending = athletes.filter((a) => a.user_id && !a.signup_reviewed)
+  if (pending.length === 0) return null
+  const roster = athletes.filter((a) => !a.user_id).sort((x, y) => fullName(x).localeCompare(fullName(y)))
+  const wasInRoster = (a: Athlete) =>
+    !!(a.created_at && a.linked_at && new Date(a.linked_at).getTime() - new Date(a.created_at).getTime() > 1000)
+  const gname = (id: string | null) => groups.find((g) => g.id === id)?.name
+
+  const run = async (fn: () => Promise<unknown>) => {
+    setBusy(true)
+    try { await fn() } catch (e) { alert(errorMessage(e)) } finally { setBusy(false) }
+  }
+  const merge = (a: Athlete) => run(async () => {
+    const into = roster.find((r) => r.id === target[a.id])
+    if (!into || !confirm(`Relier le compte de ${fullName(a)} au profil « ${fullName(into)} » ? Ses données seront regroupées dans ce profil.`)) return
+    await api.mergeAthletes(a.id, into.id)
+    await reload()
+  })
+
+  return (
+    <div className="card pending">
+      <strong>🆕 Nouvelles inscriptions ({pending.length})</strong>
+      {pending.map((a) => {
+        const linked = wasInRoster(a)
+        const similar = roster.filter((r) => r.last_name && a.last_name && r.last_name.toLowerCase()[0] === a.last_name.toLowerCase()[0])
+        return (
+          <div key={a.id} className="pending-row">
+            <div>
+              <b>{fullName(a)}</b> <span className="muted small">{a.birth_year} · {gname(a.group_id) ?? 'sans groupe'}{a.email && ` · ${a.email}`}</span>
+              <div className="small">{linked ? '✅ Relié·e automatiquement à sa fiche de ta liste' : '🆕 Profil créé à l’inscription (pas trouvé dans ta liste)'}</div>
+            </div>
+            <div className="row gap wrap">
+              <button className="btn small primary" disabled={busy} onClick={() => run(() => save('athletes', { id: a.id, signup_reviewed: true }))}>✓ C’est bon</button>
+              {linked ? (
+                <button className="btn small ghost danger" disabled={busy}
+                  onClick={() => confirm(`Ce n’est pas ${fullName(a)} ? Le compte sera délié de ce profil.`) && run(() => save('athletes', { id: a.id, user_id: null, signup_reviewed: true }))}>
+                  Ce n’est pas lui/elle
+                </button>
+              ) : roster.length > 0 && (
+                <>
+                  <select value={target[a.id] ?? ''} onChange={(e) => setTarget({ ...target, [a.id]: e.target.value })} aria-label="Profil de ma liste">
+                    <option value="">Relier à un profil de ma liste…</option>
+                    {[...similar, ...roster.filter((r) => !similar.includes(r))].map((r) => (
+                      <option key={r.id} value={r.id}>{fullName(r)}{r.birth_year ? ` (${r.birth_year})` : ''}</option>
+                    ))}
+                  </select>
+                  <button className="btn small" disabled={busy || !target[a.id]} onClick={() => merge(a)}>Relier</button>
+                </>
+              )}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -94,7 +177,8 @@ export function AthleteForm({ initial, onClose }: { initial: Partial<Athlete>; o
     try {
       await save('athletes', {
         id: a.id, first_name: a.first_name, last_name: a.last_name ?? '', group_id: a.group_id || null,
-        birth_year: a.birth_year ?? null, events: a.events ?? '', phone: a.phone ?? '', active: a.active ?? true,
+        birth_year: a.birth_year ?? null, events: a.events ?? '', phone: a.phone ?? '', email: (a.email ?? '').trim().toLowerCase(),
+        active: a.active ?? true,
       })
       onClose()
     } catch (err) {
@@ -102,7 +186,7 @@ export function AthleteForm({ initial, onClose }: { initial: Partial<Athlete>; o
     }
   }
   return (
-    <Modal title="Modifier l’athlète" onClose={onClose}>
+    <Modal title={a.id ? 'Modifier l’athlète' : 'Nouvel athlète'} onClose={onClose}>
       <form className="form" onSubmit={submit}>
         <div className="grid2">
           <Field label="Prénom"><input value={a.first_name ?? ''} onChange={(e) => set({ first_name: e.target.value })} required autoFocus /></Field>
@@ -124,6 +208,22 @@ export function AthleteForm({ initial, onClose }: { initial: Partial<Athlete>; o
           <input type="tel" inputMode="tel" autoComplete="tel" value={a.phone ?? ''} onChange={(e) => set({ phone: e.target.value })} placeholder="079 123 45 67" />
         </Field>
 
+        <Field label="Email" hint="Facultatif. S’il s’inscrit avec cet email, son compte est relié automatiquement à cette fiche (sinon par prénom + nom + année).">
+          <input type="email" inputMode="email" value={a.email ?? ''} onChange={(e) => set({ email: e.target.value })} />
+        </Field>
+        {a.id && (
+          <div className="small">
+            {a.user_id ? (
+              <span className="row gap wrap">
+                <span className="pill ok">✓ Compte relié</span>
+                <button type="button" className="link small" onClick={async () => {
+                  if (!confirm('Délier le compte de cette fiche ? L’athlète n’aura plus accès à ce profil (ses données restent sur la fiche).')) return
+                  try { await save('athletes', { id: a.id, user_id: null }); onClose() } catch (err) { alert(errorMessage(err)) }
+                }}>Délier le compte</button>
+              </span>
+            ) : <span className="pill">⏳ Pas encore inscrit·e</span>}
+          </div>
+        )}
         {a.id && (
           <label className="check"><input type="checkbox" checked={a.active ?? true} onChange={(e) => set({ active: e.target.checked })} /> Actif (décocher bloque l’accès de l’athlète à l’app)</label>
         )}

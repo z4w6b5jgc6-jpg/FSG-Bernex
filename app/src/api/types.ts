@@ -20,6 +20,8 @@ export interface Api {
   clubByCode(code: string): Promise<ClubInfo | null>
   joinClub(code: string, profile: JoinProfile): Promise<void>
   regenerateInviteCode(): Promise<string>
+  /** Relie une inscription (from) au profil créé par l'entraîneur (into) et supprime le doublon */
+  mergeAthletes(fromId: string, intoId: string): Promise<void>
 
   // Données (filtrées selon le rôle par la base)
   list<K extends TableName>(table: K): Promise<Row<K>[]>

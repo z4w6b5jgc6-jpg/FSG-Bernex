@@ -45,6 +45,9 @@ create table if not exists athletes (
   color          text not null default '#e85d04',
   goals          text not null default '',
   favorite_tips  text[] not null default '{}',
+  email          text not null default '',          -- saisi par l'entraîneur, sert à relier l'inscription
+  linked_at      timestamptz,                       -- date à laquelle l'athlète a relié son compte
+  signup_reviewed boolean not null default true,    -- false = nouvelle inscription à vérifier par l'entraîneur
   active         boolean not null default true,
   created_at     timestamptz not null default now()
 );
@@ -56,6 +59,9 @@ alter table athletes add column if not exists goals text not null default '';
 alter table athletes add column if not exists favorite_tips text[] not null default '{}';
 alter table athletes drop column if exists access_token;
 alter table athletes drop column if exists notes;
+alter table athletes add column if not exists email text not null default '';
+alter table athletes add column if not exists linked_at timestamptz;
+alter table athletes add column if not exists signup_reviewed boolean not null default true;
 
 -- Notes de suivi privées de l'entraîneur (jamais visibles par l'athlète)
 create table if not exists athlete_notes (
@@ -160,6 +166,30 @@ create table if not exists wellness (
 create index if not exists assignments_date_idx on assignments (coach_id, date);
 create index if not exists athletes_group_idx on athletes (group_id);
 create index if not exists feedback_assignment_idx on feedback (assignment_id);
+-- Tests physiques définis par l'entraîneur (30 m, VMA, détente…)
+create table if not exists tests (
+  id                uuid primary key default gen_random_uuid(),
+  coach_id          uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  name              text not null,
+  unit              text not null default '',
+  higher_is_better  boolean not null default true,
+  category          text not null default 'Autre',
+  description       text not null default '',
+  created_at        timestamptz not null default now()
+);
+
+-- Résultats des tests (saisis par l'entraîneur)
+create table if not exists test_results (
+  id          uuid primary key default gen_random_uuid(),
+  athlete_id  uuid not null references athletes (id) on delete cascade,
+  test_id     uuid not null references tests (id) on delete cascade,
+  date        date not null default current_date,
+  value       numeric not null,
+  notes       text not null default '',
+  created_at  timestamptz not null default now()
+);
+create index if not exists test_results_athlete_idx on test_results (athlete_id, test_id, date);
+
 create index if not exists wellness_athlete_idx on wellness (athlete_id, date);
 
 -- ---------------------------------------------------------------------
@@ -210,16 +240,18 @@ alter table feedback      enable row level security;
 alter table tips          enable row level security;
 alter table records       enable row level security;
 alter table wellness      enable row level security;
+alter table tests         enable row level security;
+alter table test_results  enable row level security;
 
 -- Entraîneur : accès complet à ses propres lignes
 do $$
 declare t text;
 begin
-  foreach t in array array['clubs','groups','athletes','athlete_notes','exercises','sessions','assignments','tips'] loop
+  foreach t in array array['clubs','groups','athletes','athlete_notes','exercises','sessions','assignments','tips','tests'] loop
     execute format('drop policy if exists coach_all on %I', t);
     execute format('create policy coach_all on %I for all to authenticated using (coach_id = auth.uid()) with check (coach_id = auth.uid())', t);
   end loop;
-  foreach t in array array['feedback','records','wellness'] loop
+  foreach t in array array['feedback','records','wellness','test_results'] loop
     execute format('drop policy if exists coach_all on %I', t);
     execute format('create policy coach_all on %I for all to authenticated using (is_my_athlete(athlete_id)) with check (is_my_athlete(athlete_id))', t);
   end loop;
@@ -267,16 +299,32 @@ drop policy if exists athlete_own on wellness;
 create policy athlete_own on wellness for all to authenticated
   using (athlete_id = my_athlete_id()) with check (athlete_id = my_athlete_id());
 
--- L'athlète ne peut pas changer de club, de groupe, ni se réactiver lui-même
+-- Athlète : lecture de ses résultats de tests et de la liste des tests du club
+drop policy if exists athlete_read on tests;
+create policy athlete_read on tests for select to authenticated using (coach_id = my_coach_id());
+drop policy if exists athlete_read on test_results;
+create policy athlete_read on test_results for select to authenticated using (athlete_id = my_athlete_id());
+
+-- L'athlète ne peut pas changer de club, de groupe, ni se réactiver lui-même.
+-- L'entraîneur peut délier un compte, mais pas en relier un à la main (seules les
+-- fonctions join_club / merge_athletes le font).
 create or replace function athletes_protect() returns trigger
 language plpgsql as $$
 begin
+  -- Liaison faite par join_club / merge_athletes : autorisée
+  if coalesce(current_setting('app.linking', true), '') = '1' then return new; end if;
   if auth.uid() is not null and auth.uid() is distinct from old.coach_id then
     new.coach_id := old.coach_id;
     new.group_id := old.group_id;
     new.active   := old.active;
     new.user_id  := old.user_id;
+    new.email    := old.email;
+    new.signup_reviewed := old.signup_reviewed;
+  elsif new.user_id is not null and new.user_id is distinct from old.user_id
+        and coalesce(current_setting('app.linking', true), '') <> '1' then
+    new.user_id := old.user_id;
   end if;
+  if new.user_id is null then new.linked_at := null; end if;
   return new;
 end $$;
 drop trigger if exists athletes_protect on athletes;
@@ -348,7 +396,18 @@ language sql stable security definer set search_path = public as $$
   from clubs c where c.invite_code = upper(trim(p_code))
 $$;
 
--- Inscription de l'athlète connecté dans le club
+-- Normalisation des noms pour la comparaison (accents, majuscules, tirets, espaces)
+create or replace function norm_name(p text) returns text
+language sql immutable as $$
+  select regexp_replace(
+    translate(lower(coalesce(p, '')), 'àâäáãåçéèêëíìîïñóòôöõøúùûüýÿ', 'aaaaaaceeeeiiiinoooooouuuuyy'),
+    '[^a-z0-9]', '', 'g')
+$$;
+
+-- Inscription de l'athlète connecté dans le club.
+-- Si l'entraîneur a déjà créé son profil (liste d'athlètes), le compte y est relié :
+--   1. par email, sinon 2. par prénom + nom (+ année de naissance si connue).
+-- Sinon un nouveau profil est créé. Dans tous les cas l'inscription est à vérifier par l'entraîneur.
 create or replace function join_club(
   p_code text, p_first_name text, p_last_name text, p_birth_year int,
   p_group_id uuid, p_events text, p_phone text
@@ -357,6 +416,8 @@ language plpgsql security definer set search_path = public as $$
 declare
   v_coach uuid;
   v_id    uuid;
+  v_email text;
+  v_count int;
 begin
   if auth.uid() is null then raise exception 'not_authenticated'; end if;
   if exists (select 1 from clubs where coach_id = auth.uid()) then raise exception 'is_coach'; end if;
@@ -366,11 +427,81 @@ begin
   if p_group_id is not null and not exists (select 1 from groups where id = p_group_id and coach_id = v_coach) then
     p_group_id := null;
   end if;
-  insert into athletes (coach_id, user_id, group_id, first_name, last_name, birth_year, events, phone)
-  values (v_coach, auth.uid(), p_group_id, trim(p_first_name), trim(coalesce(p_last_name, '')), p_birth_year,
-          coalesce(p_events, ''), coalesce(p_phone, ''))
-  returning id into v_id;
+  select lower(email) into v_email from auth.users where id = auth.uid();
+
+  -- 1. Profil existant avec le même email
+  select id into v_id from athletes
+  where coach_id = v_coach and user_id is null and email <> '' and lower(trim(email)) = v_email
+  limit 1;
+
+  -- 2. Profil existant avec le même prénom + nom (et même année si renseignée des deux côtés)
+  if v_id is null then
+    select count(*), min(id::text)::uuid into v_count, v_id from athletes
+    where coach_id = v_coach and user_id is null
+      and norm_name(first_name) = norm_name(p_first_name)
+      and norm_name(last_name) = norm_name(p_last_name)
+      and (birth_year is null or p_birth_year is null or birth_year = p_birth_year);
+    if v_count <> 1 then v_id := null; end if;
+  end if;
+
+  perform set_config('app.linking', '1', true);
+  if v_id is not null then
+    update athletes set
+      user_id = auth.uid(), linked_at = now(), signup_reviewed = false, active = true,
+      group_id   = coalesce(group_id, p_group_id),
+      birth_year = coalesce(birth_year, p_birth_year),
+      events     = case when events = '' then coalesce(p_events, '') else events end,
+      phone      = case when phone = '' then coalesce(p_phone, '') else phone end
+    where id = v_id;
+  else
+    insert into athletes (coach_id, user_id, group_id, first_name, last_name, birth_year, events, phone, email, linked_at, signup_reviewed)
+    values (v_coach, auth.uid(), p_group_id, trim(p_first_name), trim(coalesce(p_last_name, '')), p_birth_year,
+            coalesce(p_events, ''), coalesce(p_phone, ''), coalesce(v_email, ''), now(), false)
+    returning id into v_id;
+  end if;
+  perform set_config('app.linking', '', true);
   return v_id;
+end $$;
+
+-- L'entraîneur relie une inscription (p_from) au profil qu'il avait créé (p_into) :
+-- le compte et toutes les données de l'athlète sont déplacés, puis le doublon est supprimé.
+create or replace function merge_athletes(p_from uuid, p_into uuid) returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  v_from athletes;
+  v_into athletes;
+begin
+  select * into v_from from athletes where id = p_from and coach_id = auth.uid();
+  select * into v_into from athletes where id = p_into and coach_id = auth.uid();
+  if v_from.id is null or v_into.id is null or p_from = p_into then raise exception 'not_found'; end if;
+  if v_into.user_id is not null then raise exception 'target_has_account'; end if;
+
+  -- Données de l'athlète : en cas de doublon (même séance / même jour), on garde celles du profil cible
+  delete from feedback f where f.athlete_id = p_from
+    and exists (select 1 from feedback g where g.athlete_id = p_into and g.assignment_id = f.assignment_id);
+  update feedback set athlete_id = p_into where athlete_id = p_from;
+  delete from wellness w where w.athlete_id = p_from
+    and exists (select 1 from wellness x where x.athlete_id = p_into and x.date = w.date);
+  update wellness set athlete_id = p_into where athlete_id = p_from;
+  update records set athlete_id = p_into where athlete_id = p_from;
+  update test_results set athlete_id = p_into where athlete_id = p_from;
+  update athlete_notes set athlete_id = p_into where athlete_id = p_from;
+  update assignments set athlete_ids = array_replace(athlete_ids, p_from, p_into)
+    where coach_id = auth.uid() and p_from = any (athlete_ids);
+
+  perform set_config('app.linking', '1', true);
+  update athletes set user_id = null where id = p_from;
+  update athletes set
+    user_id = v_from.user_id, linked_at = now(), signup_reviewed = true, active = true,
+    group_id   = coalesce(group_id, v_from.group_id),
+    birth_year = coalesce(birth_year, v_from.birth_year),
+    events     = case when events = '' then v_from.events else events end,
+    phone      = case when phone = '' then v_from.phone else phone end,
+    email      = case when email = '' then v_from.email else email end,
+    avatar = v_from.avatar, color = v_from.color, goals = v_from.goals, favorite_tips = v_from.favorite_tips
+  where id = p_into;
+  perform set_config('app.linking', '', true);
+  delete from athletes where id = p_from;
 end $$;
 
 revoke all on function whoami() from public;
@@ -378,8 +509,10 @@ revoke all on function create_club(text) from public;
 revoke all on function regenerate_invite_code() from public;
 revoke all on function club_by_code(text) from public;
 revoke all on function join_club(text, text, text, int, uuid, text, text) from public;
+revoke all on function merge_athletes(uuid, uuid) from public;
 grant execute on function whoami() to authenticated;
 grant execute on function create_club(text) to authenticated;
 grant execute on function regenerate_invite_code() to authenticated;
 grant execute on function club_by_code(text) to anon, authenticated;
 grant execute on function join_club(text, text, text, int, uuid, text, text) to authenticated;
+grant execute on function merge_athletes(uuid, uuid) to authenticated;

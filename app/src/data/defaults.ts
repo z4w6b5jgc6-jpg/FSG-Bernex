@@ -59,3 +59,18 @@ export const DEFAULT_EXERCISES: { name: string; category: string; description: s
   { name: 'Retour au calme', category: 'Mobilité / étirements', description: 'Footing très lent puis marche.' },
   { name: 'Relais / jeu de poursuite', category: 'Jeux', description: 'Jeu ludique pour la réactivité et la vitesse.' },
 ]
+
+/** Tests physiques courants en athlétisme (suggestions, modifiables) */
+export const DEFAULT_TESTS: { name: string; unit: string; higher_is_better: boolean; category: string; description: string }[] = [
+  { name: '30 m départ debout', unit: 's', higher_is_better: false, category: 'Vitesse', description: 'Chrono manuel ou cellules, meilleur de 2 essais.' },
+  { name: '60 m', unit: 's', higher_is_better: false, category: 'Vitesse', description: 'Départ debout ou en blocs (le préciser en note).' },
+  { name: '30 m lancé', unit: 's', higher_is_better: false, category: 'Vitesse', description: '20 m d’élan puis 30 m chronométrés.' },
+  { name: 'VAMEVAL / VMA', unit: 'km/h', higher_is_better: true, category: 'Endurance', description: 'Vitesse du dernier palier complété.' },
+  { name: 'Test de Cooper (12 min)', unit: 'm', higher_is_better: true, category: 'Endurance', description: 'Distance parcourue en 12 minutes.' },
+  { name: 'Détente verticale (CMJ)', unit: 'cm', higher_is_better: true, category: 'Explosivité', description: 'Saut contre-mouvement, mains sur les hanches.' },
+  { name: 'Longueur sans élan', unit: 'm', higher_is_better: true, category: 'Explosivité', description: 'Pieds joints, meilleur de 3 essais.' },
+  { name: 'Quintuple bond', unit: 'm', higher_is_better: true, category: 'Explosivité', description: '5 bonds alternés depuis l’arrêt.' },
+  { name: 'Lancer médecine-ball arrière (3 kg)', unit: 'm', higher_is_better: true, category: 'Force', description: 'Dos à la zone, lancer par-dessus la tête.' },
+  { name: 'Gainage ventral', unit: 's', higher_is_better: true, category: 'Force', description: 'Tenue maximale en position correcte.' },
+  { name: 'Souplesse (assis-fléchi)', unit: 'cm', higher_is_better: true, category: 'Mobilité', description: 'Sit and reach, 0 = pointe des pieds.' },
+]

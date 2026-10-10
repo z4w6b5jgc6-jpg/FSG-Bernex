@@ -41,6 +41,11 @@ export function Dashboard() {
       <p className="muted">{me?.club_name} · {formatDate(today)}</p>
 
       {athletes.length === 0 && <InviteCard />}
+      {athletes.some((a) => a.user_id && !a.signup_reviewed) && (
+        <Link to="/athletes" className="alert warn link-card">
+          🆕 {athletes.filter((a) => a.user_id && !a.signup_reviewed).length} nouvelle(s) inscription(s) à vérifier →
+        </Link>
+      )}
       <div className="stats">
         <div className="stat"><b>{athletes.filter((a) => a.active).length}</b><span>athlètes</span></div>
         <div className="stat"><b>{upcoming.length}</b><span>séances (7 j)</span></div>
