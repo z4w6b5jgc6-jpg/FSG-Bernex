@@ -274,7 +274,7 @@ export function TestMatrix() {
       <h1>Tableau du groupe</h1>
       {imported && (
         <div className="alert info">
-          ✅ Import terminé : {imported[0]} résultat(s) ajouté(s){imported[3] ? `, ${imported[3]} mis à jour` : ''}, {imported[1]} bilan(s), {imported[2]} nouvelle(s) fiche(s).
+          ✅ Import terminé : {imported[0]} résultat(s) ajouté(s){imported[4] ? ` (en remplacement de ${imported[4]} ancien(s))` : ''}{imported[3] ? `, ${imported[3]} mis à jour` : ''}, {imported[1]} bilan(s), {imported[2]} nouvelle(s) fiche(s).
         </div>
       )}
       <div className="row gap filters">

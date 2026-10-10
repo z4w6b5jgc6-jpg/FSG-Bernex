@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { api } from '../api'
 import { useData } from '../lib/data'
 import { Field } from '../components/ui'
 import { DEFAULT_TESTS, EXTRA_TESTS } from '../data/defaults'
@@ -43,6 +44,8 @@ export function ImportResults() {
   const [err, setErr] = useState<string | null>(null)
   const [paste, setPaste] = useState('')
   const [dateFound, setDateFound] = useState(true)
+  // Si la séance a déjà été importée : le nouveau fichier fait foi (remplace) ou la complète
+  const [mode, setMode] = useState<'replace' | 'merge'>('replace')
 
   const known = useMemo(() => availableTests(tests, [...DEFAULT_TESTS, ...EXTRA_TESTS]), [tests])
 
@@ -136,6 +139,10 @@ export function ImportResults() {
   const resolved = (p: RowPerson): string => choice[p.key] ?? matchAthlete(p, athletes)?.athlete.id ?? (hasData(p) ? 'new' : 'skip')
   const toCheck = (p: RowPerson) => !choice[p.key] && matchAthlete(p, athletes)?.exact === false
 
+  const existingSameDay = test_results.filter((r) => r.date === date && people.some((p) => {
+    const id = resolved(p)
+    return id === r.athlete_id && plan.results.some((x) => x.key === p.key)
+  })).length
   const included = people.filter((p) => resolved(p) !== 'skip')
   const newCount = included.filter((p) => resolved(p) === 'new').length
   const missingTests = plan.testNames.filter((n) => !tests.some((t) => t.name === n))
@@ -162,8 +169,23 @@ export function ImportResults() {
       toCreate.forEach((p, i) => ids.set(p.key, created[i].id))
       for (const p of included) if (resolved(p) !== 'new') ids.set(p.key, resolved(p))
 
-      // 3. Résultats : un même test le même jour est mis à jour (ex. 2e essai ajouté), jamais dupliqué
+      // 3. Résultats
+      //    - remplacer : le fichier fait foi pour cette date, les anciens résultats de ces athlètes ce jour-là sont supprimés
+      //    - compléter : un même test le même jour est mis à jour (ex. 2e essai ajouté), jamais dupliqué
       let updated = 0
+      let removed = 0
+      const inFile = new Set(plan.results.map((x) => ids.get(x.key)).filter(Boolean))
+      const reportsInFile = new Set(plan.reports.map((x) => ids.get(x.key)).filter(Boolean))
+      const current = { results: [...test_results], reports: [...test_reports] }
+      if (mode === 'replace') {
+        for (const r of current.results.filter((x) => x.date === date && inFile.has(x.athlete_id))) {
+          await api.remove('test_results', r.id)
+          removed++
+        }
+        current.results = current.results.filter((x) => !(x.date === date && inFile.has(x.athlete_id)))
+        for (const r of current.reports.filter((x) => x.date === date && reportsInFile.has(x.athlete_id))) await api.remove('test_reports', r.id)
+        current.reports = current.reports.filter((x) => !(x.date === date && reportsInFile.has(x.athlete_id)))
+      }
       const rows = []
       for (const { key, test, values } of plan.results) {
         const athlete_id = ids.get(key)
@@ -171,7 +193,7 @@ export function ImportResults() {
         if (!athlete_id || !t) continue
         const best = t.higher_is_better ? Math.max(...values) : Math.min(...values)
         const trials = values.length > 1 ? values : []
-        const existing = test_results.find((r) => r.athlete_id === athlete_id && r.test_id === t.id && r.date === date)
+        const existing = current.results.find((r) => r.athlete_id === athlete_id && r.test_id === t.id && r.date === date)
         if (existing) {
           if (existing.value !== best || existing.trials.join() !== trials.join()) {
             await save('test_results', { id: existing.id, value: best, trials })
@@ -185,7 +207,7 @@ export function ImportResults() {
       const title = `Bilan des tests du ${new Date(date).toLocaleDateString('fr-CH', { day: 'numeric', month: 'long', year: 'numeric' })}`
       const reports = plan.reports.flatMap(({ key, fields }) => {
         const athlete_id = ids.get(key)
-        if (!athlete_id || test_reports.some((r) => r.athlete_id === athlete_id && r.date === date)) return []
+        if (!athlete_id || current.reports.some((r) => r.athlete_id === athlete_id && r.date === date)) return []
         const { private: _priv, ...pub } = fields
         void _priv
         return Object.keys(pub).length ? [{ athlete_id, date, title, ...pub }] : []
@@ -198,7 +220,7 @@ export function ImportResults() {
       })
       await saveMany('athlete_notes', notes)
       await reload()
-      nav(`/tests/tableau?import=${rows.length}-${reports.length}-${created.length}-${updated}`)
+      nav(`/tests/tableau?import=${rows.length}-${reports.length}-${created.length}-${updated}-${removed}`)
     } catch (e) {
       setErr(errorMessage(e))
     } finally {
@@ -251,6 +273,13 @@ export function ImportResults() {
               <input type="date" value={date} onChange={(e) => { setDate(e.target.value); setDateFound(true) }} className={dateFound ? '' : 'attention'} />
             </Field>
             {!dateFound && <div className="alert warn small">📅 Pas de date dans le fichier : indique le jour où le test a été fait (sinon c’est aujourd’hui).</div>}
+            {existingSameDay > 0 && (
+              <div className="alert info small form">
+                <div>🔁 <b>{existingSameDay} résultat(s)</b> de ces athlètes existent déjà pour le {new Date(date).toLocaleDateString('fr-CH')} (import précédent).</div>
+                <label className="check"><input type="radio" checked={mode === 'replace'} onChange={() => setMode('replace')} /> <span><b>Ce fichier remplace la séance</b> : les anciens résultats de ce jour sont supprimés et remplacés par ceux du fichier</span></label>
+                <label className="check"><input type="radio" checked={mode === 'merge'} onChange={() => setMode('merge')} /> <span><b>Compléter</b> : garder les anciens résultats et ajouter / mettre à jour ceux du fichier</span></label>
+              </div>
+            )}
           </section>
 
           {[resIdx, repIdx].filter((i, k, arr) => i >= 0 && arr.indexOf(i) === k).map((si) => {
