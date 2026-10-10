@@ -393,3 +393,10 @@ a.left { flex: 1; color: inherit; }
 @media (min-width: 721px) { .entry-row { grid-template-columns: 1fr 8rem 12rem; grid-template-areas: 'name value note'; } }
 .sticky-actions { position: sticky; bottom: calc(4.2rem + env(safe-area-inset-bottom)); padding: 0.6rem 0; z-index: 4; }
 @media (min-width: 721px) { .sticky-actions { bottom: 0; } }
+.matrix-wrap { overflow-x: auto; padding: 0; }
+.matrix { border-collapse: collapse; font-size: 0.85rem; min-width: 100%; }
+.matrix th, .matrix td { padding: 0.45rem 0.55rem; border-bottom: 1px solid var(--border); white-space: nowrap; text-align: right; }
+.matrix thead th { font-size: 0.75rem; vertical-align: bottom; white-space: normal; min-width: 4.5rem; }
+.matrix th:first-child { text-align: left; position: sticky; left: 0; background: var(--surface); z-index: 1; min-width: 7rem; }
+.matrix td.top { background: var(--primary-soft); color: var(--primary); font-weight: 800; }
+.matrix tbody tr:last-child th, .matrix tbody tr:last-child td { border-bottom: 0; }

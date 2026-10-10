@@ -5,7 +5,7 @@ import type { Me, TableName, Tables } from '../types'
 import { addDays, athletesFor, emptyItem, todayISO, uid } from '../lib/utils'
 import type { Api, Draft, Row } from './types'
 
-const KEY = 'athle-demo-db-v3'
+const KEY = 'athle-demo-db-v4'
 const AUTH_KEY = 'athle-demo-user'
 const COACH_ID = 'demo-coach'
 
@@ -44,7 +44,7 @@ function seed(): Db {
     roster('Emma', 'Rochat', u18.id, 2009, '400 m'),
     roster('Samuel', 'Keller', actifs.id, 2007, 'longueur, triple saut', 'samuel@demo.ch'),
   ]
-  const tests = DEFAULT_TESTS.slice(0, 7).map((t) => ({ id: uid(), ...t }))
+  const tests = DEFAULT_TESTS.map((t) => ({ id: uid(), ...t }))
   const res = (ath: number, test: number, daysAgo: number, value: number) =>
     ({ id: uid(), athlete_id: athletes[ath].id, test_id: tests[test].id, date: addDays(today, -daysAgo), value, notes: '' })
   const item = (name: string, f: Partial<ReturnType<typeof emptyItem>>) => ({ ...emptyItem(name), ...f })
@@ -116,9 +116,13 @@ function seed(): Db {
     ],
     wellness,
     tests,
+    // Index des tests : 0 20 m lancé · 1 30 m lancé · 2 40 m arrêté · 3 monobond · 4 triple · 5 penta · 6 déca · 7 VMA
     test_results: [
-      res(0, 0, 60, 4.92), res(0, 0, 10, 4.78), res(0, 5, 60, 34), res(0, 5, 10, 37), res(0, 3, 60, 13.5), res(0, 3, 10, 14),
-      res(1, 0, 60, 4.85), res(1, 0, 10, 4.81), res(1, 3, 10, 16.5), res(4, 0, 10, 5.02), res(2, 0, 10, 4.71),
+      res(0, 0, 60, 2.78), res(0, 0, 10, 2.71), res(0, 1, 60, 3.95), res(0, 1, 10, 3.88), res(0, 2, 10, 5.92),
+      res(0, 3, 60, 2.18), res(0, 3, 10, 2.26), res(0, 4, 10, 6.65), res(0, 5, 10, 11.9), res(0, 7, 10, 13.5),
+      res(1, 0, 10, 2.95), res(1, 2, 10, 6.21), res(1, 7, 60, 15.5), res(1, 7, 10, 16.5),
+      res(2, 0, 10, 2.69), res(2, 1, 10, 3.82), res(2, 3, 10, 2.31), res(2, 5, 10, 12.6), res(2, 6, 10, 25.4),
+      res(3, 2, 10, 6.05), res(3, 3, 10, 2.42), res(3, 4, 10, 7.1), res(4, 0, 10, 2.88), res(4, 7, 10, 15),
     ],
   }
 }

@@ -51,6 +51,12 @@ export const DEFAULT_EXERCISES: { name: string; category: string; description: s
   { name: 'Lancer de médecine-ball', category: 'Lancers', description: 'Lancers avant / arrière / rotation.' },
   { name: 'Poussée de poids', category: 'Lancers', description: 'Poussée depuis le cou, coude haut.' },
   { name: 'Lancer de vortex / javelot', category: 'Lancers', description: 'Lancer en ligne, bras au-dessus de l’épaule.' },
+  { name: 'Répétitions à allure 800 m', category: 'Endurance', description: 'Ex. 4 × 300 m à l’allure cible du 800 m, récup 3–4 min.' },
+  { name: 'Seuil / tempo run', category: 'Endurance', description: '10 à 20 min à allure « confortablement difficile ».' },
+  { name: 'Côtes longues', category: 'Endurance', description: 'Montées de 150–200 m, retour en trottinant.' },
+  { name: 'Poussée de poids en rotation', category: 'Lancers', description: 'Travail de la rotation et du placement du bloc gauche.' },
+  { name: 'Éducatifs de disque', category: 'Lancers', description: 'Lâchers, demi-tour, tour complet sans engin puis avec.' },
+  { name: 'Lancers de médecine-ball spécifiques', category: 'Lancers', description: 'Lancers latéraux en rotation, enchaînés.' },
   { name: 'Gainage', category: 'Renforcement', description: 'Face, côtés, dos. Corps aligné.' },
   { name: 'Squats', category: 'Renforcement', description: 'Dos droit, genoux dans l’axe des pieds.' },
   { name: 'Fentes', category: 'Renforcement', description: 'Fentes avant ou marchées.' },
@@ -60,17 +66,25 @@ export const DEFAULT_EXERCISES: { name: string; category: string; description: s
   { name: 'Relais / jeu de poursuite', category: 'Jeux', description: 'Jeu ludique pour la réactivité et la vitesse.' },
 ]
 
-/** Tests physiques courants en athlétisme (suggestions, modifiables) */
-export const DEFAULT_TESTS: { name: string; unit: string; higher_is_better: boolean; category: string; description: string }[] = [
-  { name: '30 m départ debout', unit: 's', higher_is_better: false, category: 'Vitesse', description: 'Chrono manuel ou cellules, meilleur de 2 essais.' },
-  { name: '60 m', unit: 's', higher_is_better: false, category: 'Vitesse', description: 'Départ debout ou en blocs (le préciser en note).' },
-  { name: '30 m lancé', unit: 's', higher_is_better: false, category: 'Vitesse', description: '20 m d’élan puis 30 m chronométrés.' },
-  { name: 'VAMEVAL / VMA', unit: 'km/h', higher_is_better: true, category: 'Endurance', description: 'Vitesse du dernier palier complété.' },
-  { name: 'Test de Cooper (12 min)', unit: 'm', higher_is_better: true, category: 'Endurance', description: 'Distance parcourue en 12 minutes.' },
-  { name: 'Détente verticale (CMJ)', unit: 'cm', higher_is_better: true, category: 'Explosivité', description: 'Saut contre-mouvement, mains sur les hanches.' },
-  { name: 'Longueur sans élan', unit: 'm', higher_is_better: true, category: 'Explosivité', description: 'Pieds joints, meilleur de 3 essais.' },
-  { name: 'Quintuple bond', unit: 'm', higher_is_better: true, category: 'Explosivité', description: '5 bonds alternés depuis l’arrêt.' },
-  { name: 'Lancer médecine-ball arrière (3 kg)', unit: 'm', higher_is_better: true, category: 'Force', description: 'Dos à la zone, lancer par-dessus la tête.' },
+export interface TestTemplate { name: string; unit: string; higher_is_better: boolean; category: string; description: string }
+
+/** Batterie de tests du groupe (proposée par défaut, modifiable dans l'app) */
+export const DEFAULT_TESTS: TestTemplate[] = [
+  { name: '20 m lancé', unit: 's', higher_is_better: false, category: 'Vitesse', description: 'Zone d’élan puis 20 m chronométrés. Préciser en note la longueur d’élan et le chrono (manuel / cellules).' },
+  { name: '30 m lancé', unit: 's', higher_is_better: false, category: 'Vitesse', description: 'Zone d’élan puis 30 m chronométrés. Même élan à chaque test pour pouvoir comparer.' },
+  { name: '40 m départ arrêté', unit: 's', higher_is_better: false, category: 'Vitesse', description: 'Départ arrêté (debout ou 3 appuis, toujours le même), chrono au premier mouvement.' },
+  { name: 'Monobond', unit: 'm', higher_is_better: true, category: 'Bondissement', description: 'Un bond depuis l’arrêt, pieds joints. Meilleur de 3 essais.' },
+  { name: 'Triple bond', unit: 'm', higher_is_better: true, category: 'Bondissement', description: '3 bonds enchaînés depuis l’arrêt. Meilleur de 2–3 essais.' },
+  { name: 'Pentabond', unit: 'm', higher_is_better: true, category: 'Bondissement', description: '5 bonds enchaînés depuis l’arrêt. Meilleur de 2 essais.' },
+  { name: 'Décabond', unit: 'm', higher_is_better: true, category: 'Bondissement', description: '10 bonds enchaînés depuis l’arrêt.' },
+  { name: 'Test VMA', unit: 'km/h', higher_is_better: true, category: 'Endurance', description: 'Vitesse du dernier palier complété (VAMEVAL, Léger ou équivalent – toujours le même protocole).' },
+]
+
+/** Tests complémentaires proposés (lancers, demi-fond) */
+export const EXTRA_TESTS: TestTemplate[] = [
+  { name: 'Médecine-ball arrière (3 kg)', unit: 'm', higher_is_better: true, category: 'Lancers', description: 'Dos à la zone, lancer par-dessus la tête, pieds au sol.' },
+  { name: 'Médecine-ball avant (3 kg)', unit: 'm', higher_is_better: true, category: 'Lancers', description: 'Face à la zone, lancer à deux mains depuis la poitrine.' },
+  { name: '600 m', unit: 's', higher_is_better: false, category: 'Endurance', description: 'Chrono en secondes (ex. 1\'45 = 105 s).' },
+  { name: '1000 m', unit: 's', higher_is_better: false, category: 'Endurance', description: 'Chrono en secondes (ex. 3\'05 = 185 s).' },
   { name: 'Gainage ventral', unit: 's', higher_is_better: true, category: 'Force', description: 'Tenue maximale en position correcte.' },
-  { name: 'Souplesse (assis-fléchi)', unit: 'cm', higher_is_better: true, category: 'Mobilité', description: 'Sit and reach, 0 = pointe des pieds.' },
 ]

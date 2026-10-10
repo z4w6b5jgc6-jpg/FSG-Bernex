@@ -1,13 +1,23 @@
 import type { TestDef, TestResult } from '../types'
 
 export function formatValue(v: number, unit: string): string {
+  // Chronos longs (600 m, 1000 m…) : 105.3 s → 1'45"3
+  if (unit === 's' && v >= 60) {
+    const min = Math.floor(v / 60)
+    const sec = v - min * 60
+    const [whole, dec] = sec.toFixed(1).split('.')
+    return `${min}'${whole.padStart(2, '0')}"${dec}`
+  }
   const n = Number(v).toLocaleString('fr-CH', { maximumFractionDigits: 2 })
   return unit ? `${n} ${unit}` : n
 }
 
-/** "4,85" ou "4.85" → 4.85 ; null si vide ou invalide */
+/** "4,85" ou "4.85" → 4.85 ; "1'45" ou "1:45.3" → 105.3 s ; null si vide ou invalide */
 export function parseValue(s: string): number | null {
-  const t = s.trim().replace(',', '.').replace(/[^\d.-]/g, '')
+  const raw = s.trim()
+  const chrono = raw.match(/^(\d+)\s*['’:]\s*(\d{1,2}(?:[.,"]\d+)?)/)
+  if (chrono) return Number(chrono[1]) * 60 + Number(chrono[2].replace(/[,"]/, '.'))
+  const t = raw.replace(',', '.').replace(/[^\d.-]/g, '')
   if (!t) return null
   const n = Number(t)
   return Number.isFinite(n) ? n : null

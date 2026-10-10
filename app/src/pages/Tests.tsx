@@ -2,12 +2,12 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useData } from '../lib/data'
 import { Empty, Field, GroupBadge, Modal } from '../components/ui'
-import { DEFAULT_TESTS } from '../data/defaults'
+import { DEFAULT_TESTS, EXTRA_TESTS, type TestTemplate } from '../data/defaults'
 import type { TestDef } from '../types'
 import { formatValue, parseValue, summarize, trendLabel } from '../lib/tests'
 import { errorMessage, formatShort, fullName, todayISO } from '../lib/utils'
 
-const CATS = ['Vitesse', 'Endurance', 'Explosivité', 'Force', 'Mobilité', 'Technique', 'Autre']
+const CATS = ['Vitesse', 'Bondissement', 'Endurance', 'Lancers', 'Explosivité', 'Force', 'Mobilité', 'Technique', 'Autre']
 
 /** Catalogue des tests physiques */
 export function Tests() {
@@ -15,11 +15,11 @@ export function Tests() {
   const [edit, setEdit] = useState<Partial<TestDef> | null>(null)
   const [busy, setBusy] = useState(false)
 
-  const importDefaults = async () => {
+  const has = (t: TestTemplate) => tests.some((x) => x.name.toLowerCase() === t.name.toLowerCase())
+  const add = async (list: TestTemplate[]) => {
     setBusy(true)
     try {
-      const existing = new Set(tests.map((t) => t.name.toLowerCase()))
-      await saveMany('tests', DEFAULT_TESTS.filter((t) => !existing.has(t.name.toLowerCase())))
+      await saveMany('tests', list.filter((t) => !has(t)))
     } catch (e) {
       alert(errorMessage(e))
     } finally {
@@ -36,12 +36,15 @@ export function Tests() {
       </div>
       {tests.length === 0 ? (
         <Empty>
-          Définis les tests que tu fais passer (30 m, VMA, détente…).<br />
-          <button className="btn primary" onClick={importDefaults} disabled={busy}>Ajouter {DEFAULT_TESTS.length} tests courants</button>
+          Ta batterie de tests : 20 m lancé, 30 m lancé, 40 m départ arrêté, monobond, triple bond, pentabond, décabond et VMA.<br />
+          <button className="btn primary" onClick={() => add(DEFAULT_TESTS)} disabled={busy}>Ajouter ces {DEFAULT_TESTS.length} tests</button>
         </Empty>
       ) : (
         <>
-          <Link className="btn primary block" to="/tests/saisie">✏️ Saisir des résultats</Link>
+          <div className="row gap wrap">
+            <Link className="btn primary" to="/tests/saisie">✏️ Saisir des résultats</Link>
+            <Link className="btn" to="/tests/tableau">📊 Tableau du groupe</Link>
+          </div>
           {CATS.map((c) => {
             const list = tests.filter((t) => t.category === c)
             if (list.length === 0) return null
@@ -65,8 +68,19 @@ export function Tests() {
               </section>
             )
           })}
-          {DEFAULT_TESTS.some((d) => !tests.some((t) => t.name.toLowerCase() === d.name.toLowerCase())) && (
-            <button className="btn ghost small" onClick={importDefaults} disabled={busy}>+ Ajouter les tests courants manquants</button>
+          {DEFAULT_TESTS.some((d) => !has(d)) && (
+            <button className="btn ghost small" onClick={() => add(DEFAULT_TESTS)} disabled={busy}>+ Ajouter les tests de la batterie manquants</button>
+          )}
+          {EXTRA_TESTS.some((d) => !has(d)) && (
+            <section>
+              <h2>Tests complémentaires</h2>
+              <p className="muted small">Pour les lanceurs et les demi-fondeurs, si tu veux les suivre en plus.</p>
+              <div className="row gap wrap">
+                {EXTRA_TESTS.filter((t) => !has(t)).map((t) => (
+                  <button key={t.name} className="btn small" onClick={() => add([t])} disabled={busy}>+ {t.name}</button>
+                ))}
+              </div>
+            </section>
           )}
         </>
       )}
@@ -231,6 +245,65 @@ export function TestEntry() {
           Enregistrer {filled.length > 0 && `${filled.length} résultat(s)`}
         </button>
       </div>
+    </div>
+  )
+}
+
+/** Tableau du groupe : dernier résultat de chaque athlète pour chaque test */
+export function TestMatrix() {
+  const { tests, test_results, athletes, groups } = useData()
+  const [group, setGroup] = useState(groups[0]?.id ?? '')
+  const ordered = CATS.flatMap((c) => tests.filter((t) => t.category === c))
+  const cols = [...ordered, ...tests.filter((t) => !ordered.includes(t))]
+  const list = athletes.filter((a) => a.active && (!group || a.group_id === group)).sort((a, b) => fullName(a).localeCompare(fullName(b)))
+  const cell = (aid: string, t: TestDef) => summarize(t, test_results.filter((r) => r.athlete_id === aid))
+  // Meilleur résultat du groupe par test (dernier résultat de chacun)
+  const best = new Map(cols.map((t) => {
+    const vals = list.map((a) => cell(a.id, t)?.last.value).filter((v): v is number => v != null)
+    return [t.id, vals.length ? (t.higher_is_better ? Math.max(...vals) : Math.min(...vals)) : null]
+  }))
+
+  return (
+    <div>
+      <Link to="/tests" className="muted small">← Tests</Link>
+      <h1>Tableau du groupe</h1>
+      <div className="row gap filters">
+        <select value={group} onChange={(e) => setGroup(e.target.value)}>
+          <option value="">Tous les groupes</option>
+          {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+        </select>
+      </div>
+      {cols.length === 0 || list.length === 0 ? <Empty>Rien à afficher.</Empty> : (
+        <div className="matrix-wrap card">
+          <table className="matrix">
+            <thead>
+              <tr>
+                <th>Athlète</th>
+                {cols.map((t) => <th key={t.id}><Link to={`/tests/${t.id}`}>{t.name}</Link><div className="tiny muted">{t.unit}</div></th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {list.map((a) => (
+                <tr key={a.id}>
+                  <th><Link to={`/athletes/${a.id}`}>{a.first_name} {a.last_name.slice(0, 1)}.</Link><div className="tiny muted">{a.events}</div></th>
+                  {cols.map((t) => {
+                    const s = cell(a.id, t)
+                    if (!s) return <td key={t.id} className="muted">–</td>
+                    const top = best.get(t.id) === s.last.value && list.length > 1
+                    return (
+                      <td key={t.id} className={top ? 'top' : ''} title={formatShort(s.last.date)}>
+                        {formatValue(s.last.value, t.unit === 's' && s.last.value >= 60 ? 's' : '') /* unité dans l'en-tête */}
+                        {s.trend !== 0 && <span className={s.trend > 0 ? 'up' : 'down'}>{s.trend > 0 ? ' ▲' : ' ▼'}</span>}
+                      </td>
+                    )
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <p className="tiny muted">Dernier résultat de chacun · en couleur : meilleur du groupe · ▲▼ progression depuis le test précédent</p>
     </div>
   )
 }
