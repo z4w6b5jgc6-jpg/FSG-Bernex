@@ -7,6 +7,7 @@ import { ENERGY, SORENESS, STRESS } from '../components/WellnessCheckin'
 import { Empty, Field, GroupBadge, Modal } from '../components/ui'
 import { RecordForm } from '../components/RecordForm'
 import { TestResults } from '../components/TestResults'
+import { IndicatorsPanel, ReportCard, ReportForm } from '../components/TestInsights'
 import { parseValue } from '../lib/tests'
 import type { PersonalRecord } from '../types'
 import { AthleteForm } from './Athletes'
@@ -16,11 +17,12 @@ import { athletesFor, errorMessage, formatShort, fullName, todayISO, whatsappUrl
 export function AthleteDetail() {
   const { id } = useParams()
   const nav = useNavigate()
-  const { athletes, groups, assignments, sessions, feedback, wellness, records, athlete_notes, tests, test_results, save, remove, loading } = useData()
+  const { athletes, groups, assignments, sessions, feedback, wellness, records, athlete_notes, tests, test_results, test_reports, save, remove, loading } = useData()
   const [editing, setEditing] = useState(false)
   const [note, setNote] = useState('')
   const [editRecord, setEditRecord] = useState<Partial<PersonalRecord> | null>(null)
   const [addResult, setAddResult] = useState(false)
+  const [addReport, setAddReport] = useState(false)
   const a = athletes.find((x) => x.id === id)
   if (!a) return loading ? <p className="muted">Chargement…</p> : <Empty>Athlète introuvable. <Link to="/athletes">Retour</Link></Empty>
 
@@ -117,7 +119,22 @@ export function AthleteDetail() {
         {tests.length === 0 ? (
           <Empty>Définis d’abord tes tests dans <Link to="/tests">Tests physiques</Link>.</Empty>
         ) : (
-          <TestResults tests={tests} results={test_results.filter((r) => r.athlete_id === a.id)} onDelete={(rid) => remove('test_results', rid)} />
+          <>
+            <IndicatorsPanel tests={tests} results={test_results.filter((r) => r.athlete_id === a.id)} />
+            <TestResults tests={tests} results={test_results.filter((r) => r.athlete_id === a.id)} onDelete={(rid) => remove('test_results', rid)} />
+          </>
+        )}
+      </section>
+
+      <section>
+        <div className="row between">
+          <h2>📝 Bilans de tests <span className="muted small">(visibles par l’athlète)</span></h2>
+          <button className="btn small" onClick={() => setAddReport(true)}>+ Bilan</button>
+        </div>
+        {test_reports.filter((r) => r.athlete_id === a.id).length === 0 ? <p className="muted small">Aucun bilan.</p> : (
+          <div className="list">
+            {test_reports.filter((r) => r.athlete_id === a.id).sort((x, y) => y.date.localeCompare(x.date)).map((r) => <ReportCard key={r.id} report={r} editable />)}
+          </div>
         )}
       </section>
 
@@ -184,6 +201,7 @@ export function AthleteDetail() {
       {editing && <AthleteForm initial={a} onClose={() => setEditing(false)} />}
       {editRecord && <RecordForm initial={editRecord} athleteId={a.id} onClose={() => setEditRecord(null)} />}
       {addResult && <ResultForm athleteId={a.id} onClose={() => setAddResult(false)} />}
+      {addReport && <ReportForm initial={{}} athleteId={a.id} onClose={() => setAddReport(false)} />}
     </div>
   )
 }

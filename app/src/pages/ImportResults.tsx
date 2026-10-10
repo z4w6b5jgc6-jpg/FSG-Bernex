@@ -1,0 +1,335 @@
+import { useMemo, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useData } from '../lib/data'
+import { Field } from '../components/ui'
+import { DEFAULT_TESTS, EXTRA_TESTS } from '../data/defaults'
+import type { Athlete } from '../types'
+import {
+  availableTests, cellText, findDate, matchAthlete, normText, parseSheet, personOf, pickSheets, toNumber,
+  type Cell, type ColRole, type ParsedSheet, type RowPerson, type SheetIn,
+} from '../lib/importResults'
+import { formatValue } from '../lib/tests'
+import { errorMessage, fullName, todayISO } from '../lib/utils'
+
+const roleKey = (r: ColRole) => (r.kind === 'test' ? `test:${r.test}` : r.kind === 'report' ? `report:${r.field}` : r.kind)
+const keyRole = (k: string): ColRole => {
+  if (k.startsWith('test:')) return { kind: 'test', test: k.slice(5) }
+  if (k.startsWith('report:')) return { kind: 'report', field: k.slice(7) as 'message' }
+  return { kind: k } as ColRole
+}
+const BASE_ROLES: [string, string][] = [
+  ['ignore', '— Ignorer —'], ['name', 'Athlète (prénom nom)'], ['first', 'Prénom'], ['last', 'Nom'],
+  ['age', 'Âge'], ['year', 'Année de naissance'], ['events', 'Spécialité'], ['sex', 'Sexe (non importé)'],
+]
+const REPORT_ROLES: [string, string][] = [
+  ['report:strengths', 'Bilan · points forts'], ['report:priority', 'Bilan · axe prioritaire'],
+  ['report:training', 'Bilan · type d’entraînement'], ['report:message', 'Bilan · message à l’athlète'],
+  ['report:private', 'Note privée (positionnement, vigilance)'],
+]
+const EMPTY = /^[-–—]?$/
+
+/** Import d'un classeur de résultats de tests (Excel ou CSV), avec bilans individuels */
+export function ImportResults() {
+  const data = useData()
+  const { tests, athletes, test_results, test_reports, athlete_notes, save, saveMany, reload } = data
+  const nav = useNavigate()
+  const [raw, setRaw] = useState<SheetIn[] | null>(null)
+  const [parsed, setParsed] = useState<ParsedSheet[]>([])
+  const [resIdx, setResIdx] = useState(-1)
+  const [repIdx, setRepIdx] = useState(-1)
+  const [date, setDate] = useState(todayISO())
+  const [choice, setChoice] = useState<Record<string, string>>({}) // clé personne → id athlète | 'new' | 'skip'
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const [paste, setPaste] = useState('')
+
+  const known = useMemo(() => availableTests(tests, [...DEFAULT_TESTS, ...EXTRA_TESTS]), [tests])
+
+  const load = (sheets: SheetIn[]) => {
+    const p = sheets.map((s) => parseSheet(s, known))
+    const pick = pickSheets(p)
+    setRaw(sheets)
+    setParsed(p)
+    setResIdx(pick.results)
+    setRepIdx(pick.reports)
+    setDate(findDate(sheets) ?? todayISO())
+    setChoice({})
+    setErr(pick.results < 0 && pick.reports < 0 ? 'Je n’ai pas trouvé de tableau avec une colonne « Athlète » (ou « Prénom »). Vérifie les colonnes ci-dessous.' : null)
+  }
+
+  const onFile = async (file: File) => {
+    setErr(null)
+    try {
+      if (/\.(csv|tsv|txt)$/i.test(file.name)) return loadText(await file.text(), file.name)
+      const { default: readXlsxFile } = await import('read-excel-file/browser')
+      const sheets = await readXlsxFile(file)
+      load(sheets.map((s) => ({ name: s.sheet, rows: s.data as Cell[][] })))
+    } catch (e) {
+      setErr('Impossible de lire ce fichier : ' + errorMessage(e))
+    }
+  }
+  const loadText = (text: string, name = 'Collage') => {
+    const lines = text.split(/\r?\n/)
+    const sep = lines[0]?.includes('\t') ? '\t' : lines[0]?.includes(';') ? ';' : ','
+    load([{ name, rows: lines.map((l) => l.split(sep).map((c) => c.trim() || null)) }])
+  }
+
+  const setRole = (sheet: number, col: number, key: string) =>
+    setParsed((ps) => ps.map((p, i) => (i === sheet ? { ...p, roles: p.roles.map((r, j) => (j === col ? keyRole(key) : r)) } : p)))
+
+  // Personnes trouvées dans les feuilles retenues
+  const people = useMemo(() => {
+    const map = new Map<string, RowPerson>()
+    for (const i of [resIdx, repIdx]) {
+      const s = parsed[i]
+      if (!s) continue
+      for (const row of s.rows) {
+        const p = personOf(row, s.roles)
+        if (!p.first) continue
+        const prev = map.get(p.key)
+        map.set(p.key, prev ? { ...prev, age: prev.age ?? p.age, year: prev.year ?? p.year, events: prev.events || p.events } : p)
+      }
+    }
+    return [...map.values()]
+  }, [parsed, resIdx, repIdx])
+
+  const resolved = (p: RowPerson): string => choice[p.key] ?? matchAthlete(p, athletes)?.id ?? 'new'
+
+  // Résultats à importer
+  const plan = useMemo(() => {
+    const s = parsed[resIdx]
+    const results: { key: string; test: string; values: number[] }[] = []
+    if (s) {
+      for (const row of s.rows) {
+        const p = personOf(row, s.roles)
+        const byTest = new Map<string, number[]>()
+        s.roles.forEach((r, i) => {
+          if (r.kind !== 'test') return
+          const v = toNumber(row[i])
+          if (v != null && v > 0) byTest.set(r.test, [...(byTest.get(r.test) ?? []), v])
+        })
+        for (const [test, values] of byTest) results.push({ key: p.key, test, values })
+      }
+    }
+    const reports: { key: string; fields: Record<string, string> }[] = []
+    const r = parsed[repIdx]
+    if (r) {
+      for (const row of r.rows) {
+        const p = personOf(row, r.roles)
+        const fields: Record<string, string> = {}
+        r.roles.forEach((role, i) => {
+          if (role.kind !== 'report') return
+          const v = cellText(row[i])
+          if (EMPTY.test(v)) return
+          const label = r.headers[i]
+          fields[role.field] = role.field === 'private' ? [fields.private, `${label} : ${v}`].filter(Boolean).join('\n') : [fields[role.field], v].filter(Boolean).join(' ')
+        })
+        if (Object.keys(fields).length) reports.push({ key: p.key, fields })
+      }
+    }
+    return { results, reports, testNames: [...new Set(results.map((x) => x.test))] }
+  }, [parsed, resIdx, repIdx])
+
+  const included = people.filter((p) => resolved(p) !== 'skip')
+  const newCount = included.filter((p) => resolved(p) === 'new').length
+  const missingTests = plan.testNames.filter((n) => !tests.some((t) => t.name === n))
+
+  const run = async () => {
+    setBusy(true)
+    setErr(null)
+    try {
+      // 1. Tests manquants (créés depuis la batterie si possible)
+      const testIds = new Map(tests.map((t) => [t.name, t]))
+      for (const name of missingTests) {
+        const tpl = [...DEFAULT_TESTS, ...EXTRA_TESTS].find((t) => normText(t.name) === normText(name))
+        const t = await save('tests', tpl ?? { name, unit: '', higher_is_better: true, category: 'Autre', description: '' })
+        testIds.set(t.name, t)
+      }
+      // 2. Nouvelles fiches
+      const year = Number(date.slice(0, 4))
+      const ids = new Map<string, string>()
+      const toCreate = included.filter((p) => resolved(p) === 'new')
+      const created = await saveMany('athletes', toCreate.map((p): Partial<Athlete> => ({
+        first_name: p.first, last_name: p.last, events: p.events,
+        birth_year: p.year ?? (p.age ? year - p.age : null),
+      })))
+      toCreate.forEach((p, i) => ids.set(p.key, created[i].id))
+      for (const p of included) if (resolved(p) !== 'new') ids.set(p.key, resolved(p))
+
+      // 3. Résultats (sans doublon même athlète + test + date)
+      const rows = plan.results.flatMap(({ key, test, values }) => {
+        const athlete_id = ids.get(key)
+        const t = testIds.get(test)
+        if (!athlete_id || !t) return []
+        if (test_results.some((r) => r.athlete_id === athlete_id && r.test_id === t.id && r.date === date)) return []
+        const best = t.higher_is_better ? Math.max(...values) : Math.min(...values)
+        return [{ athlete_id, test_id: t.id, date, value: best, trials: values.length > 1 ? values : [], notes: '' }]
+      })
+      await saveMany('test_results', rows)
+
+      // 4. Bilans (message visible par l'athlète) et notes privées
+      const title = `Bilan des tests du ${new Date(date).toLocaleDateString('fr-CH', { day: 'numeric', month: 'long', year: 'numeric' })}`
+      const reports = plan.reports.flatMap(({ key, fields }) => {
+        const athlete_id = ids.get(key)
+        if (!athlete_id || test_reports.some((r) => r.athlete_id === athlete_id && r.date === date)) return []
+        const { private: _priv, ...pub } = fields
+        void _priv
+        return Object.keys(pub).length ? [{ athlete_id, date, title, ...pub }] : []
+      })
+      await saveMany('test_reports', reports)
+      const notes = plan.reports.flatMap(({ key, fields }) => {
+        const athlete_id = ids.get(key)
+        const text = `${title}\n${fields.private}`
+        return athlete_id && fields.private && !athlete_notes.some((n) => n.athlete_id === athlete_id && n.text === text) ? [{ athlete_id, text }] : []
+      })
+      await saveMany('athlete_notes', notes)
+      await reload()
+      nav(`/tests/tableau?import=${rows.length}-${reports.length}-${created.length}`)
+    } catch (e) {
+      setErr(errorMessage(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const testOptions = known.map((t) => [`test:${t.name}`, `Test · ${t.name}${t.exists ? '' : ' (sera créé)'}`] as [string, string])
+  const res = parsed[resIdx]
+
+  return (
+    <div>
+      <Link to="/tests" className="muted small">← Tests</Link>
+      <h1>Importer des résultats</h1>
+      <div className="card form">
+        <p className="small">
+          Choisis ton classeur Excel (.xlsx) ou un fichier CSV. Une ligne par athlète, une colonne par test.
+          Plusieurs colonnes pour un même test (« essai 1 », « essai 2 ») sont gardées comme <b>essais</b>, le meilleur est retenu.
+          Une feuille avec les colonnes « Points forts », « Axe prioritaire » ou « Feedback » devient le <b>bilan</b> de chaque athlète.
+        </p>
+        <input type="file" accept=".xlsx,.csv,.tsv,.txt" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
+        {!raw && (
+          <details>
+            <summary className="small">…ou coller un tableau</summary>
+            <textarea rows={5} value={paste} onChange={(e) => setPaste(e.target.value)} placeholder={'Athlète\tMono (m)\tTriple (m)\t20 m essai 1 (s)\nSara\t2,00\t5,40\t2,60'} />
+            <button className="btn small" disabled={!paste.trim()} onClick={() => loadText(paste)}>Analyser</button>
+          </details>
+        )}
+        {err && <div className="alert warn">{err}</div>}
+      </div>
+
+      {raw && (
+        <>
+          <section className="card form">
+            <div className="grid2">
+              <Field label="Feuille des résultats">
+                <select value={resIdx} onChange={(e) => setResIdx(Number(e.target.value))}>
+                  <option value={-1}>Aucune</option>
+                  {parsed.map((p, i) => <option key={i} value={i}>{p.name} ({p.rows.length} lignes)</option>)}
+                </select>
+              </Field>
+              <Field label="Feuille des bilans">
+                <select value={repIdx} onChange={(e) => setRepIdx(Number(e.target.value))}>
+                  <option value={-1}>Aucune</option>
+                  {parsed.map((p, i) => <option key={i} value={i}>{p.name} ({p.rows.length} lignes)</option>)}
+                </select>
+              </Field>
+            </div>
+            <Field label="Date des tests"><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
+          </section>
+
+          {[resIdx, repIdx].filter((i, k, arr) => i >= 0 && arr.indexOf(i) === k).map((si) => {
+            const p = parsed[si]
+            return (
+              <section key={si}>
+                <details className="card">
+                  <summary>
+                    <b>Colonnes · {p.name}</b>{' '}
+                    <span className="muted small">{p.roles.filter((r) => r.kind !== 'ignore').length} reconnue(s) sur {p.headers.filter(Boolean).length} — vérifier</span>
+                  </summary>
+                  <table className="table small">
+                    <tbody>
+                      {p.headers.map((h, i) => h && (
+                        <tr key={i} className={p.roles[i].kind === 'ignore' ? 'muted' : ''}>
+                          <td>{h}<div className="tiny muted">{cellText(p.rows[0]?.[i] ?? null).slice(0, 40)}</div></td>
+                          <td>
+                            <select value={roleKey(p.roles[i])} onChange={(e) => setRole(si, i, e.target.value)}>
+                              {[...BASE_ROLES, ...(si === resIdx ? testOptions : []), ...(si === repIdx ? REPORT_ROLES : [])].map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+                            </select>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <p className="tiny muted">Les colonnes calculées par ton classeur (meilleur, écart, vitesse, rapports, lectures) sont ignorées : l’app les recalcule.</p>
+                </details>
+              </section>
+            )
+          })}
+
+          {people.length > 0 && (
+            <section>
+              <h2>Athlètes ({people.length})</h2>
+              <div className="card">
+                <table className="table small">
+                  <tbody>
+                    {people.map((p) => {
+                      const r = resolved(p)
+                      const n = plan.results.filter((x) => x.key === p.key).length
+                      return (
+                        <tr key={p.key}>
+                          <td><b>{p.first} {p.last}</b><div className="tiny muted">{[p.age && `${p.age} ans`, p.events, `${n} résultat(s)`].filter(Boolean).join(' · ')}</div></td>
+                          <td>
+                            <select value={r} onChange={(e) => setChoice({ ...choice, [p.key]: e.target.value })}>
+                              <option value="new">➕ Nouvelle fiche</option>
+                              <option value="skip">Ignorer</option>
+                              {athletes.map((a) => <option key={a.id} value={a.id}>{fullName(a)}{a.birth_year ? ` (${a.birth_year})` : ''}</option>)}
+                            </select>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+                <p className="tiny muted">Les fiches existantes sont reconnues par prénom + nom (ou prénom seul s’il est unique). Une nouvelle fiche se reliera automatiquement au compte de l’athlète quand il s’inscrira.</p>
+              </div>
+            </section>
+          )}
+
+          {res && plan.results.length > 0 && (
+            <section>
+              <h2>Aperçu</h2>
+              <div className="card matrix-wrap">
+                <table className="matrix">
+                  <thead><tr><th>Athlète</th>{plan.testNames.map((t) => <th key={t}>{t}</th>)}</tr></thead>
+                  <tbody>
+                    {included.map((p) => (
+                      <tr key={p.key}>
+                        <th>{p.first} {p.last}</th>
+                        {plan.testNames.map((t) => {
+                          const x = plan.results.find((y) => y.key === p.key && y.test === t)
+                          const def = tests.find((d) => d.name === t) ?? [...DEFAULT_TESTS, ...EXTRA_TESTS].find((d) => d.name === t)
+                          return <td key={t}>{x ? x.values.map((v) => formatValue(v, def?.unit === 's' && v >= 60 ? 's' : '')).join(' / ') : '–'}</td>
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
+          <div className="sticky-actions">
+            <div className="small center">
+              {plan.results.filter((x) => included.some((p) => p.key === x.key)).length} résultat(s)
+              {plan.reports.length > 0 && ` · ${plan.reports.filter((x) => included.some((p) => p.key === x.key)).length} bilan(s)`}
+              {newCount > 0 && ` · ${newCount} nouvelle(s) fiche(s)`}
+              {missingTests.length > 0 && ` · test(s) créé(s) : ${missingTests.join(', ')}`}
+            </div>
+            <button className="btn primary block" disabled={busy || included.length === 0 || (plan.results.length === 0 && plan.reports.length === 0)} onClick={run}>
+              {busy ? 'Import…' : 'Importer'}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}

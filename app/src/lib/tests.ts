@@ -23,6 +23,13 @@ export function parseValue(s: string): number | null {
   return Number.isFinite(n) ? n : null
 }
 
+/** Écart relatif entre le plus mauvais et le meilleur essai (0 si moins de 2 essais) */
+export function trialGap(trials: number[]): number {
+  if (trials.length < 2) return 0
+  const best = Math.min(...trials)
+  return (Math.max(...trials) - best) / best
+}
+
 export function isBetter(test: TestDef, a: number, b: number): boolean {
   return test.higher_is_better ? a > b : a < b
 }

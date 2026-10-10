@@ -4,7 +4,8 @@ import { useData } from '../lib/data'
 import { Empty, Field, GroupBadge, Modal } from '../components/ui'
 import { DEFAULT_TESTS, EXTRA_TESTS, type TestTemplate } from '../data/defaults'
 import type { TestDef } from '../types'
-import { formatValue, parseValue, summarize, trendLabel } from '../lib/tests'
+import { formatValue, parseValue, summarize, trendLabel, trialGap } from '../lib/tests'
+import { METHOD } from '../lib/indicators'
 import { errorMessage, formatShort, fullName, todayISO } from '../lib/utils'
 
 const CATS = ['Vitesse', 'Bondissement', 'Endurance', 'Lancers', 'Explosivité', 'Force', 'Mobilité', 'Technique', 'Autre']
@@ -38,12 +39,14 @@ export function Tests() {
         <Empty>
           Ta batterie de tests : 20 m lancé, 30 m lancé, 40 m départ arrêté, monobond, triple bond, pentabond, décabond et VMA.<br />
           <button className="btn primary" onClick={() => add(DEFAULT_TESTS)} disabled={busy}>Ajouter ces {DEFAULT_TESTS.length} tests</button>
+          <div className="small" style={{ marginTop: '0.8rem' }}>ou <Link to="/tests/import">📥 importer directement ton classeur Excel</Link></div>
         </Empty>
       ) : (
         <>
           <div className="row gap wrap">
             <Link className="btn primary" to="/tests/saisie">✏️ Saisir des résultats</Link>
             <Link className="btn" to="/tests/tableau">📊 Tableau du groupe</Link>
+            <Link className="btn" to="/tests/import">📥 Importer (Excel)</Link>
           </div>
           {CATS.map((c) => {
             const list = tests.filter((t) => t.category === c)
@@ -252,7 +255,9 @@ export function TestEntry() {
 /** Tableau du groupe : dernier résultat de chaque athlète pour chaque test */
 export function TestMatrix() {
   const { tests, test_results, athletes, groups } = useData()
-  const [group, setGroup] = useState(groups[0]?.id ?? '')
+  const [params] = useSearchParams()
+  const imported = params.get('import')?.split('-').map(Number)
+  const [group, setGroup] = useState(imported ? '' : groups[0]?.id ?? '')
   const ordered = CATS.flatMap((c) => tests.filter((t) => t.category === c))
   const cols = [...ordered, ...tests.filter((t) => !ordered.includes(t))]
   const list = athletes.filter((a) => a.active && (!group || a.group_id === group)).sort((a, b) => fullName(a).localeCompare(fullName(b)))
@@ -267,6 +272,9 @@ export function TestMatrix() {
     <div>
       <Link to="/tests" className="muted small">← Tests</Link>
       <h1>Tableau du groupe</h1>
+      {imported && (
+        <div className="alert info">✅ Import terminé : {imported[0]} résultat(s), {imported[1]} bilan(s), {imported[2]} nouvelle(s) fiche(s).</div>
+      )}
       <div className="row gap filters">
         <select value={group} onChange={(e) => setGroup(e.target.value)}>
           <option value="">Tous les groupes</option>
@@ -294,6 +302,7 @@ export function TestMatrix() {
                       <td key={t.id} className={top ? 'top' : ''} title={formatShort(s.last.date)}>
                         {formatValue(s.last.value, t.unit === 's' && s.last.value >= 60 ? 's' : '') /* unité dans l'en-tête */}
                         {s.trend !== 0 && <span className={s.trend > 0 ? 'up' : 'down'}>{s.trend > 0 ? ' ▲' : ' ▼'}</span>}
+                        {trialGap(s.last.trials) > METHOD.maxTrialGap && <span title="Écart entre essais > 3 %"> ⚠️</span>}
                       </td>
                     )
                   })}
@@ -303,7 +312,7 @@ export function TestMatrix() {
           </table>
         </div>
       )}
-      <p className="tiny muted">Dernier résultat de chacun · en couleur : meilleur du groupe · ▲▼ progression depuis le test précédent</p>
+      <p className="tiny muted">Dernier résultat de chacun · en couleur : meilleur du groupe · ▲▼ progression depuis le test précédent · ⚠️ écart entre essais &gt; 3 %</p>
     </div>
   )
 }

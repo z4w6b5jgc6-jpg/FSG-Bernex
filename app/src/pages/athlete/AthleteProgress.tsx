@@ -4,13 +4,15 @@ import { EffortBars, SleepBars } from '../../components/Charts'
 import { Empty } from '../../components/ui'
 import { RecordForm } from '../../components/RecordForm'
 import { TestResults } from '../../components/TestResults'
+import { ReportCard } from '../../components/TestInsights'
+import { computeIndicators, fmt } from '../../lib/indicators'
 import { checkinStreak, computeBadges, feedbackStreak, myAssignments } from '../../lib/athlete'
 import type { PersonalRecord } from '../../types'
 import { formatDate, todayISO } from '../../lib/utils'
 
 export function AthleteProgress() {
   const me = useMyAthlete()
-  const { assignments, feedback, records, wellness, tests, test_results, remove } = useData()
+  const { assignments, feedback, records, wellness, tests, test_results, test_reports, remove } = useData()
   const [edit, setEdit] = useState<Partial<PersonalRecord> | null>(null)
   if (!me) return null
 
@@ -65,8 +67,21 @@ export function AthleteProgress() {
         )}
       </section>
 
+      {test_reports.length > 0 && (
+        <section>
+          <h2>📝 Le bilan de ton coach</h2>
+          <div className="list">
+            {[...test_reports].sort((x, y) => y.date.localeCompare(x.date)).slice(0, 2).map((r) => <ReportCard key={r.id} report={r} />)}
+          </div>
+        </section>
+      )}
+
       <section>
         <h2>📏 Mes tests</h2>
+        {(() => {
+          const sp = computeIndicators(tests, test_results)?.sprint
+          return sp ? <div className="speed card">⚡ Ta vitesse lancée : <b>{fmt(sp.kmh, 1)} km/h</b> <span className="muted small">(20 m en {fmt(sp.best)} s)</span></div> : null
+        })()}
         <TestResults tests={tests} results={test_results} />
         {test_results.length > 0 && <p className="tiny muted">Saisis par ton coach · ▲ = progrès par rapport au test précédent</p>}
       </section>

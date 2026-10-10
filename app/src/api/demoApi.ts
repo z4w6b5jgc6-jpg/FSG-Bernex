@@ -5,7 +5,7 @@ import type { Me, TableName, Tables } from '../types'
 import { addDays, athletesFor, emptyItem, todayISO, uid } from '../lib/utils'
 import type { Api, Draft, Row } from './types'
 
-const KEY = 'athle-demo-db-v4'
+const KEY = 'athle-demo-db-v5'
 const AUTH_KEY = 'athle-demo-user'
 const COACH_ID = 'demo-coach'
 
@@ -46,7 +46,7 @@ function seed(): Db {
   ]
   const tests = DEFAULT_TESTS.map((t) => ({ id: uid(), ...t }))
   const res = (ath: number, test: number, daysAgo: number, value: number) =>
-    ({ id: uid(), athlete_id: athletes[ath].id, test_id: tests[test].id, date: addDays(today, -daysAgo), value, notes: '' })
+    ({ id: uid(), athlete_id: athletes[ath].id, test_id: tests[test].id, date: addDays(today, -daysAgo), value, trials: [] as number[], notes: '' })
   const item = (name: string, f: Partial<ReturnType<typeof emptyItem>>) => ({ ...emptyItem(name), ...f })
   const vitesse = {
     id: uid(), title: 'Vitesse – départs et accélérations', objective: 'Améliorer la mise en action et la réaction au signal.',
@@ -123,7 +123,14 @@ function seed(): Db {
       res(1, 0, 10, 2.95), res(1, 2, 10, 6.21), res(1, 7, 60, 15.5), res(1, 7, 10, 16.5),
       res(2, 0, 10, 2.69), res(2, 1, 10, 3.82), res(2, 3, 10, 2.31), res(2, 5, 10, 12.6), res(2, 6, 10, 25.4),
       res(3, 2, 10, 6.05), res(3, 3, 10, 2.42), res(3, 4, 10, 7.1), res(4, 0, 10, 2.88), res(4, 7, 10, 15),
+      res(0, 6, 10, 23.4), res(2, 4, 10, 6.85),
     ],
+    test_reports: [{
+      id: uid(), athlete_id: athletes[0].id, date: addDays(today, -10), title: 'Bilan des tests',
+      strengths: 'Vitesse lancée et impulsion isolée.', priority: 'Maintien des impulsions sur les bonds longs.',
+      training: 'Bonds courts enchaînés, gainage dynamique, sprints lancés en petit volume.',
+      message: 'Belle progression sur le 20 m lancé ! Ton prochain cap : garder la même qualité d’appui quand les bonds s’enchaînent.',
+    }],
   }
 }
 
@@ -195,6 +202,7 @@ export function createDemoApi(): Api {
       tips: (t) => t.published,
       tests: () => true,
       test_results: (x) => x.athlete_id === me.id,
+      test_reports: (x) => x.athlete_id === me.id,
       records: (x) => x.athlete_id === me.id,
       wellness: (x) => x.athlete_id === me.id,
     }
@@ -299,7 +307,7 @@ export function createDemoApi(): Api {
       if (into.user_id) throw new Error('Ce profil est déjà relié à un autre compte.')
       db.feedback = db.feedback.filter((f) => !(f.athlete_id === fromId && db.feedback.some((g) => g.athlete_id === intoId && g.assignment_id === f.assignment_id)))
       db.wellness = db.wellness.filter((w) => !(w.athlete_id === fromId && db.wellness.some((x) => x.athlete_id === intoId && x.date === w.date)))
-      for (const t of ['feedback', 'wellness', 'records', 'test_results', 'athlete_notes'] as const) {
+      for (const t of ['feedback', 'wellness', 'records', 'test_results', 'test_reports', 'athlete_notes'] as const) {
         for (const r of db[t] as { athlete_id: string }[]) if (r.athlete_id === fromId) r.athlete_id = intoId
       }
       for (const a of db.assignments) a.athlete_ids = a.athlete_ids.map((x) => (x === fromId ? intoId : x))
@@ -373,6 +381,7 @@ export function createDemoApi(): Api {
       db.athlete_notes = db.athlete_notes.filter((x) => athleteIds.has(x.athlete_id))
       const testIds = new Set(db.tests.map((t) => t.id))
       db.test_results = db.test_results.filter((x) => athleteIds.has(x.athlete_id) && testIds.has(x.test_id))
+      db.test_reports = db.test_reports.filter((x) => athleteIds.has(x.athlete_id))
       persist(db)
     },
   }
@@ -390,7 +399,8 @@ function defaults(table: TableName): Record<string, unknown> {
     case 'tips': return { category: 'Hygiène de vie', emoji: '💡', summary: '', body: '', published: true }
     case 'records': return { competition: '', date: todayISO() }
     case 'tests': return { unit: '', higher_is_better: true, category: 'Autre', description: '' }
-    case 'test_results': return { notes: '', date: todayISO() }
+    case 'test_results': return { notes: '', trials: [], date: todayISO() }
+    case 'test_reports': return { title: 'Bilan des tests', strengths: '', priority: '', training: '', message: '', date: todayISO() }
     case 'wellness': return { sleep_hours: null, sleep_quality: null, energy: null, soreness: null, stress: null, note: '', date: todayISO() }
   }
 }

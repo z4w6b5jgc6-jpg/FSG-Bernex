@@ -3,11 +3,11 @@ import { useData, useMyAthlete } from '../../lib/data'
 import { WellnessCheckin } from '../../components/WellnessCheckin'
 import { InstallPrompt } from '../../components/InstallPrompt'
 import { allTips, computeBadges, feedbackStreak, greeting, myAssignments, tipOfTheDay } from '../../lib/athlete'
-import { formatDate, todayISO } from '../../lib/utils'
+import { addDays, formatDate, todayISO } from '../../lib/utils'
 
 export function AthleteHome() {
   const me = useMyAthlete()
-  const { assignments, sessions, feedback, records, wellness, tips, groups, loading } = useData()
+  const { assignments, sessions, feedback, records, wellness, tips, groups, test_reports, loading } = useData()
   if (!me) return <p className="muted">{loading ? 'Chargement…' : 'Profil introuvable.'}</p>
 
   const today = todayISO()
@@ -69,6 +69,17 @@ export function AthleteHome() {
       <section>
         <WellnessCheckin athleteId={me.id} />
       </section>
+
+      {(() => {
+        const r = [...test_reports].sort((x, y) => y.date.localeCompare(x.date))[0]
+        if (!r || r.date < addDays(today, -21)) return null
+        return (
+          <Link to="/progres" className="card link-card tip-card">
+            <span className="tip-emoji">📝</span>
+            <div><strong>Nouveau : {r.title}</strong><div className="muted small">{r.message.slice(0, 110)}{r.message.length > 110 && '…'}</div></div>
+          </Link>
+        )
+      })()}
 
       {next && (
         <section>

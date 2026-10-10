@@ -40,8 +40,22 @@ export interface TestResult {
   athlete_id: string
   test_id: string
   date: string
+  /** meilleur essai */
   value: number
+  /** tous les essais (vide si un seul) */
+  trials: number[]
   notes: string
+}
+
+export interface TestReport {
+  id: string
+  athlete_id: string
+  date: string
+  title: string
+  strengths: string
+  priority: string
+  training: string
+  message: string
 }
 
 export interface Club {
@@ -163,6 +177,7 @@ export interface Tables {
   wellness: Wellness
   tests: TestDef
   test_results: TestResult
+  test_reports: TestReport
 }
 
 export type TableName = keyof Tables

@@ -17,6 +17,7 @@ import { AthleteDetail } from './pages/AthleteDetail'
 import { Exercises } from './pages/Exercises'
 import { Tips, TipDetail } from './pages/Tips'
 import { Tests, TestDetail, TestEntry, TestMatrix } from './pages/Tests'
+import { ImportResults } from './pages/ImportResults'
 import { AthleteHome } from './pages/athlete/AthleteHome'
 import { AthleteSessions, AthleteSessionDetail } from './pages/athlete/AthleteSessions'
 import { AthleteProgress } from './pages/athlete/AthleteProgress'
@@ -87,6 +88,7 @@ function CoachApp() {
         <Route path="/tests" element={<Tests />} />
         <Route path="/tests/saisie" element={<TestEntry />} />
         <Route path="/tests/tableau" element={<TestMatrix />} />
+        <Route path="/tests/import" element={<ImportResults />} />
         <Route path="/tests/:id" element={<TestDetail />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

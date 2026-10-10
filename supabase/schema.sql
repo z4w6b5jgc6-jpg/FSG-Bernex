@@ -184,11 +184,26 @@ create table if not exists test_results (
   athlete_id  uuid not null references athletes (id) on delete cascade,
   test_id     uuid not null references tests (id) on delete cascade,
   date        date not null default current_date,
-  value       numeric not null,
+  value       numeric not null,                   -- meilleur essai
+  trials      numeric[] not null default '{}',    -- tous les essais (ex. 20 m lancé : essai 1, essai 2)
   notes       text not null default '',
   created_at  timestamptz not null default now()
 );
+alter table test_results add column if not exists trials numeric[] not null default '{}';
 create index if not exists test_results_athlete_idx on test_results (athlete_id, test_id, date);
+
+-- Bilan de tests rédigé par l'entraîneur, lisible par l'athlète
+create table if not exists test_reports (
+  id          uuid primary key default gen_random_uuid(),
+  athlete_id  uuid not null references athletes (id) on delete cascade,
+  date        date not null default current_date,
+  title       text not null default 'Bilan des tests',
+  strengths   text not null default '',   -- points forts
+  priority    text not null default '',   -- axe prioritaire
+  training    text not null default '',   -- type d'entraînement
+  message     text not null default '',   -- feedback individuel
+  created_at  timestamptz not null default now()
+);
 
 create index if not exists wellness_athlete_idx on wellness (athlete_id, date);
 
@@ -242,6 +257,7 @@ alter table records       enable row level security;
 alter table wellness      enable row level security;
 alter table tests         enable row level security;
 alter table test_results  enable row level security;
+alter table test_reports  enable row level security;
 
 -- Entraîneur : accès complet à ses propres lignes
 do $$
@@ -251,7 +267,7 @@ begin
     execute format('drop policy if exists coach_all on %I', t);
     execute format('create policy coach_all on %I for all to authenticated using (coach_id = auth.uid()) with check (coach_id = auth.uid())', t);
   end loop;
-  foreach t in array array['feedback','records','wellness','test_results'] loop
+  foreach t in array array['feedback','records','wellness','test_results','test_reports'] loop
     execute format('drop policy if exists coach_all on %I', t);
     execute format('create policy coach_all on %I for all to authenticated using (is_my_athlete(athlete_id)) with check (is_my_athlete(athlete_id))', t);
   end loop;
@@ -304,6 +320,8 @@ drop policy if exists athlete_read on tests;
 create policy athlete_read on tests for select to authenticated using (coach_id = my_coach_id());
 drop policy if exists athlete_read on test_results;
 create policy athlete_read on test_results for select to authenticated using (athlete_id = my_athlete_id());
+drop policy if exists athlete_read on test_reports;
+create policy athlete_read on test_reports for select to authenticated using (athlete_id = my_athlete_id());
 
 -- L'athlète ne peut pas changer de club, de groupe, ni se réactiver lui-même.
 -- L'entraîneur peut délier un compte, mais pas en relier un à la main (seules les
@@ -485,6 +503,7 @@ begin
   update wellness set athlete_id = p_into where athlete_id = p_from;
   update records set athlete_id = p_into where athlete_id = p_from;
   update test_results set athlete_id = p_into where athlete_id = p_from;
+  update test_reports set athlete_id = p_into where athlete_id = p_from;
   update athlete_notes set athlete_id = p_into where athlete_id = p_from;
   update assignments set athlete_ids = array_replace(athlete_ids, p_from, p_into)
     where coach_id = auth.uid() and p_from = any (athlete_ids);

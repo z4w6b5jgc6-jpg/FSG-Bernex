@@ -70,7 +70,7 @@ export interface TestTemplate { name: string; unit: string; higher_is_better: bo
 
 /** Batterie de tests du groupe (proposée par défaut, modifiable dans l'app) */
 export const DEFAULT_TESTS: TestTemplate[] = [
-  { name: '20 m lancé', unit: 's', higher_is_better: false, category: 'Vitesse', description: 'Zone d’élan puis 20 m chronométrés. Préciser en note la longueur d’élan et le chrono (manuel / cellules).' },
+  { name: '20 m lancé', unit: 's', higher_is_better: false, category: 'Vitesse', description: '20 m d’accélération + 20 m chronométrés. Deux essais séparés d’environ 5 min ; troisième essai si l’écart dépasse 3 %.' },
   { name: '30 m lancé', unit: 's', higher_is_better: false, category: 'Vitesse', description: 'Zone d’élan puis 30 m chronométrés. Même élan à chaque test pour pouvoir comparer.' },
   { name: '40 m départ arrêté', unit: 's', higher_is_better: false, category: 'Vitesse', description: 'Départ arrêté (debout ou 3 appuis, toujours le même), chrono au premier mouvement.' },
   { name: 'Monobond', unit: 'm', higher_is_better: true, category: 'Bondissement', description: 'Un bond depuis l’arrêt, pieds joints. Meilleur de 3 essais.' },

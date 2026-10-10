@@ -25,7 +25,11 @@ export function TestResults({ tests, results, onDelete }: { tests: TestDef[]; re
           <ul className="plain rows small">
             {[...s.results].reverse().map((r) => (
               <li key={r.id} className="row between">
-                <span>{formatShort(r.date)}{r.notes && <span className="muted"> · {r.notes}</span>}</span>
+                <span>
+                  {formatShort(r.date)}
+                  {r.trials.length > 1 && <span className="muted"> · essais {r.trials.map((v) => formatValue(v, s.test.unit === 's' && v >= 60 ? 's' : '')).join(' / ')}</span>}
+                  {r.notes && <span className="muted"> · {r.notes}</span>}
+                </span>
                 <span className="row gap">
                   <b>{formatValue(r.value, s.test.unit)}</b>
                   {onDelete && <button className="btn ghost icon small danger" onClick={() => confirm('Supprimer ce résultat ?') && onDelete(r.id)}>✕</button>}
