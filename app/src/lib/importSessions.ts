@@ -70,7 +70,7 @@ export function parseSessions(sheets: SheetIn[]): SessionIn[] | null {
   return null
 }
 
-/** Lieu habituel du groupe : Stade des Evaux d'avril à octobre, Pavillon des sports du Bout-du-Monde de novembre à mars */
+/** Lieu habituel du groupe : Evaux d'avril à octobre, Pavillon des sports au Bout-du-Monde de novembre à mars */
 export function defaultLocation(date: string): string {
   const m = Number(date.slice(5, 7))
   if (!m) return ''

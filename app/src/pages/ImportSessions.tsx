@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useData } from '../lib/data'
 import { Field } from '../components/ui'
-import { FOCUSES, VENUES } from '../data/defaults'
+import { FOCUSES, OLD_VENUES, VENUES } from '../data/defaults'
 import type { Cell } from '../lib/importResults'
 import { defaultLocation, parseSessions, type SessionIn } from '../lib/importSessions'
 import type { Assignment, Athlete } from '../types'
@@ -76,8 +76,8 @@ export function ImportSessions() {
         for (const r of chosen) {
           if (!r.date) continue
           const done = plannedOf(r)
-          // seulement « pour qui » (et l'ancien lieu proposé par erreur, École de Cressy)
-          if (done) await save('assignments', { id: done.id, ...t, ...(done.location === 'École de Cressy' ? { location: r.location } : {}) })
+          // seulement « pour qui » (et un ancien libellé de lieu proposé par l'app)
+          if (done) await save('assignments', { id: done.id, ...t, ...(OLD_VENUES.includes(done.location) ? { location: r.location } : {}) })
           else rows.push({ session_id: ids.get(r.key) ?? existing(r)!.id, date: r.date, time, location: r.location, ...t, note: '' })
         }
         await saveMany('assignments', rows)
@@ -142,7 +142,7 @@ export function ImportSessions() {
                 </p>
               </div>
             )}
-            {plan && <p className="tiny muted">Lieu proposé : Stade des Evaux d’avril à octobre, Pavillon des sports du Bout-du-Monde de novembre à mars (modifiable par séance).</p>}
+            {plan && <p className="tiny muted">Lieu proposé : Evaux d’avril à octobre, Pavillon des sports au Bout-du-Monde de novembre à mars (modifiable par séance).</p>}
           </section>
 
           <datalist id="venues">{VENUES.map((v) => <option key={v} value={v} />)}</datalist>

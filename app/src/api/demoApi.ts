@@ -76,7 +76,7 @@ function seed(): Db {
     ],
   }
   const asg = (session: string, date: string, group: string, ids: string[] = [], note = '') =>
-    ({ id: uid(), session_id: session, date, time: '18:00', location: 'Stade des Evaux', group_id: group, athlete_ids: ids, note })
+    ({ id: uid(), session_id: session, date, time: '18:00', location: 'Evaux', group_id: group, athlete_ids: ids, note })
   const assignments = [
     asg(vitesse.id, addDays(today, -9), u18.id), asg(endurance.id, addDays(today, -7), u18.id),
     asg(vitesse.id, addDays(today, -4), u18.id), asg(endurance.id, addDays(today, -2), u18.id),

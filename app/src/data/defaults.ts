@@ -90,4 +90,6 @@ export const EXTRA_TESTS: TestTemplate[] = [
 ]
 
 /** Lieux d'entraînement du groupe (proposés dans les champs « Lieu ») */
-export const VENUES = ['Stade des Evaux', 'Pavillon des sports du Bout-du-Monde']
+export const VENUES = ['Evaux', 'Pavillon des sports au Bout-du-Monde']
+/** Anciens libellés proposés par l'app, remplacés lors d'une mise à jour */
+export const OLD_VENUES = ['École de Cressy', 'Stade des Evaux', 'Pavillon des sports du Bout-du-Monde']
