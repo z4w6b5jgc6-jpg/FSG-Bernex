@@ -11,7 +11,7 @@ const COACH_ID = 'demo-coach'
 
 interface DemoUser { email: string; id: string; coach: boolean }
 type Db = { [K in TableName]: Tables[K][] } & {
-  club: { coach_id: string; name: string; invite_code: string }
+  club: { coach_id: string; name: string; invite_code: string; training_info?: string }
   users: DemoUser[]
   coaches?: string[]
   coachInvites?: string[]
@@ -231,7 +231,7 @@ export function createDemoApi(): Api {
       if (!u || !r) return null
       const a = myAthlete()
       return {
-        email: u.email, role: r, athlete_id: a?.id, club_name: db.club.name,
+        email: u.email, role: r, athlete_id: a?.id, club_name: db.club.name, training_info: db.club.training_info ?? '',
         invite_code: r === 'coach' ? db.club.invite_code : undefined, is_owner: r === 'coach' ? true : undefined,
       }
     },
@@ -334,6 +334,11 @@ export function createDemoApi(): Api {
         avatar: from.avatar, color: from.color, goals: from.goals, favorite_tips: from.favorite_tips,
       })
       db.athletes = db.athletes.filter((a) => a.id !== fromId)
+      persist(db)
+    },
+    async saveTrainingInfo(text) {
+      db = load()
+      db.club.training_info = text
       persist(db)
     },
     async listCoaches() {

@@ -85,6 +85,9 @@ export function createSupabaseApi(url: string, key: string): Api {
     async regenerateInviteCode() {
       return check(await sb.rpc('regenerate_invite_code')) as string
     },
+    async saveTrainingInfo(text) {
+      check(await sb.rpc('set_training_info', { p_text: text }))
+    },
     async listCoaches() {
       const rows = check(await sb.from('club_coaches').select('email, user_id').order('created_at')) as { email: string; user_id: string | null }[]
       return rows.map((r) => ({ email: r.email, linked: !!r.user_id }))

@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useData } from '../lib/data'
 import { AssignmentForm } from '../components/AssignmentForm'
 import { GroupBadge } from '../components/ui'
+import { TrainingInfo } from '../components/TrainingInfo'
 import type { Assignment } from '../types'
 import { addDays, athletesFor, formatDate, startOfWeek, todayISO } from '../lib/utils'
 
@@ -27,6 +28,7 @@ export function Planning() {
         <h1>Planning</h1>
         <button className="btn primary" onClick={() => setForm({ date: today >= week && today <= addDays(week, 6) ? today : week })}>+ Planifier</button>
       </div>
+      <TrainingInfo />
       <div className="week-nav">
         <button className="btn small" onClick={() => setWeek(addDays(week, -7))}>←</button>
         <span>

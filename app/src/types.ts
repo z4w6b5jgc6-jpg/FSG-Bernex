@@ -212,6 +212,8 @@ export interface Me {
   invite_code?: string
   /** entraîneur principal (créateur du club) ; false = entraîneur associé */
   is_owner?: boolean
+  /** organisation générale des entraînements (texte mis en forme) */
+  training_info?: string
 }
 
 /** Entraîneur associé, ajouté par email */

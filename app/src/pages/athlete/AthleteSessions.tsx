@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { TrainingInfo } from '../../components/TrainingInfo'
 import { Link, useParams } from 'react-router-dom'
 import { useData, useMyAthlete } from '../../lib/data'
 import { SessionView } from '../../components/SessionView'
@@ -36,6 +37,7 @@ export function AthleteSessions() {
   return (
     <div>
       <h1>Mes séances</h1>
+      <TrainingInfo />
       <section>
         <h2>À venir</h2>
         {upcoming.length === 0 ? <Empty>Pas de séance prévue pour l’instant.</Empty> : <div className="list">{upcoming.map((a) => <Item key={a.id} a={a} />)}</div>}
