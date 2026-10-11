@@ -461,3 +461,4 @@ input.attention { border-color: var(--warn); box-shadow: 0 0 0 2px var(--warn-so
 .pick { display: inline-flex; align-items: center; gap: 0.35rem; border: 1px solid var(--primary); background: var(--surface); border-radius: 999px; padding: 0.35rem 0.75rem; font-size: 0.9rem; cursor: pointer; }
 .pick input { margin: 0; accent-color: var(--primary); }
 .pick.off { border-color: var(--border); color: var(--muted); text-decoration: line-through; }
+.card.to-check { border-color: var(--warn); }

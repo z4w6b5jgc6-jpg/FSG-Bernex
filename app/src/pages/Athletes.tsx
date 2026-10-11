@@ -43,6 +43,7 @@ export function Athletes() {
       <div className="row gap wrap actions">
         <button className="btn primary" onClick={() => setEditAthlete({ group_id: groups[0]?.id ?? null })}>+ Athlète</button>
         <button className="btn" onClick={() => setImporting(true)}>📥 Importer ma liste</button>
+        <Link className="btn" to="/athletes/questionnaire">📝 Questionnaire</Link>
         <button className="btn" onClick={() => setEditGroup({ color: COLORS[groups.length % COLORS.length] })}>+ Groupe</button>
       </div>
       {athletes.length > 0 && (
