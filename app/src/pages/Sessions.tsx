@@ -42,10 +42,11 @@ export function Sessions() {
 
   return (
     <div>
-      <div className="row between">
+      <div className="row between wrap">
         <h1>Séances</h1>
-        <div className="row gap">
+        <div className="row gap wrap">
           <Link className="btn" to="/exercices">📚 Exercices</Link>
+          <Link className="btn" to="/seances/import">📥 Importer</Link>
           <button className="btn primary" onClick={create}>+ Séance</button>
         </div>
       </div>
