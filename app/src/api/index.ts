@@ -4,7 +4,7 @@ import { readConfig } from './config'
 import type { Api } from './types'
 
 const env = import.meta.env as Record<string, string | undefined>
-// Priorité à la configuration du dépôt (netlify.toml), sinon aux variables saisies dans Netlify
+// Priorité à la configuration du dépôt (app/.env.production), sinon aux variables VITE_* de l'hébergeur
 const config = env.COACH_SUPABASE_URL
   ? readConfig(env.COACH_SUPABASE_URL, env.COACH_SUPABASE_ANON_KEY)
   : readConfig(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY)
