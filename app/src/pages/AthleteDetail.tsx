@@ -18,7 +18,7 @@ import { athletesFor, errorMessage, formatShort, fullName, todayISO, whatsappUrl
 export function AthleteDetail() {
   const { id } = useParams()
   const nav = useNavigate()
-  const { athletes, groups, assignments, sessions, feedback, wellness, records, athlete_notes, tests, test_results, test_reports, save, remove, loading } = useData()
+  const { athletes, groups, assignments, sessions, feedback, wellness, records, athlete_notes, tests, test_results, test_reports, competitions, save, remove, loading } = useData()
   const [editing, setEditing] = useState(false)
   const [note, setNote] = useState('')
   const [editRecord, setEditRecord] = useState<Partial<PersonalRecord> | null>(null)
@@ -86,6 +86,24 @@ export function AthleteDetail() {
         <div className="stat"><b>{avg}</b><span>effort moyen</span></div>
         <div className="stat"><b>🔥 {feedbackStreak(mine, fbs)}</b><span>série</span></div>
       </div>
+
+      {(() => {
+        const mine = competitions.filter((c) => c.athlete_ids.includes(a.id) && (c.end_date || c.date) >= todayISO()).sort((x, y) => x.date.localeCompare(y.date))
+        if (!mine.length) return null
+        return (
+          <section>
+            <div className="row between"><h2>🏆 Compétitions</h2><Link to="/competitions" className="small">Toutes →</Link></div>
+            <ul className="plain rows">
+              {mine.map((c) => (
+                <li key={c.id} className="row between">
+                  <span><span className={`level-badge level-${c.level} sm`}>{c.level}</span> <b>{c.name}</b>{c.entries?.[a.id] && <span className="muted small"> · {c.entries[a.id]}</span>}</span>
+                  <span className="small muted">{formatShort(c.date)}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      })()}
 
       <section>
         <h2>🌙 Bien-être</h2>

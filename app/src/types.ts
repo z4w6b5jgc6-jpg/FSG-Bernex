@@ -179,6 +179,8 @@ export interface Competition {
   registration_deadline: string | null
   notes: string
   athlete_ids: string[]
+  /** disciplines de chaque participant : { id athlète: "60 m, longueur" } */
+  entries: Record<string, string>
 }
 
 export interface Tables {

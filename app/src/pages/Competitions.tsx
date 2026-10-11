@@ -11,6 +11,10 @@ const LEVELS: Record<Competition['level'], { label: string; hint: string }> = {
   C: { label: 'C', hint: 'Préparation / test' },
 }
 
+// Disciplines proposées dans le formulaire (la saisie reste libre)
+const EVENTS = ['60 m', '80 m', '100 m', 'Longueur', '200 m', '400 m', '800 m', '60 m haies', '80 m haies', '100 m haies', '110 m haies', 'Triple saut', 'Hauteur',
+  'Poids', 'Javelot', 'Disque', 'Marteau', 'Perche', '300 m', '600 m', '1000 m', '1500 m', '300 m haies', 'Relais 4×100 m', 'Relais 5×80 m']
+
 const daysUntil = (iso: string) => Math.round((parseISODate(iso).getTime() - parseISODate(todayISO()).getTime()) / 86400000)
 const lastDay = (c: Competition) => c.end_date || c.date
 
@@ -41,10 +45,12 @@ export function CompetitionCard({ c, onEdit }: { c: Competition; onEdit?: () => 
   const past = daysUntil(lastDay(c)) < 0
   const deadline = c.registration_deadline ? daysUntil(c.registration_deadline) : null
   const who = athletes.filter((a) => c.athlete_ids.includes(a.id))
+  const entries = c.entries ?? {}
   const share =
     `🏆 ${c.name}\n📅 ${dateRange(c)}${c.location ? `\n📍 ${c.location}` : ''}` +
     (c.registration_deadline ? `\n✍️ Inscription jusqu’au ${formatDate(c.registration_deadline, { day: 'numeric', month: 'long' })}` : '') +
-    (c.program_url ? `\n📄 Programme : ${c.program_url}` : '') + (c.registration_url ? `\n🔗 Inscriptions : ${c.registration_url}` : '')
+    (c.program_url ? `\n📄 Programme : ${c.program_url}` : '') + (c.registration_url ? `\n🔗 Inscriptions : ${c.registration_url}` : '') +
+    (who.length ? `\n\n👥 Participants :\n${who.map((a) => `• ${a.first_name}${entries[a.id] ? ` : ${entries[a.id]}` : ''}`).join('\n')}` : '')
   return (
     <div className={`card competition level-${c.level} ${past ? 'past' : ''}`}>
       <div className="row between">
@@ -67,16 +73,25 @@ export function CompetitionCard({ c, onEdit }: { c: Competition; onEdit?: () => 
         </div>
       )}
       {c.notes && <p className="small">{c.notes}</p>}
+      {onEdit && who.length > 0 && (
+        <ul className="plain entries">
+          {who.map((a) => (
+            <li key={a.id} className="small"><b>{a.first_name}</b>{entries[a.id] ? <span className="muted"> · {entries[a.id]}</span> : <span className="tiny muted"> · disciplines à préciser</span>}</li>
+          ))}
+        </ul>
+      )}
       {onEdit ? (
         <div className="row between wrap">
-          <span className="tiny muted">{who.length ? `👥 ${who.map((a) => a.first_name).join(', ')}` : '👥 Tout le club'}</span>
+          <span className="tiny muted">{who.length ? `👥 ${who.length} participant(s)` : '👥 Tout le club'}</span>
           <span className="row gap">
             <a className="btn ghost small" href={whatsappUrl(share)} target="_blank" rel="noreferrer" aria-label="Partager sur WhatsApp">📲</a>
             <button className="btn ghost small" onClick={onEdit}>Modifier</button>
           </span>
         </div>
       ) : (
-        me && c.athlete_ids.includes(me.id) && <span className="tiny tt-record">✅ Tu es sélectionné·e</span>
+        me && c.athlete_ids.includes(me.id) && (
+          <span className="tiny tt-record">✅ Tu es sélectionné·e{entries[me.id] && <> · <b>{entries[me.id]}</b></>}</span>
+        )
       )}
     </div>
   )
@@ -84,7 +99,7 @@ export function CompetitionCard({ c, onEdit }: { c: Competition; onEdit?: () => 
 
 function CompetitionForm({ initial, onClose }: { initial: Partial<Competition>; onClose: () => void }) {
   const { groups, athletes, save, remove } = useData()
-  const [c, setC] = useState<Partial<Competition>>({ level: 'B', athlete_ids: [], ...initial })
+  const [c, setC] = useState<Partial<Competition>>({ level: 'B', athlete_ids: [], entries: {}, ...initial })
   const [some, setSome] = useState((initial.athlete_ids ?? []).length > 0)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
@@ -92,6 +107,17 @@ function CompetitionForm({ initial, onClose }: { initial: Partial<Competition>; 
   const ids = c.athlete_ids ?? []
   const toggle = (id: string) => set({ athlete_ids: ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id] })
   const active = athletes.filter((a) => a.active)
+  const entries = c.entries ?? {}
+  const setEntry = (id: string, v: string) => set({ entries: { ...entries, [id]: v } })
+  const addEvent = (id: string, ev: string) => {
+    const cur = (entries[id] ?? '').split(',').map((x) => x.trim()).filter(Boolean)
+    setEntry(id, (cur.includes(ev) ? cur.filter((x) => x !== ev) : [...cur, ev]).join(', '))
+  }
+  // Disciplines habituelles de l'athlète (fiche), puis les plus courantes
+  const suggestions = (id: string) => {
+    const own = (athletes.find((a) => a.id === id)?.events ?? '').split(/[,;/]/).map((x) => x.trim()).filter(Boolean)
+    return [...new Set([...own, ...EVENTS.filter((e) => !own.some((o) => o.toLowerCase() === e.toLowerCase()))])].slice(0, 10)
+  }
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -103,6 +129,7 @@ function CompetitionForm({ initial, onClose }: { initial: Partial<Competition>; 
         level: c.level, program_url: normUrl(c.program_url ?? ''), registration_url: normUrl(c.registration_url ?? ''),
         results_url: normUrl(c.results_url ?? ''), registration_deadline: c.registration_deadline || null,
         notes: c.notes?.trim() ?? '', athlete_ids: some ? ids : [],
+        entries: some ? Object.fromEntries(ids.map((id) => [id, (entries[id] ?? '').trim()]).filter(([, v]) => v)) : {},
       })
       onClose()
     } catch (e2) {
@@ -162,6 +189,27 @@ function CompetitionForm({ initial, onClose }: { initial: Partial<Competition>; 
             })}
           </div>
         </Field>
+        {some && ids.length > 0 && (
+          <Field label="Disciplines de chacun">
+            <div className="form">
+              {active.filter((a) => ids.includes(a.id)).map((a) => {
+                const cur = (entries[a.id] ?? '').split(',').map((x) => x.trim().toLowerCase())
+                return (
+                  <div key={a.id} className="entry-row">
+                    <b className="small">{fullName(a)}</b>
+                    <input list="events" value={entries[a.id] ?? ''} onChange={(e) => setEntry(a.id, e.target.value)} placeholder="Ex. 60 m, longueur" />
+                    <div className="chips-wrap">
+                      {suggestions(a.id).map((ev) => (
+                        <button type="button" key={ev} className={`mini-chip ${cur.includes(ev.toLowerCase()) ? 'on' : ''}`} onClick={() => addEvent(a.id, ev)}>{ev}</button>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+              <datalist id="events">{EVENTS.map((e) => <option key={e} value={e} />)}</datalist>
+            </div>
+          </Field>
+        )}
         <Field label="Notes"><textarea rows={2} value={c.notes ?? ''} onChange={(e) => set({ notes: e.target.value })} placeholder="Disciplines, transport, rendez-vous…" /></Field>
         {err && <div className="alert warn">{err}</div>}
         <div className="row between">

@@ -276,6 +276,8 @@ create table if not exists competitions (
   athlete_ids           uuid[] not null default '{}',
   created_at            timestamptz not null default now()
 );
+-- Disciplines de chaque participant : { "<id athlète>": "60 m, longueur" }
+alter table competitions add column if not exists entries jsonb not null default '{}'::jsonb;
 create index if not exists competitions_date_idx on competitions (coach_id, date);
 alter table competitions enable row level security;
 
@@ -586,7 +588,10 @@ begin
   update athlete_notes set athlete_id = p_into where athlete_id = p_from;
   update assignments set athlete_ids = array_replace(athlete_ids, p_from, p_into)
     where coach_id = my_club() and p_from = any (athlete_ids);
-  update competitions set athlete_ids = array_replace(athlete_ids, p_from, p_into)
+  update competitions set
+    athlete_ids = array_replace(athlete_ids, p_from, p_into),
+    entries = case when entries ? p_from::text
+      then (entries - p_from::text) || jsonb_build_object(p_into::text, entries -> p_from::text) else entries end
     where coach_id = my_club() and p_from = any (athlete_ids);
 
   perform set_config('app.linking', '1', true);
