@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import type { ClubInfo, Me, TableName } from '../types'
 import type { Api, Draft, Row } from './types'
 
-const ORDER: Partial<Record<TableName, string>> = { assignments: 'date', wellness: 'date', records: 'date', test_results: 'date', test_reports: 'date' }
+const ORDER: Partial<Record<TableName, string>> = { assignments: 'date', wellness: 'date', records: 'date', test_results: 'date', test_reports: 'date', competitions: 'date' }
 
 const ERRORS: Record<string, string> = {
   'Invalid login credentials': 'Email ou mot de passe incorrect.',

@@ -462,3 +462,20 @@ input.attention { border-color: var(--warn); box-shadow: 0 0 0 2px var(--warn-so
 .pick input { margin: 0; accent-color: var(--primary); }
 .pick.off { border-color: var(--border); color: var(--muted); text-decoration: line-through; }
 .card.to-check { border-color: var(--warn); }
+
+/* Compétitions */
+.level-badge { display: inline-grid; place-items: center; min-width: 2rem; height: 2rem; border-radius: 999px; font-weight: 800; font: inherit; font-weight: 800; border: 2px solid transparent; cursor: default; }
+.level-badge.level-A { background: var(--club-yellow); color: #1f1600; }
+.level-badge.level-B { background: var(--primary); color: var(--primary-ink, #fff); }
+.level-badge.level-C { background: var(--surface); color: var(--muted); border-color: var(--border); }
+.level-pick { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.level-pick .level-badge { cursor: pointer; opacity: 0.45; }
+.level-pick .level-badge.on { opacity: 1; box-shadow: 0 0 0 3px var(--primary-soft); }
+.card.competition.level-A { border-left: 5px solid var(--club-yellow); }
+.card.competition.level-B { border-left: 5px solid var(--primary); }
+.card.competition h3 { margin: 0; }
+.card.competition.past { opacity: 0.7; }
+.deadline-soon { color: var(--warn); font-weight: 600; }
+.month-title { text-transform: capitalize; }
+.slot.comp-slot { background: var(--warn-soft); }
+.slot.comp-slot.level-A { background: color-mix(in srgb, var(--club-yellow) 35%, transparent); }

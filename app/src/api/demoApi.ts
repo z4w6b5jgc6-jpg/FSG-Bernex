@@ -133,6 +133,10 @@ function seed(): Db {
       training: 'Bonds courts enchaînés, gainage dynamique, sprints lancés en petit volume.',
       message: 'Belle progression sur le 20 m lancé ! Ton prochain cap : garder la même qualité d’appui quand les bonds s’enchaînent.',
     }],
+    competitions: [
+      { id: uid(), name: 'Meeting en salle de Genève', date: addDays(today, 24), end_date: null, location: 'Genève', level: 'C', program_url: 'https://example.org/programme', registration_url: '', results_url: '', registration_deadline: addDays(today, 10), notes: 'Premier test de la saison en salle.', athlete_ids: [] },
+      { id: uid(), name: 'Championnats régionaux en salle U16/U18', date: addDays(today, 80), end_date: addDays(today, 81), location: 'Macolin', level: 'A', program_url: '', registration_url: '', results_url: '', registration_deadline: addDays(today, 60), notes: '', athlete_ids: [athletes[0].id, athletes[2].id] },
+    ],
   }
 }
 
@@ -142,7 +146,11 @@ const norm = (t: string | null | undefined) =>
 function load(): Db {
   try {
     const raw = localStorage.getItem(KEY)
-    if (raw) return JSON.parse(raw) as Db
+    if (raw) {
+      const db = JSON.parse(raw) as Db
+      db.competitions ??= [] // données démo enregistrées avant l'ajout des compétitions
+      return db
+    }
   } catch { /* ignore */ }
   const db = seed()
   persist(db)
@@ -205,6 +213,7 @@ export function createDemoApi(): Api {
       tests: () => true,
       test_results: (x) => x.athlete_id === me.id,
       test_reports: (x) => x.athlete_id === me.id,
+      competitions: (c) => c.athlete_ids.length === 0 || c.athlete_ids.includes(me.id),
       records: (x) => x.athlete_id === me.id,
       wellness: (x) => x.athlete_id === me.id,
     }
@@ -313,6 +322,7 @@ export function createDemoApi(): Api {
         for (const r of db[t] as { athlete_id: string }[]) if (r.athlete_id === fromId) r.athlete_id = intoId
       }
       for (const a of db.assignments) a.athlete_ids = a.athlete_ids.map((x) => (x === fromId ? intoId : x))
+      for (const c of db.competitions) c.athlete_ids = c.athlete_ids.map((x) => (x === fromId ? intoId : x))
       Object.assign(into, {
         user_id: from.user_id, linked_at: new Date().toISOString(), signup_reviewed: true, active: true,
         group_id: into.group_id ?? from.group_id, birth_year: into.birth_year ?? from.birth_year,
@@ -438,6 +448,7 @@ function defaults(table: TableName): Record<string, unknown> {
     case 'feedback': return { completed: true, rpe: null, fatigue: null, mood: null, pain: '', comment: '', coach_reply: '' }
     case 'tips': return { category: 'Hygiène de vie', emoji: '💡', summary: '', body: '', published: true }
     case 'records': return { competition: '', date: todayISO() }
+    case 'competitions': return { end_date: null, location: '', level: 'B', program_url: '', registration_url: '', results_url: '', registration_deadline: null, notes: '', athlete_ids: [] }
     case 'tests': return { unit: '', higher_is_better: true, category: 'Autre', description: '' }
     case 'test_results': return { notes: '', trials: [], date: todayISO() }
     case 'test_reports': return { title: 'Bilan des tests', strengths: '', priority: '', training: '', message: '', date: todayISO() }

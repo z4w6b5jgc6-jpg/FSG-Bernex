@@ -7,7 +7,7 @@ import type { Assignment } from '../types'
 import { addDays, athletesFor, formatDate, startOfWeek, todayISO } from '../lib/utils'
 
 export function Planning() {
-  const { assignments, sessions, groups, athletes, feedback } = useData()
+  const { assignments, sessions, groups, athletes, feedback, competitions } = useData()
   const [params, setParams] = useSearchParams()
   const [week, setWeek] = useState(startOfWeek(todayISO()))
   const [form, setForm] = useState<Partial<Assignment> | null>(
@@ -45,6 +45,12 @@ export function Planning() {
                 <span>{formatDate(d, { weekday: 'long', day: 'numeric' })}</span>
                 <button className="btn ghost icon small" title="Planifier ce jour" onClick={() => setForm({ date: d })}>+</button>
               </div>
+              {competitions.filter((c) => c.date <= d && (c.end_date || c.date) >= d).map((c) => (
+                <Link key={c.id} to="/competitions" className={`slot comp-slot level-${c.level}`}>
+                  <strong>🏆 {c.name}</strong>
+                  <div className="small muted">Niveau {c.level}{c.location && ` · ${c.location}`}</div>
+                </Link>
+              ))}
               {items.map((a) => {
                 const s = sessions.find((x) => x.id === a.session_id)
                 const g = groups.find((x) => x.id === a.group_id)

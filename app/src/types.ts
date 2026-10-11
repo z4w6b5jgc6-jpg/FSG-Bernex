@@ -164,6 +164,23 @@ export interface Feedback {
   updated_at: string
 }
 
+/** Compétition visée ; athlete_ids vide = tout le club */
+export interface Competition {
+  id: string
+  name: string
+  date: string
+  end_date: string | null
+  location: string
+  /** A = objectif principal, B = importante, C = préparation */
+  level: 'A' | 'B' | 'C'
+  program_url: string
+  registration_url: string
+  results_url: string
+  registration_deadline: string | null
+  notes: string
+  athlete_ids: string[]
+}
+
 export interface Tables {
   groups: Group
   athletes: Athlete
@@ -178,6 +195,7 @@ export interface Tables {
   tests: TestDef
   test_results: TestResult
   test_reports: TestReport
+  competitions: Competition
 }
 
 export type TableName = keyof Tables

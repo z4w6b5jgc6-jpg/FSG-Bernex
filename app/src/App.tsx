@@ -22,6 +22,7 @@ import { Tests, TestDetail, TestEntry, TestMatrix } from './pages/Tests'
 import { ImportResults } from './pages/ImportResults'
 import { ImportSessions } from './pages/ImportSessions'
 import { ImportProfiles } from './pages/ImportProfiles'
+import { Competitions } from './pages/Competitions'
 import { AthleteHome } from './pages/athlete/AthleteHome'
 import { AthleteSessions, AthleteSessionDetail } from './pages/athlete/AthleteSessions'
 import { AthleteProgress } from './pages/athlete/AthleteProgress'
@@ -34,6 +35,7 @@ const COACH_NAV: NavItem[] = [
   { to: '/planning', label: 'Planning', icon: '📅' },
   { to: '/seances', label: 'Séances', icon: '📋' },
   { to: '/athletes', label: 'Athlètes', icon: '🏃' },
+  { to: '/competitions', label: 'Compét.', icon: '🏆' },
   { to: '/conseils', label: 'Conseils', icon: '💡' },
 ]
 
@@ -91,6 +93,7 @@ function CoachApp() {
         <Route path="/athletes/:id" element={<AthleteDetail />} />
         <Route path="/conseils" element={<Tips />} />
         <Route path="/conseils/:id" element={<TipDetail />} />
+        <Route path="/competitions" element={<Competitions />} />
         <Route path="/tests" element={<Tests />} />
         <Route path="/tests/saisie" element={<TestEntry />} />
         <Route path="/tests/tableau" element={<TestMatrix />} />
@@ -116,6 +119,7 @@ function AthleteApp() {
         <Route path="/conseils" element={<Tips />} />
         <Route path="/conseils/:id" element={<TipDetail />} />
         <Route path="/progres" element={<AthleteProgress />} />
+        <Route path="/competitions" element={<Competitions />} />
         <Route path="/profil" element={<AthleteProfile key={athlete.id} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

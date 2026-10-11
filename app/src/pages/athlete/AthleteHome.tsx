@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { NextCompetitions } from '../Competitions'
 import { useData, useMyAthlete } from '../../lib/data'
 import { WellnessCheckin } from '../../components/WellnessCheckin'
 import { InstallPrompt } from '../../components/InstallPrompt'
@@ -90,6 +91,8 @@ export function AthleteHome() {
           </Link>
         </section>
       )}
+
+      <NextCompetitions />
 
       {tip && (
         <section>

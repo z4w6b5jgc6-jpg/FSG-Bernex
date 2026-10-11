@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { NextCompetitions } from './Competitions'
 import { useData } from '../lib/data'
 import { FeedbackCard } from '../components/FeedbackCard'
 import { Empty, GroupBadge } from '../components/ui'
@@ -70,6 +71,8 @@ export function Dashboard() {
           </div>
         </section>
       )}
+
+      <NextCompetitions />
 
       <section>
         <div className="row between">

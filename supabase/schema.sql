@@ -259,6 +259,26 @@ begin
   end loop;
 end $$;
 
+-- Compétitions visées (saisies par les entraîneurs) ; athlete_ids vide = tout le club
+create table if not exists competitions (
+  id                    uuid primary key default gen_random_uuid(),
+  coach_id              uuid not null default my_club() references auth.users (id) on delete cascade,
+  name                  text not null,
+  date                  date not null,
+  end_date              date,
+  location              text not null default '',
+  level                 text not null default 'B' check (level in ('A', 'B', 'C')),
+  program_url           text not null default '',
+  registration_url      text not null default '',
+  results_url           text not null default '',
+  registration_deadline date,
+  notes                 text not null default '',
+  athlete_ids           uuid[] not null default '{}',
+  created_at            timestamptz not null default now()
+);
+create index if not exists competitions_date_idx on competitions (coach_id, date);
+alter table competitions enable row level security;
+
 create or replace function is_my_athlete(p_athlete uuid) returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (select 1 from athletes where id = p_athlete and coach_id = my_club())
@@ -296,7 +316,7 @@ alter table test_reports  enable row level security;
 do $$
 declare t text;
 begin
-  foreach t in array array['clubs','groups','athletes','athlete_notes','exercises','sessions','assignments','tips','tests'] loop
+  foreach t in array array['clubs','groups','athletes','athlete_notes','exercises','sessions','assignments','tips','tests','competitions'] loop
     execute format('drop policy if exists coach_all on %I', t);
     execute format('create policy coach_all on %I for all to authenticated using (coach_id = my_club()) with check (coach_id = my_club())', t);
   end loop;
@@ -360,6 +380,11 @@ create policy athlete_own on wellness for all to authenticated
   using (athlete_id = my_athlete_id()) with check (athlete_id = my_athlete_id());
 
 -- Athlète : lecture de ses résultats de tests et de la liste des tests du club
+-- Athlète : les compétitions du club (toutes, ou celles où il est inscrit)
+drop policy if exists athlete_read on competitions;
+create policy athlete_read on competitions for select to authenticated
+  using (coach_id = my_coach_id() and (cardinality(athlete_ids) = 0 or my_athlete_id() = any (athlete_ids)));
+
 drop policy if exists athlete_read on tests;
 create policy athlete_read on tests for select to authenticated using (coach_id = my_coach_id());
 drop policy if exists athlete_read on test_results;
@@ -560,6 +585,8 @@ begin
   update test_reports set athlete_id = p_into where athlete_id = p_from;
   update athlete_notes set athlete_id = p_into where athlete_id = p_from;
   update assignments set athlete_ids = array_replace(athlete_ids, p_from, p_into)
+    where coach_id = my_club() and p_from = any (athlete_ids);
+  update competitions set athlete_ids = array_replace(athlete_ids, p_from, p_into)
     where coach_id = my_club() and p_from = any (athlete_ids);
 
   perform set_config('app.linking', '1', true);
