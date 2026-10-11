@@ -654,3 +654,6 @@ grant execute on function regenerate_invite_code() to authenticated;
 grant execute on function club_by_code(text) to anon, authenticated;
 grant execute on function join_club(text, text, text, int, uuid, text, text) to authenticated;
 grant execute on function merge_athletes(uuid, uuid) to authenticated;
+
+-- Fait connaître tout de suite les nouvelles tables à l'API (sinon « schema cache » quelques minutes)
+notify pgrst, 'reload schema';
