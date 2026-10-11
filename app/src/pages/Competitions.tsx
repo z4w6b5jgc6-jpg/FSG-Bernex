@@ -260,19 +260,3 @@ export function Competitions() {
     </div>
   )
 }
-
-/** Encart « prochaines compétitions » (accueil entraîneur et athlète) */
-export function NextCompetitions({ max = 2 }: { max?: number }) {
-  const { competitions } = useData()
-  const next = [...competitions].filter((c) => daysUntil(lastDay(c)) >= 0).sort((a, b) => a.date.localeCompare(b.date)).slice(0, max)
-  if (next.length === 0) return null
-  return (
-    <section>
-      <div className="row between">
-        <h2>🏆 Prochaines compétitions</h2>
-        <Link to="/competitions" className="small">Tout voir</Link>
-      </div>
-      <div className="cards">{next.map((c) => <CompetitionCard key={c.id} c={c} />)}</div>
-    </section>
-  )
-}

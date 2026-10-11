@@ -54,7 +54,7 @@ function Shell({ nav, brand, right, children }: { nav: NavItem[]; brand: ReactNo
       <header className="topbar">
         <span className="brand">{brand}</span>
         <nav className="topnav">
-          {nav.map((n) => <NavLink key={n.to} to={n.to} end={n.to === '/'}>{n.label}</NavLink>)}
+          {nav.map((n) => <NavLink key={n.to} to={n.to} end={n.to === '/'}><span className="nav-ico" aria-hidden>{n.icon}</span>{n.label}</NavLink>)}
         </nav>
         {right}
       </header>

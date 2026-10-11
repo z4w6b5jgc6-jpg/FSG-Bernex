@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { NextCompetitions } from '../Competitions'
+import { Tiles } from '../../components/Tiles'
 import { useData, useMyAthlete } from '../../lib/data'
 import { WellnessCheckin } from '../../components/WellnessCheckin'
 import { InstallPrompt } from '../../components/InstallPrompt'
@@ -8,7 +8,7 @@ import { addDays, formatDate, todayISO } from '../../lib/utils'
 
 export function AthleteHome() {
   const me = useMyAthlete()
-  const { assignments, sessions, feedback, records, wellness, tips, groups, test_reports, loading } = useData()
+  const { assignments, sessions, feedback, records, wellness, tips, groups, test_reports, competitions, loading } = useData()
   if (!me) return <p className="muted">{loading ? 'Chargement…' : 'Profil introuvable.'}</p>
 
   const today = todayISO()
@@ -23,6 +23,8 @@ export function AthleteHome() {
   const tip = tipOfTheDay(allTips(tips))
   const group = groups.find((g) => g.id === me.group_id)
   const title = (sid: string) => sessions.find((s) => s.id === sid)?.title ?? 'Séance'
+  const nextComp = competitions.filter((c) => (c.end_date || c.date) >= today).sort((a, b) => a.date.localeCompare(b.date))[0]
+  const inDays = (d: string) => Math.round((new Date(d).getTime() - new Date(today).getTime()) / 86400000)
 
   return (
     <div>
@@ -43,6 +45,15 @@ export function AthleteHome() {
       )}
 
       <InstallPrompt who="athlete" />
+
+      <Tiles items={[
+        { to: '/seances', icon: '📅', label: 'Mes séances', tone: 'green', badge: todo.length,
+          info: todays.length ? 'Séance aujourd’hui !' : next ? `Prochaine : ${formatDate(next.date, { weekday: 'short', day: 'numeric', month: 'short' })}` : 'Rien de prévu' },
+        { to: '/progres', icon: '📈', label: 'Mes progrès', tone: 'blue', info: `${earned.length}/${badges.length} badges · tests et records` },
+        { to: '/competitions', icon: '🏆', label: 'Compétitions', tone: 'yellow',
+          info: nextComp ? `${nextComp.name} · ${inDays(nextComp.date) > 0 ? `dans ${inDays(nextComp.date)} j` : 'aujourd’hui'}` : 'Aucune prévue' },
+        { to: '/conseils', icon: '💡', label: 'Conseils', tone: 'pink', info: tip ? tip.title : 'Nutrition, sommeil, récup' },
+      ]} />
 
       {todays.map((a) => (
         <Link key={a.id} to={`/seances/${a.id}`} className="card link-card today-card">
@@ -82,17 +93,6 @@ export function AthleteHome() {
         )
       })()}
 
-      {next && (
-        <section>
-          <h2>Prochaine séance</h2>
-          <Link to={`/seances/${next.id}`} className="card link-card">
-            <strong>{title(next.session_id)}</strong>
-            <div className="muted small">{formatDate(next.date)}{next.time && ` · ${next.time}`}{next.location && ` · ${next.location}`}</div>
-          </Link>
-        </section>
-      )}
-
-      <NextCompetitions />
 
       {tip && (
         <section>

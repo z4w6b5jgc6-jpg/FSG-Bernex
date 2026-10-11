@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { NextCompetitions } from './Competitions'
+import { Tiles } from '../components/Tiles'
 import { useData } from '../lib/data'
 import { FeedbackCard } from '../components/FeedbackCard'
 import { Empty, GroupBadge } from '../components/ui'
@@ -7,7 +7,7 @@ import { InviteCard } from '../components/InviteCard'
 import { addDays, athletesFor, formatDate, formatShort, todayISO } from '../lib/utils'
 
 export function Dashboard() {
-  const { assignments, sessions, groups, athletes, feedback, wellness, me, loading } = useData()
+  const { assignments, sessions, groups, athletes, feedback, wellness, competitions, tests, me, loading } = useData()
   const today = todayISO()
   const upcoming = assignments
     .filter((a) => a.date >= today && a.date <= addDays(today, 7))
@@ -33,6 +33,12 @@ export function Dashboard() {
   const received = pastWeek.reduce((n, a) => n + feedback.filter((f) => f.assignment_id === a.id).length, 0)
   const unanswered = feedback.filter((f) => !f.coach_reply && f.comment).length
 
+  const pending = athletes.filter((a) => a.user_id && !a.signup_reviewed).length
+  const nextComp = competitions.filter((c) => (c.end_date || c.date) >= today).sort((a, b) => a.date.localeCompare(b.date))[0]
+  const inDays = (d: string) => Math.round((new Date(d).getTime() - new Date(today).getTime()) / 86400000)
+  const deadlines = competitions.filter((c) => c.registration_deadline && inDays(c.registration_deadline) >= 0 && inDays(c.registration_deadline) <= 7).length
+  const rate = expected ? Math.round((received / expected) * 100) : null
+
   const sessionOf = (id: string) => sessions.find((s) => s.id === id)
   const athleteOf = (id: string) => athletes.find((a) => a.id === id)
 
@@ -42,17 +48,22 @@ export function Dashboard() {
       <p className="muted">{me?.club_name} · {formatDate(today)}</p>
 
       {athletes.length === 0 && <InviteCard />}
-      {athletes.some((a) => a.user_id && !a.signup_reviewed) && (
+      {pending > 0 && (
         <Link to="/athletes" className="alert warn link-card">
-          🆕 {athletes.filter((a) => a.user_id && !a.signup_reviewed).length} nouvelle(s) inscription(s) à vérifier →
+          🆕 {pending} nouvelle(s) inscription(s) à vérifier →
         </Link>
       )}
-      <div className="stats">
-        <div className="stat"><b>{athletes.filter((a) => a.active).length}</b><span>athlètes</span></div>
-        <div className="stat"><b>{upcoming.length}</b><span>séances (7 j)</span></div>
-        <div className="stat"><b>{expected ? Math.round((received / expected) * 100) : 0}%</b><span>retours (7 j)</span></div>
-        <div className="stat"><b>{checkins}</b><span>check-ins du jour</span></div>
-      </div>
+      <Tiles items={[
+        { to: '/planning', icon: '📅', label: 'Planning', tone: 'green',
+          info: (upcoming.length ? `${upcoming.length} séance(s) dans les 7 j` : 'Rien de prévu cette semaine') + (rate !== null ? ` · retours ${rate} %` : '') },
+        { to: '/athletes', icon: '🏃', label: 'Athlètes', tone: 'blue', badge: pending,
+          info: `${athletes.filter((a) => a.active).length} athlètes` + (checkins ? ` · ${checkins} check-in(s) aujourd’hui` : '') },
+        { to: '/seances', icon: '📋', label: 'Séances', tone: 'violet', info: `${sessions.length} séance(s) type` },
+        { to: '/competitions', icon: '🏆', label: 'Compétitions', tone: 'yellow', badge: deadlines,
+          info: nextComp ? `${nextComp.name} · ${inDays(nextComp.date) > 0 ? `dans ${inDays(nextComp.date)} j` : 'aujourd’hui'}` : 'Aucune prévue' },
+        { to: '/tests', icon: '📏', label: 'Tests', tone: 'orange', info: `${tests.length} tests · résultats et VMA` },
+        { to: '/conseils', icon: '💡', label: 'Conseils', tone: 'pink', info: 'Nutrition, sommeil, récup' },
+      ]} />
 
       {alerts.length > 0 && (
         <section>
@@ -71,8 +82,6 @@ export function Dashboard() {
           </div>
         </section>
       )}
-
-      <NextCompetitions />
 
       <section>
         <div className="row between">
