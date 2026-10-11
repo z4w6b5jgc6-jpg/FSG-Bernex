@@ -3,6 +3,7 @@ import { useData } from '../lib/data'
 import type { Assignment } from '../types'
 import { errorMessage, fullName } from '../lib/utils'
 import { Field, Modal } from './ui'
+import { VENUES } from '../data/defaults'
 
 export function AssignmentForm({
   initial, onClose, onSaved,
@@ -53,7 +54,10 @@ export function AssignmentForm({
           <Field label="Date"><input type="date" value={a.date ?? ''} onChange={(e) => set({ date: e.target.value })} required /></Field>
           <Field label="Heure"><input type="time" value={a.time ?? ''} onChange={(e) => set({ time: e.target.value })} /></Field>
         </div>
-        <Field label="Lieu"><input value={a.location ?? ''} onChange={(e) => set({ location: e.target.value })} placeholder="Stade, salle…" /></Field>
+        <Field label="Lieu">
+          <input list="venues" value={a.location ?? ''} onChange={(e) => set({ location: e.target.value })} placeholder="Stade, salle…" />
+          <datalist id="venues">{VENUES.map((v) => <option key={v} value={v} />)}</datalist>
+        </Field>
         <Field label="Groupe">
           <select value={a.group_id ?? ''} onChange={(e) => set({ group_id: e.target.value || null })}>
             <option value="">— Aucun groupe —</option>

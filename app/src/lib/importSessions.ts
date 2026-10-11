@@ -1,6 +1,7 @@
 import type { Block, SessionItem } from '../types'
 import { normText, type Cell, type SheetIn } from './importResults'
 import { emptyItem, uid } from './utils'
+import { VENUES } from '../data/defaults'
 
 /** Séance lue dans un fichier : une ligne par exercice, regroupées par date + nom de séance */
 export interface SessionIn {
@@ -69,9 +70,9 @@ export function parseSessions(sheets: SheetIn[]): SessionIn[] | null {
   return null
 }
 
-/** Lieu habituel du groupe : Stade des Evaux d'avril à octobre, École de Cressy de novembre à mars */
+/** Lieu habituel du groupe : Stade des Evaux d'avril à octobre, Pavillon des sports du Bout-du-Monde de novembre à mars */
 export function defaultLocation(date: string): string {
   const m = Number(date.slice(5, 7))
   if (!m) return ''
-  return m >= 4 && m <= 10 ? 'Stade des Evaux' : 'École de Cressy'
+  return m >= 4 && m <= 10 ? VENUES[0] : VENUES[1]
 }

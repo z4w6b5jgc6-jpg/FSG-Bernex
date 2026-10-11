@@ -88,3 +88,6 @@ export const EXTRA_TESTS: TestTemplate[] = [
   { name: '1000 m', unit: 's', higher_is_better: false, category: 'Endurance', description: 'Chrono en secondes (ex. 3\'05 = 185 s).' },
   { name: 'Gainage ventral', unit: 's', higher_is_better: true, category: 'Force', description: 'Tenue maximale en position correcte.' },
 ]
+
+/** Lieux d'entraînement du groupe (proposés dans les champs « Lieu ») */
+export const VENUES = ['Stade des Evaux', 'Pavillon des sports du Bout-du-Monde']
