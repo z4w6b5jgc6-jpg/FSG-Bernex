@@ -45,8 +45,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setLoading(true)
     setError(null)
     try {
-      const results = await Promise.all(TABLES.map((t) => api.list(t)))
-      setStore(Object.fromEntries(TABLES.map((t, i) => [t, results[i]])) as unknown as Store)
+      // Une table absente (base pas encore mise à jour) ne doit pas cacher toutes les autres données
+      const results = await Promise.allSettled(TABLES.map((t) => api.list(t)))
+      setStore(Object.fromEntries(TABLES.map((t, i) => [t, results[i].status === 'fulfilled' ? results[i].value : []])) as unknown as Store)
+      const failed = results.find((r): r is PromiseRejectedResult => r.status === 'rejected')
+      if (failed) setError(failed.reason instanceof Error ? failed.reason.message : String(failed.reason))
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     } finally {
