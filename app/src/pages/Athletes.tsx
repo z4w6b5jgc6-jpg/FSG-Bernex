@@ -7,6 +7,7 @@ import type { Athlete, Group } from '../types'
 import { api } from '../api'
 import { errorMessage, fullName, inviteLink, todayISO, whatsappUrl } from '../lib/utils'
 import { ImportRoster } from '../components/ImportRoster'
+import { CoachesCard } from '../components/CoachesCard'
 
 const COLORS = ['#2563eb', '#db2777', '#16a34a', '#ea580c', '#7c3aed', '#0891b2', '#ca8a04', '#64748b']
 
@@ -40,6 +41,7 @@ export function Athletes() {
       </div>
       <PendingSignups />
       <InviteCard />
+      <CoachesCard />
       <div className="row gap wrap actions">
         <button className="btn primary" onClick={() => setEditAthlete({ group_id: groups[0]?.id ?? null })}>+ Athlète</button>
         <button className="btn" onClick={() => setImporting(true)}>📥 Importer ma liste</button>

@@ -190,6 +190,15 @@ export interface Me {
   athlete_id?: string
   club_name?: string
   invite_code?: string
+  /** entraîneur principal (créateur du club) ; false = entraîneur associé */
+  is_owner?: boolean
+}
+
+/** Entraîneur associé, ajouté par email */
+export interface CoachInvite {
+  email: string
+  /** relié à un compte (s'est déjà connecté) */
+  linked: boolean
 }
 
 export interface JoinProfile {

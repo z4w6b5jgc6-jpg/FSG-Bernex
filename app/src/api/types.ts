@@ -1,4 +1,4 @@
-import type { ClubInfo, JoinProfile, Me, TableName, Tables } from '../types'
+import type { ClubInfo, CoachInvite, JoinProfile, Me, TableName, Tables } from '../types'
 
 export type Row<K extends TableName> = Tables[K]
 export type Draft<K extends TableName> = Partial<Tables[K]> & { id?: string }
@@ -22,6 +22,11 @@ export interface Api {
   regenerateInviteCode(): Promise<string>
   /** Relie une inscription (from) au profil créé par l'entraîneur (into) et supprime le doublon */
   mergeAthletes(fromId: string, intoId: string): Promise<void>
+
+  // Entraîneurs associés (même club, mêmes droits)
+  listCoaches(): Promise<CoachInvite[]>
+  addCoach(email: string): Promise<void>
+  removeCoach(email: string): Promise<void>
 
   // Données (filtrées selon le rôle par la base)
   list<K extends TableName>(table: K): Promise<Row<K>[]>

@@ -13,6 +13,9 @@ const ERRORS: Record<string, string> = {
   is_coach: 'Ce compte est un compte entraîneur.',
   already_athlete: 'Ce compte est déjà un compte athlète.',
   target_has_account: 'Ce profil est déjà relié à un autre compte.',
+  club_coaches_pkey: 'Cet entraîneur est déjà ajouté.',
+  'schema cache': 'La base doit être mise à jour : relance le fichier supabase/schema.sql dans Supabase (SQL Editor).',
+  club_coaches_email_check: 'Adresse email invalide.',
 }
 
 function fail(message: string): never {
@@ -80,6 +83,16 @@ export function createSupabaseApi(url: string, key: string): Api {
     },
     async regenerateInviteCode() {
       return check(await sb.rpc('regenerate_invite_code')) as string
+    },
+    async listCoaches() {
+      const rows = check(await sb.from('club_coaches').select('email, user_id').order('created_at')) as { email: string; user_id: string | null }[]
+      return rows.map((r) => ({ email: r.email, linked: !!r.user_id }))
+    },
+    async addCoach(email) {
+      check(await sb.from('club_coaches').insert({ email: email.trim().toLowerCase() }))
+    },
+    async removeCoach(email) {
+      check(await sb.from('club_coaches').delete().eq('email', email))
     },
 
     async list<K extends TableName>(table: K) {

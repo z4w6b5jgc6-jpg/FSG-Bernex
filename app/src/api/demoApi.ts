@@ -13,6 +13,7 @@ interface DemoUser { email: string; id: string; coach: boolean }
 type Db = { [K in TableName]: Tables[K][] } & {
   club: { coach_id: string; name: string; invite_code: string }
   users: DemoUser[]
+  coaches?: string[]
 }
 
 function seed(): Db {
@@ -220,7 +221,7 @@ export function createDemoApi(): Api {
       const a = myAthlete()
       return {
         email: u.email, role: r, athlete_id: a?.id, club_name: db.club.name,
-        invite_code: r === 'coach' ? db.club.invite_code : undefined,
+        invite_code: r === 'coach' ? db.club.invite_code : undefined, is_owner: r === 'coach' ? true : undefined,
       }
     },
     onAuthChange(cb) {
@@ -318,6 +319,22 @@ export function createDemoApi(): Api {
         avatar: from.avatar, color: from.color, goals: from.goals, favorite_tips: from.favorite_tips,
       })
       db.athletes = db.athletes.filter((a) => a.id !== fromId)
+      persist(db)
+    },
+    async listCoaches() {
+      db = load()
+      return delay((db.coaches ?? []).map((email) => ({ email, linked: db.users.some((u) => u.email === email) })))
+    },
+    async addCoach(email) {
+      db = load()
+      const e = email.trim().toLowerCase()
+      if ((db.coaches ?? []).includes(e)) throw new Error('Cet entraîneur est déjà ajouté.')
+      db.coaches = [...(db.coaches ?? []), e]
+      persist(db)
+    },
+    async removeCoach(email) {
+      db = load()
+      db.coaches = (db.coaches ?? []).filter((x) => x !== email)
       persist(db)
     },
     async regenerateInviteCode() {

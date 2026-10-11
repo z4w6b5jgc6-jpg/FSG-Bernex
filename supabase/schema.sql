@@ -22,6 +22,15 @@ create table if not exists clubs (
   created_at   timestamptz not null default now()
 );
 
+-- Autres entraîneurs du club : ajoutés par email, reliés à leur compte à la première connexion
+create table if not exists club_coaches (
+  owner_id    uuid not null default auth.uid() references clubs (coach_id) on delete cascade,
+  email       text not null check (email = lower(trim(email)) and email <> ''),
+  user_id     uuid unique references auth.users (id) on delete set null,
+  created_at  timestamptz not null default now(),
+  primary key (owner_id, email)
+);
+
 create table if not exists groups (
   id          uuid primary key default gen_random_uuid(),
   coach_id    uuid not null default auth.uid() references auth.users (id) on delete cascade,
@@ -226,9 +235,26 @@ language sql stable security definer set search_path = public as $$
   select group_id from athletes where user_id = auth.uid() and active limit 1
 $$;
 
+-- Club géré par l'entraîneur connecté : le sien, ou celui où il est entraîneur associé.
+-- Toutes les données d'un club portent l'identifiant de son entraîneur principal (coach_id).
+create or replace function my_club() returns uuid
+language sql stable security definer set search_path = public as $$
+  select coalesce(
+    (select coach_id from clubs where coach_id = auth.uid()),
+    (select owner_id from club_coaches where user_id = auth.uid() limit 1))
+$$;
+
+do $$
+declare t text;
+begin
+  foreach t in array array['groups','athletes','athlete_notes','exercises','sessions','assignments','tips','tests'] loop
+    execute format('alter table %I alter column coach_id set default my_club()', t);
+  end loop;
+end $$;
+
 create or replace function is_my_athlete(p_athlete uuid) returns boolean
 language sql stable security definer set search_path = public as $$
-  select exists (select 1 from athletes where id = p_athlete and coach_id = auth.uid())
+  select exists (select 1 from athletes where id = p_athlete and coach_id = my_club())
 $$;
 
 -- Une séance planifiée concerne-t-elle l'athlète connecté ?
@@ -265,13 +291,20 @@ declare t text;
 begin
   foreach t in array array['clubs','groups','athletes','athlete_notes','exercises','sessions','assignments','tips','tests'] loop
     execute format('drop policy if exists coach_all on %I', t);
-    execute format('create policy coach_all on %I for all to authenticated using (coach_id = auth.uid()) with check (coach_id = auth.uid())', t);
+    execute format('create policy coach_all on %I for all to authenticated using (coach_id = my_club()) with check (coach_id = my_club())', t);
   end loop;
   foreach t in array array['feedback','records','wellness','test_results','test_reports'] loop
     execute format('drop policy if exists coach_all on %I', t);
     execute format('create policy coach_all on %I for all to authenticated using (is_my_athlete(athlete_id)) with check (is_my_athlete(athlete_id))', t);
   end loop;
 end $$;
+
+-- Entraîneurs associés : visibles par tous les entraîneurs du club, ajoutés ou retirés par l'entraîneur principal
+alter table club_coaches enable row level security;
+drop policy if exists coach_read on club_coaches;
+create policy coach_read on club_coaches for select to authenticated using (owner_id = my_club());
+drop policy if exists owner_write on club_coaches;
+create policy owner_write on club_coaches for all to authenticated using (owner_id = auth.uid()) with check (owner_id = auth.uid());
 
 -- Athlète : lecture du club, des groupes, des séances qui le concernent, des conseils
 drop policy if exists athlete_read on clubs;
@@ -331,7 +364,7 @@ language plpgsql as $$
 begin
   -- Liaison faite par join_club / merge_athletes : autorisée
   if coalesce(current_setting('app.linking', true), '') = '1' then return new; end if;
-  if auth.uid() is not null and auth.uid() is distinct from old.coach_id then
+  if auth.uid() is not null and my_club() is distinct from old.coach_id then
     new.coach_id := old.coach_id;
     new.group_id := old.group_id;
     new.active   := old.active;
@@ -354,7 +387,7 @@ language plpgsql security definer set search_path = public as $$
 declare v_coach uuid;
 begin
   select coach_id into v_coach from athletes where id = new.athlete_id;
-  if auth.uid() is not null and auth.uid() is distinct from v_coach then
+  if auth.uid() is not null and my_club() is distinct from v_coach then
     new.coach_reply := case when tg_op = 'UPDATE' then old.coach_reply else '' end;
   end if;
   new.updated_at := now();
@@ -368,15 +401,24 @@ create trigger feedback_protect before insert or update on feedback for each row
 -- ---------------------------------------------------------------------
 
 -- Rôle de l'utilisateur connecté : 'coach', 'athlete' ou 'new' (pas encore inscrit)
+-- Un entraîneur associé (ajouté par email) est relié à son compte ici, à sa première connexion.
 create or replace function whoami() returns json
-language plpgsql stable security definer set search_path = public as $$
+language plpgsql volatile security definer set search_path = public as $$
 declare
   v_club clubs;
   v_ath  athletes;
 begin
-  select * into v_club from clubs where coach_id = auth.uid();
+  if my_club() is null and auth.uid() is not null
+     and not exists (select 1 from athletes where user_id = auth.uid()) then
+    update club_coaches set user_id = auth.uid()
+    where (owner_id, email) = (select owner_id, email from club_coaches
+                               where user_id is null and email = (select lower(email) from auth.users where id = auth.uid())
+                               order by created_at limit 1);
+  end if;
+  select * into v_club from clubs where coach_id = my_club();
   if found then
-    return json_build_object('role', 'coach', 'club_name', v_club.name, 'invite_code', v_club.invite_code);
+    return json_build_object('role', 'coach', 'club_name', v_club.name, 'invite_code', v_club.invite_code,
+                             'is_owner', v_club.coach_id = auth.uid());
   end if;
   select * into v_ath from athletes where user_id = auth.uid();
   if found then
@@ -394,6 +436,7 @@ language plpgsql security definer set search_path = public as $$
 begin
   if auth.uid() is null then raise exception 'not_authenticated'; end if;
   if exists (select 1 from athletes where user_id = auth.uid()) then raise exception 'already_athlete'; end if;
+  if exists (select 1 from club_coaches where user_id = auth.uid()) then raise exception 'is_coach'; end if;
   insert into clubs (coach_id, name) values (auth.uid(), p_name)
   on conflict (coach_id) do update set name = excluded.name;
 end $$;
@@ -401,7 +444,7 @@ end $$;
 create or replace function regenerate_invite_code() returns text
 language sql security definer set search_path = public as $$
   update clubs set invite_code = upper(substr(md5(gen_random_uuid()::text), 1, 8))
-  where coach_id = auth.uid() returning invite_code
+  where coach_id = my_club() returning invite_code
 $$;
 
 -- Infos publiques d'un club à partir du code (page d'inscription)
@@ -438,7 +481,7 @@ declare
   v_count int;
 begin
   if auth.uid() is null then raise exception 'not_authenticated'; end if;
-  if exists (select 1 from clubs where coach_id = auth.uid()) then raise exception 'is_coach'; end if;
+  if my_club() is not null then raise exception 'is_coach'; end if;
   if exists (select 1 from athletes where user_id = auth.uid()) then raise exception 'already_member'; end if;
   select coach_id into v_coach from clubs where invite_code = upper(trim(p_code));
   if v_coach is null then raise exception 'invalid_code'; end if;
@@ -489,8 +532,8 @@ declare
   v_from athletes;
   v_into athletes;
 begin
-  select * into v_from from athletes where id = p_from and coach_id = auth.uid();
-  select * into v_into from athletes where id = p_into and coach_id = auth.uid();
+  select * into v_from from athletes where id = p_from and coach_id = my_club();
+  select * into v_into from athletes where id = p_into and coach_id = my_club();
   if v_from.id is null or v_into.id is null or p_from = p_into then raise exception 'not_found'; end if;
   if v_into.user_id is not null then raise exception 'target_has_account'; end if;
 
@@ -506,7 +549,7 @@ begin
   update test_reports set athlete_id = p_into where athlete_id = p_from;
   update athlete_notes set athlete_id = p_into where athlete_id = p_from;
   update assignments set athlete_ids = array_replace(athlete_ids, p_from, p_into)
-    where coach_id = auth.uid() and p_from = any (athlete_ids);
+    where coach_id = my_club() and p_from = any (athlete_ids);
 
   perform set_config('app.linking', '1', true);
   update athletes set user_id = null where id = p_from;
@@ -523,6 +566,8 @@ begin
   delete from athletes where id = p_from;
 end $$;
 
+revoke all on function my_club() from public;
+grant execute on function my_club() to authenticated;
 revoke all on function whoami() from public;
 revoke all on function create_club(text) from public;
 revoke all on function regenerate_invite_code() from public;

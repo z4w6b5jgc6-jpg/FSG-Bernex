@@ -75,6 +75,10 @@ export function Onboarding() {
       </form>
       <form className="card login-card form" onSubmit={create}>
         <h2>📋 Je suis entraîneur</h2>
+        <p className="small muted">
+          Tu rejoins un club qui utilise déjà l’app ? Ne crée pas d’espace : demande à l’entraîneur principal de t’ajouter
+          (Athlètes → 👥 Entraîneurs du club) avec l’adresse <b>{me?.email}</b>, puis reconnecte-toi.
+        </p>
         <Field label="Nom de ton club ou de ton groupe"><input value={clubName} onChange={(e) => setClubName(e.target.value)} placeholder="Ex. FSG Bernex – Athlétisme" required /></Field>
         <button className="btn block" disabled={busy || !clubName.trim()}>Créer mon espace entraîneur</button>
       </form>
