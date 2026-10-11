@@ -9,6 +9,9 @@ const config = env.COACH_SUPABASE_URL
   ? readConfig(env.COACH_SUPABASE_URL, env.COACH_SUPABASE_ANON_KEY)
   : readConfig(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY)
 
+/** Adresse du projet Supabase (null en démo) */
+export const supabaseUrl = config.kind === 'ok' ? config.config.url : null
+
 /** Problèmes de configuration à afficher à la place de l'app (null si tout va bien) */
 export let configProblems: string[] | null = config.kind === 'error' ? config.problems : null
 

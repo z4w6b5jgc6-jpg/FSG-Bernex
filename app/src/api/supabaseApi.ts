@@ -15,7 +15,7 @@ const ERRORS: Record<string, string> = {
   target_has_account: 'Ce profil est déjà relié à un autre compte.',
   invalid_invite: 'Ce lien d’invitation n’est plus valable (déjà utilisé ou expiré). Demande un nouveau lien.',
   club_coaches_pkey: 'Cet entraîneur est déjà ajouté.',
-  'schema cache': 'La base doit être mise à jour : relance le fichier supabase/schema.sql dans Supabase (SQL Editor).',
+  'schema cache': 'La base doit être mise à jour : ouvre entrainementu18.netlify.app/#/base et suis les étapes.',
   club_coaches_email_check: 'Adresse email invalide.',
 }
 

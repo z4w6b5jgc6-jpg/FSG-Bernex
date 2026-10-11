@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, type ReactNode } from 'react'
 import { HashRouter, Navigate, NavLink, Route, Routes } from 'react-router-dom'
 import { api } from './api'
 import { DataProvider, useData, useMyAthlete } from './lib/data'
@@ -7,6 +7,7 @@ import { InstallPrompt } from './components/InstallPrompt'
 import { Login } from './pages/Login'
 import { Join } from './pages/Join'
 import { CoachJoin } from './pages/CoachJoin'
+const DbUpdate = lazy(() => import('./pages/DbUpdate').then((m) => ({ default: m.DbUpdate })))
 import { Onboarding } from './pages/Onboarding'
 import { Dashboard } from './pages/Dashboard'
 import { Planning } from './pages/Planning'
@@ -138,6 +139,7 @@ export default function App() {
           <Route path="/rejoindre/:code" element={<Join />} />
           <Route path="/rejoindre/:code/:group" element={<Join />} />
           <Route path="/entraineur/:token" element={<CoachJoin />} />
+          <Route path="/base" element={<Suspense fallback={null}><DbUpdate /></Suspense>} />
           <Route path="*" element={<RoleGate />} />
         </Routes>
       </DataProvider>
