@@ -62,11 +62,15 @@ Puis ouvrir http://localhost:5173 :
 2. Dans le projet : **SQL Editor → New query**, coller le contenu de [`supabase/schema.sql`](supabase/schema.sql), cliquer **Run** (le script peut être relancé sans risque après une mise à jour de l'app).
 3. Dans **Project Settings → API**, noter l'**URL** du projet et la clé **anon public**.
 
-### 2. Héberger le site (Netlify ou Vercel)
-- **Netlify** : *Add new site → Import from GitHub*, choisir ce dépôt (le fichier `netlify.toml` configure tout).
-- **Vercel** : *New Project*, choisir ce dépôt, mettre **Root Directory = `app`**.
+### 2. Héberger le site (Cloudflare Pages)
+Le site du club est publié sur **https://entrainementu18.pages.dev** : chaque push sur la branche de production le republie automatiquement.
+- Cloudflare : *Workers & Pages → Create → Pages → Connect to Git*, choisir ce dépôt, puis
+  **Framework preset = None**, **Build command = `npm run build`**, **Build output directory = `dist`**, **Root directory = `app`**.
+- Après un changement d'adresse : dans Supabase, *Authentication → URL Configuration*, mettre la nouvelle adresse en **Site URL** et l'ajouter aux **Redirect URLs** (`https://…/**`).
 
-La connexion à Supabase est définie dans [`netlify.toml`](netlify.toml) (`COACH_SUPABASE_URL` et `COACH_SUPABASE_ANON_KEY`, la clé **publishable**, publique par conception). Pour un autre projet Supabase, remplacer ces deux valeurs. On peut aussi utiliser les variables `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` dans l'interface Netlify, si `netlify.toml` n'en définit pas. Si une valeur est mal renseignée, l'app affiche un écran « Configuration à corriger » qui explique le problème.
+La connexion à Supabase est définie dans [`app/.env.production`](app/.env.production) (`COACH_SUPABASE_URL` et `COACH_SUPABASE_ANON_KEY`, la clé **publishable**, publique par conception) : aucune variable à saisir chez l'hébergeur. Pour un autre projet Supabase, remplacer ces deux valeurs. Si une valeur est mal renseignée, l'app affiche un écran « Configuration à corriger » qui explique le problème.
+
+Mise à jour de la base après une nouvelle version : ouvrir **`<adresse du site>/#/base`**, copier le script et l'exécuter dans le *SQL Editor* de Supabase.
 
 ### 3. Créer son compte entraîneur
 1. Ouvrir le site → **Créer un compte**, confirmer via l'email reçu, se connecter, puis **« Je suis entraîneur »** et donner le nom du club.

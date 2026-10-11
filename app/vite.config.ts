@@ -5,6 +5,6 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react()],
   base: './',
-  // COACH_* : configuration Supabase définie dans netlify.toml
+  // COACH_* : configuration Supabase définie dans app/.env.production
   envPrefix: ['VITE_', 'COACH_'],
 })
