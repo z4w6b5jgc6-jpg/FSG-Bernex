@@ -5,6 +5,7 @@ import { Field } from '../components/ui'
 import { FOCUSES, OLD_VENUES, VENUES } from '../data/defaults'
 import type { Cell } from '../lib/importResults'
 import { defaultLocation, parseSessions, type SessionIn } from '../lib/importSessions'
+import { docxLines, parseSessionText } from '../lib/sessionText'
 import type { Assignment, Athlete } from '../types'
 import { errorMessage, formatDate, fullName, parseISODate } from '../lib/utils'
 
@@ -27,6 +28,10 @@ export function ImportSessions() {
   const [groupId, setGroupId] = useState('')
   const [time, setTime] = useState('18:00')
   const [open, setOpen] = useState<string | null>(null)
+  // Document Word ou texte collé : nom de base des séances (« Longueur » → « Longueur S01 – … »)
+  const [base, setBase] = useState('Séance')
+  const [paste, setPaste] = useState('')
+  const [skipped, setSkipped] = useState<string[]>([])
   const group = groupId || groups[0]?.id || ''
   const members = useMemo(() => athletes.filter((a) => a.active && a.group_id === group).sort((a, b) => fullName(a).localeCompare(fullName(b))), [athletes, group])
   // Athlètes du groupe exclus de ces séances (null = proposition d'après la spécialité)
@@ -42,14 +47,25 @@ export function ImportSessions() {
   const plannedOf = (r: Row) => { const s = existing(r); return s ? assignments.find((a) => a.session_id === s.id && a.date === r.date) : undefined }
   const set = (key: string, patch: Partial<Row>) => setRows((rs) => rs && rs.map((r) => (r.key === key ? { ...r, ...patch } : r)))
 
+  const show = (found: SessionIn[]) => setRows(found.map((s) => ({ ...s, include: true, location: defaultLocation(s.date) })))
+  const fromText = (lines: string[]) => {
+    const { sessions: found, skipped: sk } = parseSessionText(lines, base)
+    setSkipped(sk)
+    if (!found.length) return setErr('Je n’ai trouvé aucune date de séance (ex. « Mercredi 28 octobre 2026 ») dans ce texte.')
+    show(found)
+  }
+
   const onFile = async (file: File) => {
     setErr(null)
+    setSkipped([])
     try {
+      if (/\.docx$/i.test(file.name)) return fromText(docxLines(await file.arrayBuffer()))
+      if (/\.txt$/i.test(file.name)) return fromText((await file.text()).split(/\r?\n/))
       const { default: readXlsxFile } = await import('read-excel-file/browser')
       const sheets = await readXlsxFile(file)
       const found = parseSessions(sheets.map((s) => ({ name: s.sheet, rows: s.data as Cell[][] })))
       if (!found?.length) return setErr('Je n’ai pas trouvé de tableau avec une colonne « Exercice ».')
-      setRows(found.map((s) => ({ ...s, include: true, location: defaultLocation(s.date) })))
+      show(found)
     } catch (e) {
       setErr('Impossible de lire ce fichier : ' + errorMessage(e))
     }
@@ -97,12 +113,29 @@ export function ImportSessions() {
       <h1>Importer des séances</h1>
       <div className="card form">
         <p className="small">
-          Choisis un classeur Excel (.xlsx) avec <b>une ligne par exercice</b> et les colonnes
-          Date · Séance · Cycle · Phase · Bloc · Exercice (et si tu veux Séries, Répétitions, Distance, Durée, Récupération, Intensité, Consignes).
-          Les lignes d’une même date et d’une même séance forment une séance.
+          <b>Ton document Word</b> (.docx), tel que tu l’écris : chaque date (« Mercredi 28 octobre 2026 ») commence une séance,
+          « Cycle 2 – Phase intensive » donne l’objectif, « Gainage : » ou « Éducatifs » ouvre un bloc, les autres lignes sont les exercices.
+          Ou un <b>tableau Excel</b> (une ligne par exercice). Tu vérifies tout dans l’aperçu avant d’importer.
         </p>
-        <input type="file" accept=".xlsx" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
+        <Field label="Nom des séances (document Word ou texte)" hint="Ex. « Longueur » → Longueur S01, S02…">
+          <input value={base} onChange={(e) => setBase(e.target.value)} placeholder="Longueur, Vitesse, Haies…" />
+        </Field>
+        <input type="file" accept=".docx,.xlsx,.txt" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
+        <details>
+          <summary className="small">…ou coller le texte</summary>
+          <div className="form">
+            <textarea rows={8} value={paste} onChange={(e) => setPaste(e.target.value)} placeholder={'Mercredi 28 octobre 2026\nÉchauffement 4 tours et stretching 20 min\nÉducatifs :\nTalon-fesses 4 x 30m\nSkipping 4 x 30m\nRetour au calme : stretching'} />
+            <button className="btn small" disabled={!paste.trim()} onClick={() => { setErr(null); fromText(paste.split(/\r?\n/)) }}>Analyser</button>
+          </div>
+        </details>
+        <a className="small" href="modele-seances.xlsx" download>📄 Télécharger le modèle Excel</a>
         {err && <div className="alert warn">{err}</div>}
+        {skipped.length > 0 && (
+          <details className="alert info small">
+            <summary>{skipped.length} ligne(s) avant la première date, non importée(s)</summary>
+            <ul className="plain">{skipped.slice(0, 20).map((l, i) => <li key={i}>{l}</li>)}</ul>
+          </details>
+        )}
       </div>
 
       {rows && (
