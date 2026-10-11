@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useData } from '../lib/data'
 import { Field } from '../components/ui'
-import { clearPendingJoin, parseInvitePath, pendingJoin } from '../lib/pwa'
+import { clearPendingCoach, clearPendingJoin, parseInvitePath, pendingCoach, pendingJoin } from '../lib/pwa'
 import { errorMessage } from '../lib/utils'
 
 /** Compte créé mais pas encore rattaché à un club */
@@ -19,12 +19,14 @@ export function Onboarding() {
   // Termine automatiquement une inscription commencée avant la confirmation de l'email
   useEffect(() => {
     const pending = pendingJoin()
-    if (me?.role !== 'new' || !pending || started.current) return
+    const coach = pendingCoach()
+    if (me?.role !== 'new' || (!pending && !coach) || started.current) return
     started.current = true
     setBusy(true)
-    api.joinClub(pending.code, pending.profile)
-      .then(() => { clearPendingJoin(); return refreshMe() })
-      .catch((e) => { clearPendingJoin(); setErr(errorMessage(e)) })
+    const run = coach ? api.acceptCoachInvite(coach) : api.joinClub(pending!.code, pending!.profile)
+    run
+      .then(() => { clearPendingJoin(); clearPendingCoach(); return refreshMe() })
+      .catch((e) => { clearPendingJoin(); clearPendingCoach(); setErr(errorMessage(e)) })
       .finally(() => setBusy(false))
   }, [me?.role, refreshMe])
 
@@ -76,8 +78,8 @@ export function Onboarding() {
       <form className="card login-card form" onSubmit={create}>
         <h2>📋 Je suis entraîneur</h2>
         <p className="small muted">
-          Tu rejoins un club qui utilise déjà l’app ? Ne crée pas d’espace : demande à l’entraîneur principal de t’ajouter
-          (Athlètes → 👥 Entraîneurs du club) avec l’adresse <b>{me?.email}</b>, puis reconnecte-toi.
+          Tu rejoins un club qui utilise déjà l’app ? Ne crée pas d’espace : ouvre le <b>lien d’invitation entraîneur</b>
+          reçu sur WhatsApp (ou colle-le dans la case « Lien ou code » ci-dessus).
         </p>
         <Field label="Nom de ton club ou de ton groupe"><input value={clubName} onChange={(e) => setClubName(e.target.value)} placeholder="Ex. FSG Bernex – Athlétisme" required /></Field>
         <button className="btn block" disabled={busy || !clubName.trim()}>Créer mon espace entraîneur</button>

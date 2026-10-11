@@ -71,8 +71,22 @@ export function clearPendingJoin() {
 
 /** Chemin d'inscription à partir d'un lien collé (avec son groupe éventuel) ou du code seul */
 export function parseInvitePath(input: string): string | null {
+  const coach = input.match(/entraineur\/([A-Za-z0-9-]{20,})/)
+  if (coach) return `/entraineur/${coach[1]}`
   const fromLink = input.match(/rejoindre\/([A-Za-z0-9]+)(?:\/([0-9a-f-]{36}))?/i)
   if (fromLink) return `/rejoindre/${fromLink[1].toUpperCase()}${fromLink[2] ? `/${fromLink[2].toLowerCase()}` : ''}`
   const raw = input.trim()
   return /^[A-Za-z0-9]{4,12}$/.test(raw) ? `/rejoindre/${raw.toUpperCase()}` : null
+}
+
+const COACH_KEY = 'athle-pending-coach'
+/** Invitation entraîneur commencée avant la confirmation de l'email */
+export function savePendingCoach(token: string) {
+  try { localStorage.setItem(COACH_KEY, token) } catch { /* ignore */ }
+}
+export function pendingCoach(): string | null {
+  try { return localStorage.getItem(COACH_KEY) } catch { return null }
+}
+export function clearPendingCoach() {
+  try { localStorage.removeItem(COACH_KEY) } catch { /* ignore */ }
 }

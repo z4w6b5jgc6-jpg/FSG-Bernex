@@ -31,6 +31,13 @@ create table if not exists club_coaches (
   primary key (owner_id, email)
 );
 
+-- Liens d'invitation entraîneur (envoyés par WhatsApp) : usage unique, valables 14 jours
+create table if not exists coach_invites (
+  token       text primary key check (length(token) >= 20),
+  owner_id    uuid not null default auth.uid() references clubs (coach_id) on delete cascade,
+  created_at  timestamptz not null default now()
+);
+
 create table if not exists groups (
   id          uuid primary key default gen_random_uuid(),
   coach_id    uuid not null default auth.uid() references auth.users (id) on delete cascade,
@@ -306,6 +313,10 @@ create policy coach_read on club_coaches for select to authenticated using (owne
 drop policy if exists owner_write on club_coaches;
 create policy owner_write on club_coaches for all to authenticated using (owner_id = auth.uid()) with check (owner_id = auth.uid());
 
+alter table coach_invites enable row level security;
+drop policy if exists owner_write on coach_invites;
+create policy owner_write on coach_invites for all to authenticated using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+
 -- Athlète : lecture du club, des groupes, des séances qui le concernent, des conseils
 drop policy if exists athlete_read on clubs;
 create policy athlete_read on clubs for select to authenticated using (coach_id = my_coach_id());
@@ -566,6 +577,37 @@ begin
   delete from athletes where id = p_from;
 end $$;
 
+-- Page d'invitation entraîneur : nom du club (sans être connecté)
+create or replace function coach_invite_info(p_token text) returns json
+language sql stable security definer set search_path = public as $$
+  select json_build_object('name', c.name)
+  from coach_invites i join clubs c on c.coach_id = i.owner_id
+  where i.token = p_token and i.created_at > now() - interval '14 days'
+$$;
+
+-- L'entraîneur invité (connecté) rejoint le club ; le lien est ensuite désactivé
+create or replace function accept_coach_invite(p_token text) returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  v_owner uuid;
+  v_email text;
+begin
+  if auth.uid() is null then raise exception 'not_authenticated'; end if;
+  select owner_id into v_owner from coach_invites where token = p_token and created_at > now() - interval '14 days';
+  if v_owner is null then raise exception 'invalid_invite'; end if;
+  if my_club() = v_owner then delete from coach_invites where token = p_token; return; end if;
+  if my_club() is not null then raise exception 'is_coach'; end if;
+  if exists (select 1 from athletes where user_id = auth.uid()) then raise exception 'already_athlete'; end if;
+  select lower(email) into v_email from auth.users where id = auth.uid();
+  insert into club_coaches (owner_id, email, user_id) values (v_owner, v_email, auth.uid())
+  on conflict (owner_id, email) do update set user_id = auth.uid();
+  delete from coach_invites where token = p_token;
+end $$;
+
+revoke all on function coach_invite_info(text) from public;
+revoke all on function accept_coach_invite(text) from public;
+grant execute on function coach_invite_info(text) to anon, authenticated;
+grant execute on function accept_coach_invite(text) to authenticated;
 revoke all on function my_club() from public;
 grant execute on function my_club() to authenticated;
 revoke all on function whoami() from public;

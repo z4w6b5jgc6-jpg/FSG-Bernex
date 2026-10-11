@@ -6,6 +6,7 @@ import { applyAccent } from './lib/athlete'
 import { InstallPrompt } from './components/InstallPrompt'
 import { Login } from './pages/Login'
 import { Join } from './pages/Join'
+import { CoachJoin } from './pages/CoachJoin'
 import { Onboarding } from './pages/Onboarding'
 import { Dashboard } from './pages/Dashboard'
 import { Planning } from './pages/Planning'
@@ -136,6 +137,7 @@ export default function App() {
         <Routes>
           <Route path="/rejoindre/:code" element={<Join />} />
           <Route path="/rejoindre/:code/:group" element={<Join />} />
+          <Route path="/entraineur/:token" element={<CoachJoin />} />
           <Route path="*" element={<RoleGate />} />
         </Routes>
       </DataProvider>

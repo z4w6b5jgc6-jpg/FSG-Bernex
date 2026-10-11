@@ -14,6 +14,7 @@ type Db = { [K in TableName]: Tables[K][] } & {
   club: { coach_id: string; name: string; invite_code: string }
   users: DemoUser[]
   coaches?: string[]
+  coachInvites?: string[]
 }
 
 function seed(): Db {
@@ -336,6 +337,28 @@ export function createDemoApi(): Api {
       db = load()
       db.coaches = (db.coaches ?? []).filter((x) => x !== email)
       persist(db)
+    },
+    async createCoachInvite(token) {
+      db = load()
+      db.coachInvites = [...(db.coachInvites ?? []), token]
+      persist(db)
+    },
+    async coachInviteInfo(token) {
+      db = load()
+      return (db.coachInvites ?? []).includes(token) ? { name: db.club.name } : null
+    },
+    async acceptCoachInvite(token) {
+      db = load()
+      const u = currentUser()
+      if (!u) throw new Error('Non connecté')
+      if (!(db.coachInvites ?? []).includes(token)) throw new Error('Ce lien d’invitation n’est plus valable (déjà utilisé ou expiré). Demande un nouveau lien.')
+      if (myAthlete()) throw new Error('Ce compte est déjà un compte athlète.')
+      db.coachInvites = (db.coachInvites ?? []).filter((t) => t !== token)
+      if (!(db.coaches ?? []).includes(u.email)) db.coaches = [...(db.coaches ?? []), u.email]
+      u.coach = true
+      u.id = COACH_ID
+      persist(db)
+      listeners.forEach((l) => l())
     },
     async regenerateInviteCode() {
       db = load()

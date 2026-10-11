@@ -13,6 +13,7 @@ const ERRORS: Record<string, string> = {
   is_coach: 'Ce compte est un compte entraîneur.',
   already_athlete: 'Ce compte est déjà un compte athlète.',
   target_has_account: 'Ce profil est déjà relié à un autre compte.',
+  invalid_invite: 'Ce lien d’invitation n’est plus valable (déjà utilisé ou expiré). Demande un nouveau lien.',
   club_coaches_pkey: 'Cet entraîneur est déjà ajouté.',
   'schema cache': 'La base doit être mise à jour : relance le fichier supabase/schema.sql dans Supabase (SQL Editor).',
   club_coaches_email_check: 'Adresse email invalide.',
@@ -93,6 +94,15 @@ export function createSupabaseApi(url: string, key: string): Api {
     },
     async removeCoach(email) {
       check(await sb.from('club_coaches').delete().eq('email', email))
+    },
+    async createCoachInvite(token) {
+      check(await sb.from('coach_invites').insert({ token }))
+    },
+    async coachInviteInfo(token) {
+      return check(await sb.rpc('coach_invite_info', { p_token: token })) as { name: string } | null
+    },
+    async acceptCoachInvite(token) {
+      check(await sb.rpc('accept_coach_invite', { p_token: token }))
     },
 
     async list<K extends TableName>(table: K) {

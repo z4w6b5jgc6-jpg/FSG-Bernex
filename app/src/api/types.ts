@@ -27,6 +27,10 @@ export interface Api {
   listCoaches(): Promise<CoachInvite[]>
   addCoach(email: string): Promise<void>
   removeCoach(email: string): Promise<void>
+  /** Lien d'invitation entraîneur à usage unique (le jeton est créé côté app) */
+  createCoachInvite(token: string): Promise<void>
+  coachInviteInfo(token: string): Promise<{ name: string } | null>
+  acceptCoachInvite(token: string): Promise<void>
 
   // Données (filtrées selon le rôle par la base)
   list<K extends TableName>(table: K): Promise<Row<K>[]>

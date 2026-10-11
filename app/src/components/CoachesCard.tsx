@@ -5,6 +5,7 @@ import type { CoachInvite } from '../types'
 import { errorMessage, whatsappUrl } from '../lib/utils'
 
 const appUrl = () => window.location.href.split('#')[0]
+const newToken = () => (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`)
 
 /** Entraîneurs du club : l'entraîneur principal ajoute ses collègues par email, ils ont les mêmes droits */
 export function CoachesCard() {
@@ -14,6 +15,19 @@ export function CoachesCard() {
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [added, setAdded] = useState<string | null>(null)
+  // Jeton préparé d'avance : WhatsApp s'ouvre directement au toucher (pas de fenêtre bloquée sur iPhone)
+  const [token, setToken] = useState(newToken)
+  const [sent, setSent] = useState(false)
+  const inviteUrl = `${appUrl()}#/entraineur/${token}`
+  const inviteText =
+    `📋 Rejoins-moi comme entraîneur sur l’app du club ${me?.club_name ?? ''} : séances, planning, athlètes et retours.\n\n` +
+    `Crée ton compte ici 👉 ${inviteUrl}\n\n(lien personnel, valable 14 jours)`
+  const invite = () => {
+    const t = token
+    // Nouveau jeton seulement après l'ouverture du lien (sinon le lien ouvert serait déjà le suivant)
+    setTimeout(() => setToken(newToken()), 1000)
+    api.createCoachInvite(t).then(() => setSent(true)).catch((e) => setErr(errorMessage(e)))
+  }
   const owner = me?.is_owner !== false
 
   const load = useCallback(() => {
@@ -76,18 +90,25 @@ export function CoachesCard() {
         ))}
       </ul>
       {owner && (
-        <form className="row gap" onSubmit={add}>
-          <input type="email" inputMode="email" autoCapitalize="none" placeholder="email de l’autre entraîneur" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <button className="btn primary" disabled={busy || !email.trim()}>Ajouter</button>
-        </form>
+        <a className="btn whatsapp block" href={whatsappUrl(inviteText)} target="_blank" rel="noreferrer" onClick={invite}>📲 Inviter un entraîneur par WhatsApp</a>
       )}
-      {added && (
-        <div className="alert info small form">
-          <span>✅ <b>{added}</b> est ajouté. Envoie-lui les instructions :</span>
-          <a className="btn whatsapp" href={whatsappUrl(message(added))} target="_blank" rel="noreferrer" onClick={() => setAdded(null)}>📲 Envoyer par WhatsApp</a>
-        </div>
+      {sent && <p className="tiny muted">✅ Lien envoyé. Dès qu’il aura créé son compte avec ce lien, il apparaîtra ici.</p>}
+      {owner && (
+        <details>
+          <summary className="small muted">…ou ajouter par adresse email</summary>
+          <form className="row gap" onSubmit={add}>
+            <input type="email" inputMode="email" autoCapitalize="none" placeholder="email de l’autre entraîneur" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <button className="btn primary" disabled={busy || !email.trim()}>Ajouter</button>
+          </form>
+          {added && (
+            <div className="alert info small form">
+              <span>✅ <b>{added}</b> est ajouté. Envoie-lui les instructions :</span>
+              <a className="btn whatsapp" href={whatsappUrl(message(added))} target="_blank" rel="noreferrer" onClick={() => setAdded(null)}>📲 Envoyer par WhatsApp</a>
+            </div>
+          )}
+          <p className="tiny muted">Il crée ensuite son compte avec <b>cette adresse</b> et arrive directement dans le club.</p>
+        </details>
       )}
-      {owner && <p className="tiny muted">Il crée ensuite son compte avec <b>cette adresse</b> et arrive directement dans le club.</p>}
       {err && <div className="alert warn small">{err}</div>}
     </details>
   )
