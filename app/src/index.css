@@ -558,3 +558,8 @@ input.attention { border-color: var(--warn); box-shadow: 0 0 0 2px var(--warn-so
   border-radius: 10px; background: color-mix(in srgb, var(--club-yellow) 16%, var(--surface)); border: 1px solid color-mix(in srgb, var(--club-yellow) 40%, var(--border)); }
 .recovery-hint .tiny { flex-basis: 100%; order: 3; }
 .recovery-hint .btn { margin-left: auto; }
+
+.ai-btn { background: linear-gradient(120deg, color-mix(in srgb, #7c5cdb 18%, var(--surface)), color-mix(in srgb, var(--club-yellow) 18%, var(--surface))); border-color: color-mix(in srgb, #7c5cdb 35%, var(--border)); font-weight: 600; }
+.ai-resume { background: color-mix(in srgb, #7c5cdb 8%, var(--surface)); }
+.ai-sug { display: flex; flex-direction: column; gap: 0.3rem; }
+.ai-sug.done { opacity: 0.6; }

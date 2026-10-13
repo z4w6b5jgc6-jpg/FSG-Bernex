@@ -183,6 +183,18 @@ export interface Competition {
   entries: Record<string, string>
 }
 
+/** Proposition de l'IA pour une séance (à valider par l'entraîneur) */
+export interface AiSuggestion {
+  bloc: string
+  exercice: string
+  /** champ de l'exercice à modifier ('' = conseil général) */
+  champ: '' | 'sets' | 'reps' | 'distance' | 'duration' | 'recovery' | 'intensity' | 'notes'
+  valeur: string
+  proposition: string
+  pourquoi: string
+}
+export interface AiAdvice { resume: string; suggestions: AiSuggestion[] }
+
 export interface Tables {
   groups: Group
   athletes: Athlete

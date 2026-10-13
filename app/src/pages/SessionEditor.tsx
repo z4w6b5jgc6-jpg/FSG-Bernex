@@ -6,6 +6,7 @@ import { CATEGORIES, FOCUSES } from '../data/defaults'
 import type { Block, Session, SessionItem } from '../types'
 import { emptyItem, errorMessage, itemSummary, uid } from '../lib/utils'
 import { suggestRecovery } from '../lib/recovery'
+import { AiAdvicePanel } from '../components/AiAdvicePanel'
 
 const ITEM_FIELDS: { key: keyof SessionItem; label: string; placeholder: string }[] = [
   { key: 'sets', label: 'Séries', placeholder: 'ex. 3' },
@@ -107,6 +108,7 @@ export function SessionEditor() {
           </Field>
         </div>
         <Field label="Objectif"><textarea rows={2} value={draft.objective} onChange={(e) => update({ objective: e.target.value })} placeholder="Ce que les athlètes doivent retenir de la séance" /></Field>
+        <AiAdvicePanel session={draft} onApply={updItem} />
       </div>
 
       <datalist id="exercise-names">

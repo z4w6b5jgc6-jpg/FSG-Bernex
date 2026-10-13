@@ -1,0 +1,8 @@
+# Configuration Cloudflare Pages (site entrainementu18.pages.dev)
+name = "entrainementu18"
+pages_build_output_dir = "./dist"
+compatibility_date = "2025-06-01"
+
+# IA de Cloudflare (Workers AI) pour le bouton « Améliorer cette séance » : functions/api/ameliorer.ts
+[ai]
+binding = "AI"

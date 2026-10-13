@@ -336,6 +336,17 @@ export function createDemoApi(): Api {
       db.athletes = db.athletes.filter((a) => a.id !== fromId)
       persist(db)
     },
+    async improveSession(s) {
+      // Démo : réponse d'exemple (pas d'IA appelée)
+      const first = s.blocks.flatMap((b) => b.items.map((it) => ({ b, it }))).find(({ it }) => /m\b/.test(it.distance) && !it.recovery)
+      return delay({
+        resume: 'Exemple en mode démo : la séance est bien construite, la vitesse est placée en début de séance.',
+        suggestions: [
+          ...(first ? [{ bloc: first.b.title, exercice: first.it.name, champ: 'recovery' as const, valeur: "3'", proposition: 'Ajouter 3 min de récupération entre les répétitions.', pourquoi: 'Vitesse maximale : environ 1 min par 10 m pour garder la qualité.' }] : []),
+          { bloc: '', exercice: '', champ: '' as const, valeur: '', proposition: 'Terminer par 10 min de retour au calme (footing lent + étirements).', pourquoi: 'Favorise la récupération pour la séance suivante.' },
+        ],
+      })
+    },
     async saveTrainingInfo(text) {
       db = load()
       db.club.training_info = text

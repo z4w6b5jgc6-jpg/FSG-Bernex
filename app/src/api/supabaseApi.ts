@@ -85,6 +85,21 @@ export function createSupabaseApi(url: string, key: string): Api {
     async regenerateInviteCode() {
       return check(await sb.rpc('regenerate_invite_code')) as string
     },
+    async improveSession(s) {
+      const { data } = await sb.auth.getSession()
+      const res = await fetch('/api/ameliorer', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${data.session?.access_token ?? ''}` },
+        // Contenu d'entraînement uniquement : pas d'identifiants, pas d'athlètes
+        body: JSON.stringify({
+          title: s.title, objective: s.objective, focus: s.focus, duration_min: s.duration_min,
+          blocks: s.blocks.map((b) => ({ title: b.title, items: b.items.map(({ id: _id, ...it }) => (void _id, it)) })),
+        }),
+      })
+      const out = await res.json().catch(() => null)
+      if (!res.ok || !out) throw new Error(out?.error ?? (res.status === 404 ? 'Le service IA n’est pas encore en ligne.' : `Erreur ${res.status}`))
+      return out
+    },
     async saveTrainingInfo(text) {
       check(await sb.rpc('set_training_info', { p_text: text }))
     },
