@@ -563,3 +563,9 @@ input.attention { border-color: var(--warn); box-shadow: 0 0 0 2px var(--warn-so
 .ai-resume { background: color-mix(in srgb, #7c5cdb 8%, var(--surface)); }
 .ai-sug { display: flex; flex-direction: column; gap: 0.3rem; }
 .ai-sug.done { opacity: 0.6; }
+
+.eq-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.4rem; }
+@media (max-width: 420px) { .eq-grid { grid-template-columns: repeat(3, 1fr); } }
+.eq-cell { display: flex; flex-direction: column; align-items: center; padding: 0.45rem 0.2rem; border-radius: 10px; background: var(--bg); border: 1px solid var(--border); }
+.eq-cell b { font-size: 1.02rem; }
+.eq-cell.ref { background: color-mix(in srgb, var(--club-yellow) 22%, var(--surface)); border-color: var(--club-yellow); }

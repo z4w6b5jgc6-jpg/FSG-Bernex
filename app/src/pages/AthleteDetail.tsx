@@ -8,6 +8,7 @@ import { Empty, Field, GroupBadge, Modal } from '../components/ui'
 import { RecordForm } from '../components/RecordForm'
 import { TestResults } from '../components/TestResults'
 import { VmaPaces } from '../components/VmaPaces'
+import { SprintEquivalence } from '../components/SprintEquivalence'
 import { ReportCard, ReportForm } from '../components/TestInsights'
 import { parseValue } from '../lib/tests'
 import type { PersonalRecord } from '../types'
@@ -141,6 +142,7 @@ export function AthleteDetail() {
           <>
             <VmaPaces tests={tests} results={test_results.filter((r) => r.athlete_id === a.id)} title="Allures d’entraînement" />
             <TestResults tests={tests} results={test_results.filter((r) => r.athlete_id === a.id)} onDelete={(rid) => remove('test_results', rid)} />
+            <SprintEquivalence tests={tests} results={test_results.filter((r) => r.athlete_id === a.id)} records={records.filter((r) => r.athlete_id === a.id)} />
           </>
         )}
       </section>

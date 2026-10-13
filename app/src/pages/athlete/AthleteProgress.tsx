@@ -6,6 +6,7 @@ import { RecordForm } from '../../components/RecordForm'
 import { TestResults } from '../../components/TestResults'
 import { ReportCard } from '../../components/TestInsights'
 import { VmaPaces } from '../../components/VmaPaces'
+import { SprintEquivalence } from '../../components/SprintEquivalence'
 import { checkinStreak, computeBadges, feedbackStreak, myAssignments } from '../../lib/athlete'
 import type { PersonalRecord } from '../../types'
 import { formatDate, todayISO } from '../../lib/utils'
@@ -80,6 +81,7 @@ export function AthleteProgress() {
         <h2>📏 Mes tests</h2>
         <VmaPaces tests={tests} results={test_results} />
         <TestResults tests={tests} results={test_results} />
+        <SprintEquivalence tests={tests} results={test_results} records={records} title="⚡ Mes temps probables" />
         {test_results.length > 0 && <p className="tiny muted">Saisis par ton coach · ▲ = progrès par rapport au test précédent</p>}
       </section>
 

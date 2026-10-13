@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { sprintReference } from '../../lib/sprint'
 import { TrainingInfo } from '../../components/TrainingInfo'
 import { Link, useParams } from 'react-router-dom'
 import { useData, useMyAthlete } from '../../lib/data'
@@ -53,7 +54,7 @@ export function AthleteSessions() {
 export function AthleteSessionDetail() {
   const { id } = useParams()
   const me = useMyAthlete()
-  const { assignments, sessions, feedback, tests, test_results, loading } = useData()
+  const { assignments, sessions, feedback, tests, test_results, records, loading } = useData()
   const a = assignments.find((x) => x.id === id)
   const s = a && sessions.find((x) => x.id === a.session_id)
   if (!me || !a || !s) return loading ? <p className="muted">Chargement…</p> : <Empty>Séance introuvable. <Link to="/seances">Retour</Link></Empty>
@@ -65,7 +66,7 @@ export function AthleteSessionDetail() {
       <h1>{s.title}</h1>
       <p className="muted">{formatDate(a.date)}{a.time && ` · ${a.time}`}{a.location && ` · ${a.location}`}</p>
       {a.note && <div className="alert info">{a.note}</div>}
-      <div className="card"><SessionView session={s} vma={latestVma(tests, test_results)?.value} /></div>
+      <div className="card"><SessionView session={s} vma={latestVma(tests, test_results)?.value} sprintLevel={sprintReference(tests, test_results, records)?.level} /></div>
       <section>
         <h2>Mon retour</h2>
         {fb?.coach_reply && <div className="reply">💬 <strong>Message de ton coach :</strong> {fb.coach_reply}</div>}
