@@ -569,3 +569,19 @@ input.attention { border-color: var(--warn); box-shadow: 0 0 0 2px var(--warn-so
 .eq-cell { display: flex; flex-direction: column; align-items: center; padding: 0.45rem 0.2rem; border-radius: 10px; background: var(--bg); border: 1px solid var(--border); }
 .eq-cell b { font-size: 1.02rem; }
 .eq-cell.ref { background: color-mix(in srgb, var(--club-yellow) 22%, var(--surface)); border-color: var(--club-yellow); }
+
+/* Assistant */
+.chat { display: flex; flex-direction: column; gap: 0.6rem; }
+.chat-context select { width: auto; max-width: 100%; }
+.chat-list { display: flex; flex-direction: column; gap: 0.6rem; min-height: 120px; }
+.chat-empty { padding: 0.6rem 0; }
+.bubble { max-width: 92%; padding: 0.6rem 0.8rem; border-radius: 16px; line-height: 1.4; display: flex; flex-direction: column; gap: 0.4rem; align-items: flex-start; }
+.bubble.user { align-self: flex-end; background: var(--primary); color: var(--primary-ink); border-bottom-right-radius: 6px; white-space: pre-wrap; }
+.bubble.assistant { align-self: flex-start; background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 6px; }
+.bubble.assistant .rich h3 { margin: 0.5rem 0 0.2rem; font-size: 0.95rem; }
+.bubble.assistant .rich ul, .bubble.assistant .rich ol { margin: 0.2rem 0; padding-left: 1.2rem; }
+.bubble.assistant .rich p { margin: 0.25rem 0; }
+.chat-input { display: flex; gap: 0.5rem; align-items: flex-end; position: sticky; bottom: calc(4.4rem + env(safe-area-inset-bottom)); background: var(--bg); padding: 0.4rem 0; }
+.modal .chat-input { bottom: 0; background: var(--surface); }
+@media (min-width: 721px) { .chat-input { bottom: 0; } }
+.chat-input textarea { flex: 1; resize: none; }

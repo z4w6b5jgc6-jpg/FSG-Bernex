@@ -1,4 +1,4 @@
-import type { AiAdvice, ClubInfo, CoachInvite, JoinProfile, Me, Session, TableName, Tables } from '../types'
+import type { AiAdvice, ChatMessage, ClubInfo, CoachInvite, JoinProfile, Me, Session, TableName, Tables } from '../types'
 
 export type Row<K extends TableName> = Tables[K]
 export type Draft<K extends TableName> = Partial<Tables[K]> & { id?: string }
@@ -23,6 +23,8 @@ export interface Api {
   saveTrainingInfo(text: string): Promise<void>
   /** Suggestions de l'IA (contenu de la séance seulement, aucune donnée d'athlète) */
   improveSession(session: Pick<Session, 'title' | 'objective' | 'focus' | 'duration_min' | 'blocks'>): Promise<AiAdvice>
+  /** Conversation avec l'assistant (noms déjà masqués), éventuellement à propos d'une séance */
+  chat(messages: ChatMessage[], session?: Pick<Session, 'title' | 'objective' | 'focus' | 'duration_min' | 'blocks'> | null): Promise<string>
   /** Relie une inscription (from) au profil créé par l'entraîneur (into) et supprime le doublon */
   mergeAthletes(fromId: string, intoId: string): Promise<void>
 

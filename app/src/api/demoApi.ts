@@ -336,6 +336,13 @@ export function createDemoApi(): Api {
       db.athletes = db.athletes.filter((a) => a.id !== fromId)
       persist(db)
     },
+    async chat(messages, s) {
+      const q = messages[messages.length - 1]?.content ?? ''
+      if (/propos|seance|séance|plan b/i.test(q)) {
+        return delay(`(Mode démo, réponse d’exemple) Voici une proposition en salle :\n\n## Échauffement :\n- Footing et mobilité 15 min\n\n## Éducatifs :\n- Skipping 4 x 20m\n- Talon-fesses 4 x 20m\n\n## Corps de séance :\n- Départs à genoux 6 x 15m\n- Bondissements sur tapis 3 x 8\n\n## Retour au calme :\n- Étirements 10 min`)
+      }
+      return delay(`(Mode démo, réponse d’exemple) Tu as demandé : « ${q.slice(0, 120)} »${s ? ` à propos de la séance « ${s.title} »` : ''}.\n\n## Piste\n- Vitesse en début de séance, sur athlètes frais\n- **Récupération** : environ 1 min par 10 m en vitesse maximale\n- Terminer par un retour au calme`)
+    },
     async improveSession(s) {
       // Démo : réponse d'exemple (pas d'IA appelée)
       const first = s.blocks.flatMap((b) => b.items.map((it) => ({ b, it }))).find(({ it }) => /m\b/.test(it.distance) && !it.recovery)

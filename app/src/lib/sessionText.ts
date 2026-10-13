@@ -87,6 +87,8 @@ export function parseSessionText(lines: string[], baseTitle: string, today = new
   const skipped: string[] = []
   let cycle = '', phase = ''
   let cur: (SessionIn & { subtitle: string }) | null = null
+  // blocs complets sur une seule ligne (« Échauffement 4 tours et stretching 20 min ») : rien ne s'y ajoute
+  const closed = new Set<string>()
 
   const block = (title: string): Block => {
     const b = { id: uid(), title, items: [] }
@@ -108,7 +110,7 @@ export function parseSessionText(lines: string[], baseTitle: string, today = new
     }
     text = text.replace(/(?:\t|\s)+_(?:\t|\s)*/g, ' ')
     for (const part of text.split('•').map(clean).filter(Boolean)) {
-      const b = last() && !['Échauffement', 'Retour au calme'].includes(last().title) ? last() : block('Exercices')
+      const b = last() && !closed.has(last().id) ? last() : block('Exercices')
       b.items.push(item(part.replace(/^[-–*]\s+|^\d+[.)]\s+/, '')))
     }
   }
@@ -130,8 +132,10 @@ export function parseSessionText(lines: string[], baseTitle: string, today = new
     }
     if (!cur) { skipped.push(l); continue }
     if (/^pr[ée]paration physique g[ée]n[ée]rale$/i.test(l)) { cur.objective = [cur.objective, l].filter(Boolean).join(' · '); continue }
-    if (WARMUP.test(l)) { block('Échauffement').items.push(item(l)); continue }
-    if (COOL.test(p)) { block('Retour au calme').items.push(item(l)); continue }
+    // « Échauffement : » ouvre un bloc ; « Échauffement 4 tours et stretching » est un bloc à lui seul
+    const bare = /:\s*$/.test(l) || /^(e|é)chauffement$|^retour au calme$/i.test(l)
+    if (WARMUP.test(l)) { const b = block('Échauffement'); if (!bare) { b.items.push(item(l)); closed.add(b.id) } continue }
+    if (COOL.test(p)) { const b = block('Retour au calme'); if (!bare) { b.items.push(item(l)); closed.add(b.id) } continue }
     if (/^pause\b/.test(p)) { (last() ?? block('Exercices')).items.push(emptyItem(`⏸️ ${l}`)); continue }
     // Titre de bloc : « Titre : » (+ contenu éventuel) ou titre connu seul sur sa ligne
     const colon = l.match(/^([^:]{2,60}?)\s*:\s*(.*)$/)
@@ -150,7 +154,7 @@ export function parseSessionText(lines: string[], baseTitle: string, today = new
     // Sous-titre de la séance : première ligne courte, sans chiffre, avant tout bloc
     if (!cur.blocks.length && !cur.subtitle && l.length <= 60 && !/\d/.test(l) && !/\t/.test(line)) { cur.subtitle = l; continue }
     // « Éducatifs longueur sur 30 m (…) x 5 » : titre connu suivi de l'exercice
-    if (known && known[1] !== last()?.title.replace(/ \(×\d+\)$/, '')) block(known[1])
+    if (known && (!last() || closed.has(last().id)) && known[1] !== last()?.title.replace(/ \(×\d+\)$/, '')) block(known[1])
     add(line.replace(/^[•·▪◦]\s*/, '• '))
   }
 

@@ -85,6 +85,21 @@ export function createSupabaseApi(url: string, key: string): Api {
     async regenerateInviteCode() {
       return check(await sb.rpc('regenerate_invite_code')) as string
     },
+    async chat(messages, s) {
+      const { data } = await sb.auth.getSession()
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${data.session?.access_token ?? ''}` },
+        body: JSON.stringify({
+          messages,
+          session: s ? { title: s.title, objective: s.objective, focus: s.focus, duration_min: s.duration_min,
+            blocks: s.blocks.map((b) => ({ title: b.title, items: b.items.map(({ id: _id, ...it }) => (void _id, it)) })) } : null,
+        }),
+      })
+      const out = await res.json().catch(() => null)
+      if (!res.ok || !out) throw new Error(out?.error ?? (res.status === 404 ? 'Le service IA n’est pas encore en ligne.' : `Erreur ${res.status}`))
+      return out.reply as string
+    },
     async improveSession(s) {
       const { data } = await sb.auth.getSession()
       const res = await fetch('/api/ameliorer', {

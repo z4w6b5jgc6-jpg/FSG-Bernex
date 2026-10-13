@@ -23,6 +23,7 @@ import { ImportResults } from './pages/ImportResults'
 import { ImportSessions } from './pages/ImportSessions'
 import { ImportProfiles } from './pages/ImportProfiles'
 import { Competitions } from './pages/Competitions'
+import { Assistant } from './pages/Assistant'
 import { AthleteHome } from './pages/athlete/AthleteHome'
 import { AthleteSessions, AthleteSessionDetail } from './pages/athlete/AthleteSessions'
 import { AthleteProgress } from './pages/athlete/AthleteProgress'
@@ -94,6 +95,7 @@ function CoachApp() {
         <Route path="/conseils" element={<Tips />} />
         <Route path="/conseils/:id" element={<TipDetail />} />
         <Route path="/competitions" element={<Competitions />} />
+        <Route path="/assistant" element={<Assistant />} />
         <Route path="/tests" element={<Tests />} />
         <Route path="/tests/saisie" element={<TestEntry />} />
         <Route path="/tests/tableau" element={<TestMatrix />} />

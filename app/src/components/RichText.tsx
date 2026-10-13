@@ -18,7 +18,7 @@ export function RichText({ text }: { text: string }) {
   }
   for (const raw of text.split('\n')) {
     const line = raw.trim()
-    const bullet = line.match(/^[-•]\s+(.*)/)
+    const bullet = line.match(/^[-•*]\s+(.*)/)
     const num = line.match(/^\d+\.\s+(.*)/)
     if (bullet || num) {
       const ordered = !!num
@@ -28,7 +28,8 @@ export function RichText({ text }: { text: string }) {
     }
     flush()
     if (!line) continue
-    if (line.startsWith('## ')) out.push(<h3 key={out.length}>{line.slice(3)}</h3>)
+    const h = line.match(/^#{1,4}\s+(.*)/)
+    if (h) out.push(<h3 key={out.length}>{inline(h[1].replace(/\*\*/g, ''))}</h3>)
     else out.push(<p key={out.length}>{inline(line)}</p>)
   }
   flush()

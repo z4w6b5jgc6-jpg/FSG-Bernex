@@ -194,6 +194,7 @@ export interface AiSuggestion {
   pourquoi: string
 }
 export interface AiAdvice { resume: string; suggestions: AiSuggestion[] }
+export interface ChatMessage { role: 'user' | 'assistant'; content: string }
 
 export interface Tables {
   groups: Group

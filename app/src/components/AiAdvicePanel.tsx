@@ -3,6 +3,7 @@ import { api } from '../api'
 import type { AiAdvice, AiSuggestion, Session, SessionItem } from '../types'
 import { errorMessage } from '../lib/utils'
 import { Modal } from './ui'
+import { ChatPanel } from './ChatPanel'
 
 const norm = (t: string) => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '')
 const LABELS: Record<string, string> = { sets: 'Séries', reps: 'Répét.', distance: 'Distance', duration: 'Durée', recovery: 'Récup', intensity: 'Intensité', notes: 'Consignes' }
@@ -26,6 +27,7 @@ export function AiAdvicePanel({ session, onApply }: { session: Session; onApply:
   const [err, setErr] = useState<string | null>(null)
   const [advice, setAdvice] = useState<AiAdvice | null>(null)
   const [done, setDone] = useState<Set<number>>(new Set())
+  const [chat, setChat] = useState(false)
 
   const run = async () => {
     setOpen(true); setBusy(true); setErr(null); setAdvice(null); setDone(new Set())
@@ -40,7 +42,15 @@ export function AiAdvicePanel({ session, onApply }: { session: Session; onApply:
 
   return (
     <>
-      <button type="button" className="btn ai-btn" onClick={run} disabled={!session.blocks.some((b) => b.items.length)}>✨ Améliorer cette séance</button>
+      <div className="row gap wrap">
+        <button type="button" className="btn ai-btn" onClick={run} disabled={!session.blocks.some((b) => b.items.length)}>✨ Améliorer cette séance</button>
+        <button type="button" className="btn ai-btn" onClick={() => setChat(true)}>💬 Discuter de cette séance</button>
+      </div>
+      {chat && (
+        <Modal title="💬 Assistant · cette séance" onClose={() => setChat(false)}>
+          <ChatPanel session={session} storageKey={`athle-chat-${session.id}`} />
+        </Modal>
+      )}
       {open && (
         <Modal title="✨ Suggestions pour la séance" onClose={() => setOpen(false)}>
           <p className="tiny muted">🔒 Seul le contenu de la séance (exercices, séries, distances, récupérations) est envoyé à l’IA de Cloudflare — aucun nom ni donnée d’athlète. Ce sont des propositions : à toi de juger.</p>

@@ -59,6 +59,7 @@ export function Dashboard() {
         { to: '/athletes', icon: '🏃', label: 'Athlètes', tone: 'blue', badge: pending,
           info: `${athletes.filter((a) => a.active).length} athlètes` + (checkins ? ` · ${checkins} check-in(s) aujourd’hui` : '') },
         { to: '/seances', icon: '📋', label: 'Séances', tone: 'violet', info: `${sessions.length} séance(s) type` },
+        { to: '/assistant', icon: '🤖', label: 'Assistant', tone: 'blue', info: 'Météo, intention, période : demande une séance' },
         { to: '/competitions', icon: '🏆', label: 'Compétitions', tone: 'yellow', badge: deadlines,
           info: nextComp ? `${nextComp.name} · ${inDays(nextComp.date) > 0 ? `dans ${inDays(nextComp.date)} j` : 'aujourd’hui'}` : 'Aucune prévue' },
         { to: '/tests', icon: '📏', label: 'Tests', tone: 'orange', info: `${tests.length} tests · résultats et VMA` },
