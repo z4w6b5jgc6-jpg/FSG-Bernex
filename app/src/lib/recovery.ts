@@ -72,17 +72,16 @@ export function suggestRecovery(it: SessionItem, context = ''): RecoveryHint | n
   // Tempo / allures modérées
   if ((pct ?? 100) <= 75) return { value: `retour marché (1'–2')${series(3, 4)}`, why: 'Allure tempo (≤ 75 %) : récupération courte, on enchaîne en restant détendu.' }
 
-  if (meters <= 20) return { value: `${range(1.5, 2)}${series(4, 5)}`, why: 'Départs / accélérations courtes : 1,5–2 min pour repartir explosif.' }
-  if (meters <= 80) {
-    if (!fast) return { value: `${range(Math.max(1.5, meters / 20), meters / 15)}${series(4, 6)}`, why: 'Vitesse sous-maximale (80–90 %) : récupération un peu plus courte que pour la vitesse pure.' }
-    const r = Math.max(2, Math.round(meters / 10))
-    return { value: `${range(r - 1, r)}${series(6, 8)}`, why: 'Vitesse maximale : environ 1 min par 10 m courus pour garder la qualité ; 6–8 min entre les séries.' }
+  // Repères du tableau « Sprint » (S. Charlet) complétés par les pratiques actuelles (≈ 1 min / 10 m en vitesse max)
+  if (meters <= 20) return { value: `${range(1.5, 2)}${series(3, 5)}`, why: 'Départs / accélérations courtes : 1,5–2 min pour repartir explosif ; 3–5 min entre les séries.' }
+  if (meters <= 60) {
+    if (!fast) return { value: `${range(1.5, 2)}${series(3, 5)}`, why: 'Vitesse sous-maximale (80–90 %) : récupération un peu plus courte que pour la vitesse pure.' }
+    return { value: `${range(Math.max(1.5, meters / 20), Math.max(2, meters / 15))}${series(4, 6)}`, why: 'Puissance anaérobie alactique (30–60 m à 95–100 %) : 1\'30–3\' entre les répétitions, 3–5 min entre les séries (jusqu’à 6 min si la qualité baisse). Volume total 400–800 m.' }
   }
-  if (meters <= 150) return fast
-    ? { value: `${range(4, 6)}${series(8, 10)}`, why: 'Endurance de vitesse (100–150 m) : 4–6 min entre les répétitions, 8–10 min entre les séries.' }
-    : { value: `${range(2, 3)}${series(5, 6)}`, why: 'Lignes droites à 80–90 % : 2–3 min.' }
-  if (meters <= 400) return fast
-    ? { value: `${range(8, 12)}`, why: 'Lactique (150–400 m à haute intensité) : récupération quasi complète, 8–12 min.' }
-    : { value: `${range(3, 5)}${series(6, 8)}`, why: 'Fractionné long à allure contrôlée : 3–5 min.' }
-  return { value: `${range(2, 4)} trottiné`, why: 'Distances longues : récupération active de 2 à 4 min.' }
+  if (meters <= 200) return fast
+    ? { value: `${range(1, 2)} (marché)${series(12, 15)}`, why: 'Capacité anaérobie alactique (séance courte, 80–150 m à 90–95 %) : 1–2 min entre les répétitions, 12–15 min entre les séries. Volume 700–1200 m.' }
+    : { value: `${range(1.5, 3)}${series(5, 6)}`, why: 'Lignes droites à 80–90 % : 1\'30–3\'.' }
+  if (meters <= 400) return { value: `${range(3, 8)}${series(10, 12)}`, why: 'Puissance anaérobie lactique (séance longue, 150–400 m à 75–85 % de la vitesse max) : 3–8 min, et plus entre les séries. Volume 1000–1500 m.' }
+  if (meters <= 1000) return { value: `${range(6, 8)}${series(10, 12)}`, why: 'Capacité anaérobie lactique (500–1000 m) : récupération complète, 6–8 min. Volume 2 à 5 km.' }
+  return { value: `${range(2.5, 3)} trottiné`, why: 'Intervalles longs au seuil (1000–2000 m à 85 % VMA) : 2\'30–3\'. Volume 8 à 10 km.' }
 }
