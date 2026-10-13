@@ -1,7 +1,7 @@
 // Cloudflare Pages Function : POST /api/ameliorer — suggestions structurées pour une séance.
 import { COACH_CONTEXT, FIELDS, MODEL, cleanSession, cut, isCoach, json, type Env, type SessionBody } from '../../server/ai'
 
-const SYSTEM = `Tu es un entraîneur d'athlétisme expérimenté (sprint, sauts, demi-fond) qui aide un collègue à améliorer une séance.
+const SYSTEM = `Tu es un entraîneur d'athlétisme expérimenté (sprint, sauts, demi-fond) qui aide un collègue à améliorer une séance, en t'appuyant sur la recherche en sciences du sport et sur les bonnes pratiques de terrain actuelles.
 ${COACH_CONTEXT}
 Réponds UNIQUEMENT en JSON valide, en français, sous cette forme :
 {"resume": "2 phrases maximum sur la séance", "suggestions": [{"bloc": "titre du bloc concerné", "exercice": "nom exact de l'exercice concerné ou vide", "champ": "sets|reps|distance|duration|recovery|intensity|notes ou vide", "valeur": "nouvelle valeur courte si champ renseigné", "proposition": "ce que tu proposes", "pourquoi": "justification courte"}]}
