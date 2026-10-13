@@ -5,6 +5,7 @@ import { Empty, Field, Modal } from '../components/ui'
 import { CATEGORIES, FOCUSES } from '../data/defaults'
 import type { Block, Session, SessionItem } from '../types'
 import { emptyItem, errorMessage, itemSummary, uid } from '../lib/utils'
+import { suggestRecovery } from '../lib/recovery'
 
 const ITEM_FIELDS: { key: keyof SessionItem; label: string; placeholder: string }[] = [
   { key: 'sets', label: 'Séries', placeholder: 'ex. 3' },
@@ -149,6 +150,17 @@ export function SessionEditor() {
                         </label>
                       ))}
                     </div>
+                    {(() => {
+                      const hint = suggestRecovery(it, `${draft.focus} ${b.title}`)
+                      if (!hint || it.recovery === hint.value) return null
+                      return (
+                        <div className="recovery-hint">
+                          <span className="small">💡 Récup conseillée : <b>{hint.value}</b></span>
+                          <span className="tiny muted">{hint.why}</span>
+                          <button type="button" className="btn small" onClick={() => updItem(b.id, it.id, { recovery: hint.value })}>{it.recovery ? 'Remplacer' : 'Appliquer'}</button>
+                        </div>
+                      )
+                    })()}
                     <input className="item-notes" placeholder="Consignes (facultatif)" value={it.notes} onChange={(e) => updItem(b.id, it.id, { notes: e.target.value })} />
                   </>
                 )}

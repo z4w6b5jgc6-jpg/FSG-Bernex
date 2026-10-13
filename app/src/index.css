@@ -553,3 +553,8 @@ input.attention { border-color: var(--warn); box-shadow: 0 0 0 2px var(--warn-so
 .training-info[open] summary { margin-bottom: 0.4rem; }
 .training-info .rich h3 { margin: 0.7rem 0 0.2rem; font-size: 0.95rem; }
 .training-info .rich ul { margin: 0.2rem 0; padding-left: 1.1rem; }
+
+.recovery-hint { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem 0.6rem; padding: 0.5rem 0.6rem; margin-top: 0.4rem;
+  border-radius: 10px; background: color-mix(in srgb, var(--club-yellow) 16%, var(--surface)); border: 1px solid color-mix(in srgb, var(--club-yellow) 40%, var(--border)); }
+.recovery-hint .tiny { flex-basis: 100%; order: 3; }
+.recovery-hint .btn { margin-left: auto; }
