@@ -39,7 +39,7 @@ export function AssignmentForm({
     }
   }
 
-  const others = athletes.filter((x) => x.active && x.group_id !== a.group_id)
+  const others = athletes.filter((x) => x.active && x.group_id !== a.group_id).sort((x, y) => fullName(x).localeCompare(fullName(y)))
 
   return (
     <Modal title={a.id ? 'Modifier la planification' : 'Planifier une séance'} onClose={onClose}>
@@ -64,8 +64,22 @@ export function AssignmentForm({
             {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
           </select>
         </Field>
+        {a.group_id && (
+          <p className="small muted">
+            ✅ Tout le groupe <b>{groups.find((g) => g.id === a.group_id)?.name}</b> reçoit la séance
+            ({athletes.filter((x) => x.active && x.group_id === a.group_id).length} athlètes, et les futurs inscrits du groupe).
+          </p>
+        )}
         {others.length > 0 && (
           <Field label={a.group_id ? 'Ajouter d’autres athlètes' : 'Athlètes'}>
+            <div className="row gap wrap select-all">
+              <button type="button" className="btn small" onClick={() => set({ athlete_ids: [...new Set([...ids, ...others.map((x) => x.id)])] })}>✓ Tout sélectionner</button>
+              {!a.group_id && groups.filter((g) => others.some((x) => x.group_id === g.id)).map((g) => (
+                <button key={g.id} type="button" className="btn small ghost" onClick={() => set({ athlete_ids: [...new Set([...ids, ...others.filter((x) => x.group_id === g.id).map((x) => x.id)])] })}>+ {g.name}</button>
+              ))}
+              {ids.length > 0 && <button type="button" className="btn small ghost" onClick={() => set({ athlete_ids: [] })}>✕ Tout désélectionner</button>}
+              <span className="tiny muted">{ids.length} sélectionné(s)</span>
+            </div>
             <div className="checklist">
               {others.map((x) => (
                 <label key={x.id} className="check">

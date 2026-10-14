@@ -585,3 +585,4 @@ input.attention { border-color: var(--warn); box-shadow: 0 0 0 2px var(--warn-so
 .modal .chat-input { bottom: 0; background: var(--surface); }
 @media (min-width: 721px) { .chat-input { bottom: 0; } }
 .chat-input textarea { flex: 1; resize: none; }
+.select-all { margin-bottom: 0.4rem; }

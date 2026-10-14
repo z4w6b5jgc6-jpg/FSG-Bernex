@@ -160,7 +160,11 @@ export function ImportSessions() {
             )}
             {plan && members.length > 0 && (
               <div className="form">
-                <b className="small">Pour qui ? <span className="muted">({members.length - out.length} sur {members.length})</span></b>
+                <div className="row gap wrap">
+                  <b className="small">Pour qui ? <span className="muted">({members.length - out.length} sur {members.length})</span></b>
+                  <button type="button" className="btn small" onClick={() => setExcluded((x) => ({ ...x, [group]: [] }))}>✓ Tout sélectionner</button>
+                  <button type="button" className="btn small ghost" onClick={() => setExcluded((x) => ({ ...x, [group]: members.map((m) => m.id) }))}>✕ Aucun</button>
+                </div>
                 <div className="pick-list">
                   {members.map((a) => (
                     <label key={a.id} className={`pick ${out.includes(a.id) ? 'off' : ''}`}>
@@ -211,7 +215,7 @@ export function ImportSessions() {
             ))}
           </div>
           <div className="sticky-actions">
-            <button className="btn primary block" disabled={busy || chosen.length === 0 || (plan && !group)} onClick={run}>
+            <button className="btn primary block" disabled={busy || chosen.length === 0 || (plan && !group) || (plan && members.length > 0 && out.length === members.length)} onClick={run}>
               {busy ? 'Import…' : [
                 fresh.length > 0 && `Importer ${fresh.length} séance(s)${plan && group ? ' et les planifier' : ''}`,
                 toUpdate > 0 && `mettre à jour ${toUpdate} planification(s)`,
