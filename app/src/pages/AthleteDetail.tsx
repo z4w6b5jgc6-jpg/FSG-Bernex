@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { BackLink } from '../components/BackLink'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useData } from '../lib/data'
 import { FeedbackCard } from '../components/FeedbackCard'
@@ -59,7 +60,7 @@ export function AthleteDetail() {
 
   return (
     <div>
-      <Link to="/athletes" className="muted small">← Athlètes</Link>
+      <BackLink to="/athletes" label="Athlètes" />
       <div className="hero">
         <div className="hero-avatar" style={{ background: a.color }}>{a.avatar}</div>
         <div>

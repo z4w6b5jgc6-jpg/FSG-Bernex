@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { BackLink } from '../components/BackLink'
 import { Link, useParams } from 'react-router-dom'
 import { useData } from '../lib/data'
 import { Empty, Field, Modal } from '../components/ui'
@@ -85,7 +86,7 @@ export function SessionEditor() {
   return (
     <div className="editor">
       <div className="row between sticky-bar">
-        <Link to="/seances" className="muted small">← Séances</Link>
+        <BackLink to="/seances" label="Séances" />
         <div className="row gap">
           <Link className="btn small" to={`/planning?seance=${draft.id}`}>📅 Planifier</Link>
           <button className="btn primary" onClick={persist} disabled={!dirty || saving}>

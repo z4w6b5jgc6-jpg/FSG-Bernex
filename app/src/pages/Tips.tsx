@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { BackLink } from '../components/BackLink'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useData, useMyAthlete } from '../lib/data'
 import { RichText } from '../components/RichText'
@@ -86,7 +87,7 @@ export function TipDetail() {
 
   return (
     <div className="article">
-      <Link to="/conseils" className="muted small">← Conseils</Link>
+      <BackLink to="/conseils" label="Conseils" />
       <div className="article-head">
         <span className="article-emoji">{tip.emoji}</span>
         <div className="tiny muted">{catEmoji(tip.category)} {tip.category}</div>

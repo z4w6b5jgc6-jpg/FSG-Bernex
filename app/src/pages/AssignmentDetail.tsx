@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { BackLink } from '../components/BackLink'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useData } from '../lib/data'
 import { AssignmentForm } from '../components/AssignmentForm'
@@ -38,7 +39,7 @@ export function AssignmentDetail() {
 
   return (
     <div>
-      <Link to="/planning" className="muted small">← Planning</Link>
+      <BackLink to="/planning" label="Planning" />
       <h1>{s?.title ?? 'Séance supprimée'}</h1>
       <p className="muted">
         {formatDate(a.date)}{a.time && ` · ${a.time}`}{a.location && ` · ${a.location}`}

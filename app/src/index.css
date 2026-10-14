@@ -603,3 +603,10 @@ input.attention { border-color: var(--warn); box-shadow: 0 0 0 2px var(--warn-so
   .matrix th:first-child { position: static; }
   body { background: #fff; color: #000; }
 }
+/* Bouton retour : grande zone de toucher */
+.back-link { display: inline-flex; align-items: center; gap: 0.35rem; min-height: 44px; padding: 0 0.9rem 0 0.6rem; margin: 0 0 0.3rem -0.2rem;
+  border-radius: 999px; background: var(--surface); border: 1px solid var(--border); color: var(--text); font-weight: 600; font-size: 0.95rem;
+  -webkit-tap-highlight-color: transparent; }
+.back-link:hover { text-decoration: none; border-color: var(--primary); }
+.back-link:active { transform: scale(0.97); }
+.back-link span { font-size: 1.15rem; line-height: 1; }

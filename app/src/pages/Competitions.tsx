@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { BackLink } from '../components/BackLink'
 import { useData, useMyAthlete } from '../lib/data'
 import { Empty, Field, Modal } from '../components/ui'
 import type { Competition } from '../types'
@@ -234,7 +234,7 @@ export function Competitions() {
 
   return (
     <div>
-      {!coach && <Link to="/" className="muted small">← Accueil</Link>}
+      {!coach && <BackLink to="/" label="Accueil" />}
       <div className="row between">
         <h1>🏆 Compétitions</h1>
         {coach && <button className="btn primary" onClick={() => setForm({ date: todayISO() })}>+ Compétition</button>}

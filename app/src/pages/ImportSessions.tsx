@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { BackLink } from '../components/BackLink'
+import { useNavigate } from 'react-router-dom'
 import { useData } from '../lib/data'
 import { Field } from '../components/ui'
 import { FOCUSES, OLD_VENUES, VENUES } from '../data/defaults'
@@ -109,7 +110,7 @@ export function ImportSessions() {
 
   return (
     <div>
-      <Link to="/seances" className="muted small">← Séances</Link>
+      <BackLink to="/seances" label="Séances" />
       <h1>Importer des séances</h1>
       <div className="card form">
         <p className="small">

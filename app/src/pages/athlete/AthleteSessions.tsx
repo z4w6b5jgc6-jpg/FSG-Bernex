@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { BackLink } from '../../components/BackLink'
 import { sprintReference } from '../../lib/sprint'
 import { TrainingInfo } from '../../components/TrainingInfo'
 import { Link, useParams } from 'react-router-dom'
@@ -62,7 +63,7 @@ export function AthleteSessionDetail() {
 
   return (
     <div>
-      <Link to="/seances" className="muted small">← Mes séances</Link>
+      <BackLink to="/seances" label="Mes séances" />
       <h1>{s.title}</h1>
       <p className="muted">{formatDate(a.date)}{a.time && ` · ${a.time}`}{a.location && ` · ${a.location}`}</p>
       {a.note && <div className="alert info">{a.note}</div>}

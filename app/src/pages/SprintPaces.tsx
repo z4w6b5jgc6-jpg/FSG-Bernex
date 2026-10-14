@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { BackLink } from '../components/BackLink'
 import { Link } from 'react-router-dom'
 import { useData } from '../lib/data'
 import { Empty } from '../components/ui'
@@ -27,7 +28,7 @@ export function SprintPaces() {
 
   return (
     <div className="sprint-paces">
-      <Link to="/tests" className="muted small no-print">← Tests</Link>
+      <BackLink to="/tests" label="Tests" />
       <div className="row between wrap">
         <h1>⚡ Allures sprint</h1>
         <button className="btn small no-print" onClick={() => window.print()}>🖨️ Imprimer</button>

@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { BackLink } from '../components/BackLink'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useData } from '../lib/data'
 import { Empty, Field, GroupBadge, Modal } from '../components/ui'
@@ -29,7 +30,7 @@ export function Tests() {
 
   return (
     <div>
-      <Link to="/athletes" className="muted small">← Athlètes</Link>
+      <BackLink to="/athletes" label="Athlètes" />
       <div className="row between">
         <h1>Tests physiques</h1>
         <button className="btn" onClick={() => setEdit({ category: 'Vitesse', higher_is_better: true })}>+ Test</button>
@@ -145,7 +146,7 @@ export function TestDetail() {
     .sort((x, y) => (test.higher_is_better ? y.s!.last.value - x.s!.last.value : x.s!.last.value - y.s!.last.value))
   return (
     <div>
-      <Link to="/tests" className="muted small">← Tests</Link>
+      <BackLink to="/tests" label="Tests" />
       <h1>{test.name}</h1>
       {test.description && <p className="muted small">{test.description}</p>}
       <div className="row gap filters">
@@ -207,7 +208,7 @@ export function TestEntry() {
 
   return (
     <div>
-      <Link to="/tests" className="muted small">← Tests</Link>
+      <BackLink to="/tests" label="Tests" />
       <h1>Saisir des résultats</h1>
       <div className="card form">
         <Field label="Test">
@@ -270,7 +271,7 @@ export function TestMatrix() {
 
   return (
     <div>
-      <Link to="/tests" className="muted small">← Tests</Link>
+      <BackLink to="/tests" label="Tests" />
       <h1>Tableau du groupe</h1>
       {imported && (
         <div className="alert info">

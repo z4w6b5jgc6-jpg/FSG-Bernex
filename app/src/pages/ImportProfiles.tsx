@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { BackLink } from '../components/BackLink'
+import { useNavigate } from 'react-router-dom'
 import { useData } from '../lib/data'
 import { Field } from '../components/ui'
 import type { Athlete } from '../types'
@@ -92,7 +93,7 @@ export function ImportProfiles() {
 
   return (
     <div>
-      <Link to="/athletes" className="muted small">← Athlètes</Link>
+      <BackLink to="/athletes" label="Athlètes" />
       <h1>Importer un questionnaire</h1>
       <div className="card form">
         <p className="small">

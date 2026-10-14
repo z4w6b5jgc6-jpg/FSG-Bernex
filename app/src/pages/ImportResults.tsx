@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { BackLink } from '../components/BackLink'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useData } from '../lib/data'
 import { Field } from '../components/ui'
@@ -241,7 +242,7 @@ export function ImportResults() {
 
   return (
     <div>
-      <Link to="/tests" className="muted small">← Tests</Link>
+      <BackLink to="/tests" label="Tests" />
       <h1>Importer des résultats</h1>
       <div className="card form">
         <p className="small">
