@@ -586,3 +586,20 @@ input.attention { border-color: var(--warn); box-shadow: 0 0 0 2px var(--warn-so
 @media (min-width: 721px) { .chat-input { bottom: 0; } }
 .chat-input textarea { flex: 1; resize: none; }
 .select-all { margin-bottom: 0.4rem; }
+
+/* Allures sprint */
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; background: var(--surface); }
+.seg button { font: inherit; font-weight: 600; border: 0; background: none; color: var(--muted); padding: 0.45rem 0.85rem; cursor: pointer; }
+.seg button.on { background: var(--primary); color: var(--primary-ink); }
+.sprint-paces .matrix td { font-variant-numeric: tabular-nums; }
+.print-only { display: none; }
+@media print {
+  .topbar, .bottomnav, .demo-banner, .no-print, .install-prompt { display: none !important; }
+  .app { padding-left: 0 !important; }
+  .print-only { display: block; }
+  .container { max-width: none; padding: 0; }
+  .card { border: 0; box-shadow: none; }
+  .matrix { font-size: 11pt; }
+  .matrix th:first-child { position: static; }
+  body { background: #fff; color: #000; }
+}

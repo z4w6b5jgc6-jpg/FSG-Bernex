@@ -119,3 +119,12 @@ export function targetTime(level: number, meters: number, pct = 100): number | n
   const t = timeAt(level, meters)
   return t == null ? null : t / (pct / 100)
 }
+
+/** Meilleur 40 m départ arrêté de l'athlète (référence du tableau des allures) */
+export function best40(tests: TestDef[], results: TestResult[]): SprintRef | null {
+  const ids = new Set(tests.filter((t) => /\b40\s*m\b/i.test(t.name) && /arret|depart/.test(normText(t.name)) && !/lance/.test(normText(t.name))).map((t) => t.id))
+  const best = results.filter((r) => ids.has(r.test_id) && r.value > 0).sort((a, b) => a.value - b.value)[0]
+  if (!best) return null
+  const level = levelFor(40, best.value)
+  return level == null ? null : { level, meters: 40, seconds: best.value, date: best.date, source: '40 m départ arrêté' }
+}

@@ -24,6 +24,7 @@ import { ImportSessions } from './pages/ImportSessions'
 import { ImportProfiles } from './pages/ImportProfiles'
 import { Competitions } from './pages/Competitions'
 import { Assistant } from './pages/Assistant'
+import { SprintPaces } from './pages/SprintPaces'
 import { AthleteHome } from './pages/athlete/AthleteHome'
 import { AthleteSessions, AthleteSessionDetail } from './pages/athlete/AthleteSessions'
 import { AthleteProgress } from './pages/athlete/AthleteProgress'
@@ -99,6 +100,7 @@ function CoachApp() {
         <Route path="/tests" element={<Tests />} />
         <Route path="/tests/saisie" element={<TestEntry />} />
         <Route path="/tests/tableau" element={<TestMatrix />} />
+        <Route path="/tests/allures-sprint" element={<SprintPaces />} />
         <Route path="/tests/import" element={<ImportResults />} />
         <Route path="/tests/:id" element={<TestDetail />} />
         <Route path="*" element={<Navigate to="/" replace />} />

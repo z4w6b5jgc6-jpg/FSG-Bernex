@@ -45,6 +45,7 @@ export function Tests() {
           <div className="row gap wrap">
             <Link className="btn primary" to="/tests/saisie">✏️ Saisir des résultats</Link>
             <Link className="btn" to="/tests/tableau">📊 Tableau du groupe</Link>
+            <Link className="btn" to="/tests/allures-sprint">⚡ Allures sprint</Link>
             <Link className="btn" to="/tests/import">📥 Importer (Excel)</Link>
           </div>
           {CATS.map((c) => {
