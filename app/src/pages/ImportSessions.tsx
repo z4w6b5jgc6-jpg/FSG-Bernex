@@ -4,13 +4,14 @@ import { useNavigate } from 'react-router-dom'
 import { useData } from '../lib/data'
 import { Field } from '../components/ui'
 import { FOCUSES, OLD_VENUES, VENUES } from '../data/defaults'
-import type { Cell } from '../lib/importResults'
+import { matchAthlete, type Cell } from '../lib/importResults'
 import { defaultLocation, parsePlanGrid, parseSessions, type SessionIn } from '../lib/importSessions'
 import { docxLines, parseSessionText } from '../lib/sessionText'
 import type { Assignment, Athlete } from '../types'
 import { errorMessage, formatDate, fullName, parseISODate } from '../lib/utils'
 
-interface Row extends SessionIn { include: boolean; location: string }
+// ids / unknown : plan par groupes, athlètes de la séance retrouvés (ou non) dans l'app
+interface Row extends SessionIn { include: boolean; location: string; ids: string[]; unknown: string[] }
 
 // Spécialités sans saut ni sprint : décochées par défaut (demi-fond, fond, lancers)
 const OTHER_EVENTS = /(400|800|1500|3000|fond|cross|poids|javelot|disque|marteau|lancer)/i
@@ -48,7 +49,20 @@ export function ImportSessions() {
   const plannedOf = (r: Row) => { const s = existing(r); return s ? assignments.find((a) => a.session_id === s.id && a.date === r.date) : undefined }
   const set = (key: string, patch: Partial<Row>) => setRows((rs) => rs && rs.map((r) => (r.key === key ? { ...r, ...patch } : r)))
 
-  const show = (found: SessionIn[]) => setRows(found.map((s) => ({ ...s, include: true, location: defaultLocation(s.date) })))
+  const active = useMemo(() => athletes.filter((a) => a.active).sort((a, b) => fullName(a).localeCompare(fullName(b))), [athletes])
+  const show = (found: SessionIn[]) => setRows(found.map((s) => {
+    const ids: string[] = [], unknown: string[] = []
+    for (const name of s.who ?? []) {
+      const [first, ...last] = name.split(/\s+/)
+      const m = matchAthlete({ key: '', first, last: last.join(' '), age: null, year: null, events: '' }, active)
+      if (m && !ids.includes(m.athlete.id)) ids.push(m.athlete.id)
+      else if (!m) unknown.push(name)
+    }
+    return { ...s, include: true, location: defaultLocation(s.date), ids, unknown }
+  }))
+  // Plan par groupes : chaque séance a ses athlètes (onglet des athlètes du fichier)
+  const perRow = !!rows?.some((r) => r.who)
+  const toggleId = (r: Row, id: string) => set(r.key, { ids: r.ids.includes(id) ? r.ids.filter((i) => i !== id) : [...r.ids, id] })
   const fromText = (lines: string[]) => {
     const { sessions: found, skipped: sk } = parseSessionText(lines, base)
     setSkipped(sk)
@@ -84,6 +98,9 @@ export function ImportSessions() {
   for (const r of rows ?? []) if (r.date) counts[weekday(r.date)]++
   const usual = counts.indexOf(Math.max(...counts))
   const offDays = chosen.filter((r) => r.date && weekday(r.date) !== usual)
+  const unknownAll = [...new Set(chosen.flatMap((r) => r.unknown))]
+  const nobody = perRow ? chosen.filter((r) => r.ids.length === 0).length : 0
+  const canPlan = perRow || !!group
 
   const run = async () => {
     setBusy(true)
@@ -94,11 +111,11 @@ export function ImportSessions() {
         title: r.title, objective: r.objective, focus, duration_min: 120, blocks: r.blocks,
       })))
       const ids = new Map(fresh.map((r, i) => [r.key, created[i].id]))
-      if (plan && group) {
-        const t = target()
+      if (plan && canPlan) {
         const rows = []
         for (const r of chosen) {
-          if (!r.date) continue
+          if (!r.date || (perRow && r.ids.length === 0)) continue
+          const t = perRow ? { group_id: null, athlete_ids: r.ids } : target()
           const done = plannedOf(r)
           // seulement « pour qui » (et un ancien libellé de lieu proposé par l'app)
           if (done) await save('assignments', { id: done.id, ...t, ...(OLD_VENUES.includes(done.location) ? { location: r.location } : {}) })
@@ -107,7 +124,7 @@ export function ImportSessions() {
         await saveMany('assignments', rows)
       }
       await reload()
-      nav(plan && group ? '/planning' : '/seances')
+      nav(plan && canPlan ? '/planning' : '/seances')
     } catch (e) {
       setErr(errorMessage(e))
     } finally {
@@ -155,7 +172,13 @@ export function ImportSessions() {
               </select>
             </Field>
             <label className="check"><input type="checkbox" checked={plan} onChange={(e) => setPlan(e.target.checked)} /> <span><b>Planifier aussi</b> chaque séance à sa date</span></label>
-            {plan && (
+            {plan && perRow && (
+              <div className="grid2">
+                <p className="small">👥 Une séance par groupe : chacune est planifiée pour les athlètes de son groupe (d’après l’onglet des athlètes de ton fichier). Tu peux ajuster sous chaque séance.</p>
+                <Field label="Heure"><input type="time" value={time} onChange={(e) => setTime(e.target.value)} /></Field>
+              </div>
+            )}
+            {plan && !perRow && (
               <div className="grid2">
                 <Field label="Groupe">
                   <select value={group} onChange={(e) => setGroupId(e.target.value)}>
@@ -166,7 +189,7 @@ export function ImportSessions() {
                 <Field label="Heure"><input type="time" value={time} onChange={(e) => setTime(e.target.value)} /></Field>
               </div>
             )}
-            {plan && members.length > 0 && (
+            {plan && !perRow && members.length > 0 && (
               <div className="form">
                 <div className="row gap wrap">
                   <b className="small">Pour qui ? <span className="muted">({members.length - out.length} sur {members.length})</span></b>
@@ -195,6 +218,10 @@ export function ImportSessions() {
           {offDays.length > 0 && (
             <div className="alert warn small">📅 {offDays.length} séance(s) ne tombent pas un {DAYS[usual]} comme les autres : vérifie la date ({offDays.map((r) => formatDate(r.date, { weekday: 'long', day: 'numeric', month: 'long' })).join(', ')}).</div>
           )}
+          {plan && unknownAll.length > 0 && (
+            <div className="alert warn small">🔎 Pas trouvé(s) dans tes athlètes : <b>{unknownAll.join(", ")}</b> — crée leur fiche puis recharge le fichier, ou coche la bonne personne sous la séance.</div>
+          )}
+          {plan && nobody > 0 && <div className="alert warn small">{nobody} séance(s) sans athlète : elles seront importées mais pas planifiées.</div>}
           <div className="import-sessions">
             {rows.map((r) => (
               <div key={r.key} className={`card form ${r.include ? '' : 'muted'}`}>
@@ -210,6 +237,18 @@ export function ImportSessions() {
                 </div>
                 <Field label="Titre"><input value={r.title} onChange={(e) => set(r.key, { title: e.target.value })} /></Field>
                 {r.objective && <div className="tiny muted">🎯 {r.objective}</div>}
+                {plan && r.who && (
+                  <details className="small">
+                    <summary>👥 {r.ids.length ? r.ids.map((id) => active.find((a) => a.id === id)?.first_name).filter(Boolean).join(', ') : 'Personne'}{r.unknown.length > 0 && <span className="muted"> · introuvable(s) : {r.unknown.join(', ')}</span>}</summary>
+                    <div className="pick-list">
+                      {active.map((a) => (
+                        <label key={a.id} className={`pick ${r.ids.includes(a.id) ? '' : 'off'}`}>
+                          <input type="checkbox" checked={r.ids.includes(a.id)} onChange={() => toggleId(r, a.id)} /> {fullName(a)}
+                        </label>
+                      ))}
+                    </div>
+                  </details>
+                )}
                 <button type="button" className="btn ghost small" onClick={() => setOpen(open === r.key ? null : r.key)}>
                   {open === r.key ? '▾' : '▸'} {r.blocks.length} bloc(s) · {r.blocks.reduce((n, b) => n + b.items.length, 0)} exercice(s)
                 </button>
@@ -223,9 +262,9 @@ export function ImportSessions() {
             ))}
           </div>
           <div className="sticky-actions">
-            <button className="btn primary block" disabled={busy || chosen.length === 0 || (plan && !group) || (plan && members.length > 0 && out.length === members.length)} onClick={run}>
+            <button className="btn primary block" disabled={busy || chosen.length === 0 || (plan && !canPlan) || (plan && !perRow && members.length > 0 && out.length === members.length)} onClick={run}>
               {busy ? 'Import…' : [
-                fresh.length > 0 && `Importer ${fresh.length} séance(s)${plan && group ? ' et les planifier' : ''}`,
+                fresh.length > 0 && `Importer ${fresh.length} séance(s)${plan && canPlan ? ' et les planifier' : ''}`,
                 toUpdate > 0 && `mettre à jour ${toUpdate} planification(s)`,
                 chosen.length > fresh.length + toUpdate && plan && `planifier ${chosen.length - fresh.length - toUpdate} séance(s) existante(s)`,
               ].filter(Boolean).join(' · ').replace(/^./, (c) => c.toUpperCase()) || 'Rien à importer'}
