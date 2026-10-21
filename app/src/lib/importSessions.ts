@@ -2,6 +2,7 @@ import type { Block, SessionItem } from '../types'
 import { normText, type Cell, type SheetIn } from './importResults'
 import { emptyItem, uid } from './utils'
 import { VENUES } from '../data/defaults'
+import { item } from './sessionText'
 
 /** Séance lue dans un fichier : une ligne par exercice, regroupées par date + nom de séance */
 export interface SessionIn {
@@ -20,6 +21,7 @@ const COLS: [RegExp, Field][] = [
   [/^(consignes?|notes?|remarques?)$/, 'notes'],
 ]
 
+const cellStr = (c: Cell | undefined) => (c instanceof Date ? '' : String(c ?? '').trim())
 const text = (c: Cell) => (c instanceof Date ? '' : String(c ?? '').trim())
 
 function toISODate(c: Cell): string {
@@ -75,4 +77,58 @@ export function defaultLocation(date: string): string {
   const m = Number(date.slice(5, 7))
   if (!m) return ''
   return m >= 4 && m <= 10 ? VENUES[0] : VENUES[1]
+}
+
+/**
+ * Plan en grille : une ligne par séance (colonne Date) et une colonne par partie de séance
+ * (Échauffement, Bloc vitesse, colonnes par groupe, Retour au calme…). Chaque cellule devient un bloc,
+ * découpé en exercices (retours à la ligne, phrases). Sem. / Cycle / Objectif / Remarques sont reconnus.
+ */
+export function parsePlanGrid(sheets: SheetIn[], baseTitle = 'Séance'): SessionIn[] | null {
+  for (const s of sheets) {
+    const h = s.rows.slice(0, 12).findIndex((r) => r.some((c) => normText(c) === 'date') && r.filter((c) => cellStr(c)).length >= 4)
+    if (h < 0) continue
+    const headers = s.rows[h].map((c) => cellStr(c))
+    const role = (t: string) => {
+      const n = normText(t)
+      if (n === 'date') return 'date'
+      if (/^(sem|semaine|n|no|numero)$/.test(n)) return 'skip'
+      if (/^cycle/.test(n)) return 'cycle'
+      if (/^(objectif|theme|intention)/.test(n)) return 'objective'
+      if (/^(remarque|note|commentaire)/.test(n)) return 'remarks'
+      return n ? 'block' : 'skip'
+    }
+    const roles = headers.map(role)
+    if (roles.filter((r) => r === 'block').length < 2) continue
+    const di = roles.indexOf('date')
+    const out: SessionIn[] = []
+    const themes = new Map<string, string>() // objectif de chaque séance, pour son titre
+    for (const r of s.rows.slice(h + 1)) {
+      const date = toISODate(r[di] ?? null)
+      if (!date) continue
+      const get = (k: string) => roles.map((ro, i) => (ro === k ? cellStr(r[i]) : '')).filter(Boolean).join(' – ')
+      const objectiveTxt = get('objective')
+      const blocks: Block[] = []
+      roles.forEach((ro, i) => {
+        if (ro !== 'block' && ro !== 'remarks') return
+        const v = cellStr(r[i])
+        if (!v) return
+        // Titre du bloc : première ligne de l'en-tête, sans la liste de noms entre parenthèses
+        const title = ro === 'remarks' ? 'Remarques' : headers[i].split('\n')[0].replace(/\s*\(.*$/, '').trim() || 'Bloc'
+        const parts = v.split(/\n+/).flatMap((l) => l.split(/(?<=\.)\s+(?=[A-ZÀ-Ý0-9«])/)).map((p) => p.trim().replace(/\.$/, '')).filter(Boolean)
+        blocks.push({ id: uid(), title, items: parts.map((p) => (ro === 'remarks' ? emptyItem(p) : item(p))) })
+      })
+      if (!blocks.length) continue
+      const key = uid()
+      themes.set(key, objectiveTxt)
+      out.push({ key, date, title: '', objective: [get('cycle'), objectiveTxt].filter(Boolean).join(' – '), blocks })
+    }
+    if (!out.length) continue
+    out.sort((a, b) => a.date.localeCompare(b.date)).forEach((x, i) => {
+      const o = themes.get(x.key)
+      x.title = `${baseTitle.trim() || 'Séance'} S${String(i + 1).padStart(2, '0')}${o ? ` – ${o}` : ''}`
+    })
+    return out
+  }
+  return null
 }

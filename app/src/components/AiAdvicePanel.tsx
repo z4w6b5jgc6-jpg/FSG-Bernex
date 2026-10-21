@@ -4,6 +4,8 @@ import type { AiAdvice, AiSuggestion, Session, SessionItem } from '../types'
 import { errorMessage } from '../lib/utils'
 import { Modal } from './ui'
 import { ChatPanel } from './ChatPanel'
+import { useData } from '../lib/data'
+import { redactSession } from '../lib/redact'
 
 const norm = (t: string) => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '')
 const LABELS: Record<string, string> = { sets: 'Séries', reps: 'Répét.', distance: 'Distance', duration: 'Durée', recovery: 'Récup', intensity: 'Intensité', notes: 'Consignes' }
@@ -28,11 +30,12 @@ export function AiAdvicePanel({ session, onApply }: { session: Session; onApply:
   const [advice, setAdvice] = useState<AiAdvice | null>(null)
   const [done, setDone] = useState<Set<number>>(new Set())
   const [chat, setChat] = useState(false)
+  const { athletes } = useData()
 
   const run = async () => {
     setOpen(true); setBusy(true); setErr(null); setAdvice(null); setDone(new Set())
     try {
-      setAdvice(await api.improveSession(session))
+      setAdvice(await api.improveSession(redactSession(session, athletes)))
     } catch (e) {
       setErr(errorMessage(e))
     } finally {

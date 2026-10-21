@@ -66,7 +66,7 @@ function parseDate(line: string, today: Date): { iso: string; rest: string } | n
   return { iso: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`, rest }
 }
 
-function item(text: string) {
+export function item(text: string) {
   const it = emptyItem(text)
   let m = text.match(/^(.*?)\s+(\d+)\s*[x×]\s*(\d+)\s*m$/i)
   if (m) { it.name = m[1]; it.sets = m[2]; it.distance = `${m[3]} m`; return it }

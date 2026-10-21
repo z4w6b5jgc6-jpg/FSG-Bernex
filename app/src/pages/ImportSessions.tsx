@@ -5,7 +5,7 @@ import { useData } from '../lib/data'
 import { Field } from '../components/ui'
 import { FOCUSES, OLD_VENUES, VENUES } from '../data/defaults'
 import type { Cell } from '../lib/importResults'
-import { defaultLocation, parseSessions, type SessionIn } from '../lib/importSessions'
+import { defaultLocation, parsePlanGrid, parseSessions, type SessionIn } from '../lib/importSessions'
 import { docxLines, parseSessionText } from '../lib/sessionText'
 import type { Assignment, Athlete } from '../types'
 import { errorMessage, formatDate, fullName, parseISODate } from '../lib/utils'
@@ -64,8 +64,10 @@ export function ImportSessions() {
       if (/\.txt$/i.test(file.name)) return fromText((await file.text()).split(/\r?\n/))
       const { default: readXlsxFile } = await import('read-excel-file/browser')
       const sheets = await readXlsxFile(file)
-      const found = parseSessions(sheets.map((s) => ({ name: s.sheet, rows: s.data as Cell[][] })))
-      if (!found?.length) return setErr('Je n’ai pas trouvé de tableau avec une colonne « Exercice ».')
+      const input = sheets.map((s) => ({ name: s.sheet, rows: s.data as Cell[][] }))
+      // Une ligne par exercice, sinon plan en grille (une ligne par séance, une colonne par partie)
+      const found = parseSessions(input) ?? parsePlanGrid(input, base)
+      if (!found?.length) return setErr('Je n’ai trouvé ni tableau avec une colonne « Exercice », ni plan avec une colonne « Date » et une colonne par partie de séance.')
       show(found)
     } catch (e) {
       setErr('Impossible de lire ce fichier : ' + errorMessage(e))
@@ -76,7 +78,12 @@ export function ImportSessions() {
   const weekday = (d: string) => (d ? parseISODate(d).getDay() : -1)
   const fresh = chosen.filter((r) => !exists(r))
   const toUpdate = plan ? chosen.filter((r) => plannedOf(r)).length : 0
-  const offDays = chosen.filter((r) => r.date && weekday(r.date) !== 3)
+  // Jour habituel du fichier (le plus fréquent) : on signale les dates qui s'en écartent
+  const DAYS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi']
+  const counts = [0, 0, 0, 0, 0, 0, 0]
+  for (const r of rows ?? []) if (r.date) counts[weekday(r.date)]++
+  const usual = counts.indexOf(Math.max(...counts))
+  const offDays = chosen.filter((r) => r.date && weekday(r.date) !== usual)
 
   const run = async () => {
     setBusy(true)
@@ -186,7 +193,7 @@ export function ImportSessions() {
           <datalist id="venues">{VENUES.map((v) => <option key={v} value={v} />)}</datalist>
           <h2>{rows.length} séance(s) trouvée(s)</h2>
           {offDays.length > 0 && (
-            <div className="alert warn small">📅 {offDays.length} séance(s) ne tombent pas un mercredi : vérifie la date ({offDays.map((r) => formatDate(r.date, { weekday: 'long', day: 'numeric', month: 'long' })).join(', ')}).</div>
+            <div className="alert warn small">📅 {offDays.length} séance(s) ne tombent pas un {DAYS[usual]} comme les autres : vérifie la date ({offDays.map((r) => formatDate(r.date, { weekday: 'long', day: 'numeric', month: 'long' })).join(', ')}).</div>
           )}
           <div className="import-sessions">
             {rows.map((r) => (
@@ -197,7 +204,7 @@ export function ImportSessions() {
                 </label>
                 <div className="grid2">
                   <Field label="Date">
-                    <input type="date" value={r.date} className={r.date && weekday(r.date) !== 3 ? 'attention' : ''} onChange={(e) => set(r.key, { date: e.target.value, location: defaultLocation(e.target.value) })} />
+                    <input type="date" value={r.date} className={r.date && weekday(r.date) !== usual ? 'attention' : ''} onChange={(e) => set(r.key, { date: e.target.value, location: defaultLocation(e.target.value) })} />
                   </Field>
                   {plan && <Field label="Lieu"><input list="venues" value={r.location} onChange={(e) => set(r.key, { location: e.target.value })} /></Field>}
                 </div>

@@ -1,4 +1,4 @@
-import type { Athlete } from '../types'
+import type { Athlete, Session } from '../types'
 
 const ACCENTS: Record<string, string> = { a: 'aàâäáã', e: 'eéèêë', i: 'iîïíì', o: 'oôöóò', u: 'uùûüú', c: 'cç', n: 'nñ', y: 'yÿ' }
 const pattern = (word: string) =>
@@ -22,4 +22,14 @@ export function redactNames(text: string, athletes: Pick<Athlete, 'first_name' |
   let count = 0
   const out = text.replace(re, () => { count++; return '[athlète]' })
   return { text: out, count }
+}
+
+/** Même masquage sur tout le texte d'une séance (titres, exercices, consignes) avant l'envoi à l'IA */
+export function redactSession<T extends Pick<Session, 'title' | 'objective' | 'focus' | 'duration_min' | 'blocks'>>(s: T, athletes: Pick<Athlete, 'first_name' | 'last_name'>[]): T {
+  const r = (t: string) => redactNames(t, athletes).text
+  return {
+    ...s,
+    title: r(s.title), objective: r(s.objective),
+    blocks: s.blocks.map((b) => ({ ...b, title: r(b.title), items: b.items.map((it) => ({ ...it, name: r(it.name), notes: r(it.notes), intensity: r(it.intensity) })) })),
+  }
 }

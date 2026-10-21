@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useData } from '../lib/data'
-import { redactNames } from '../lib/redact'
+import { redactNames, redactSession } from '../lib/redact'
 import { parseSessionText } from '../lib/sessionText'
 import type { ChatMessage, Session } from '../types'
 import { errorMessage, todayISO } from '../lib/utils'
@@ -55,7 +55,7 @@ export function ChatPanel({ session, storageKey }: { session?: Session | null; s
     const nextMsgs: ChatMessage[] = [...messages, { role: 'user', content }]
     setMessages(nextMsgs); setInput(''); setErr(null); setBusy(true)
     try {
-      const reply = await api.chat(nextMsgs, session)
+      const reply = await api.chat(nextMsgs, session ? redactSession(session, athletes) : null)
       setMessages([...nextMsgs, { role: 'assistant', content: reply }])
     } catch (e) {
       setErr(errorMessage(e))
