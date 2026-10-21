@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { BackLink } from '../components/BackLink'
+import { DayNav } from '../components/DayNav'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useData } from '../lib/data'
 import { AssignmentForm } from '../components/AssignmentForm'
@@ -17,6 +18,15 @@ export function AssignmentDetail() {
   if (!a) return loading ? <p className="muted">Chargement…</p> : <Empty>Planification introuvable. <Link to="/planning">Retour</Link></Empty>
 
   const s = sessions.find((x) => x.id === a.session_id)
+  // Autres séances du même jour (groupes, sous-groupes) : libellé court = fin du titre après « · », sinon le groupe
+  const titleOf = (x: typeof a) => sessions.find((y) => y.id === x.session_id)?.title ?? 'Séance'
+  const sameDay = assignments.filter((x) => x.date === a.date)
+    .sort((x, y) => (x.time || '').localeCompare(y.time || '') || titleOf(x).localeCompare(titleOf(y)))
+    .map((x) => {
+      const t = titleOf(x)
+      const short = t.includes(' · ') ? t.split(' · ').slice(1).join(' · ') : groups.find((g) => g.id === x.group_id)?.name ?? t
+      return { id: x.id, label: short.length > 32 ? short.slice(0, 31) + '…' : short }
+    })
   const g = groups.find((x) => x.id === a.group_id)
   const targets = athletesFor(a, athletes)
   const fbs = feedback.filter((f) => f.assignment_id === a.id)
@@ -40,6 +50,7 @@ export function AssignmentDetail() {
   return (
     <div>
       <BackLink to="/planning" label="Planning" />
+      <DayNav items={sameDay} current={a.id} path={(id) => `/planning/${id}`} />
       <h1>{s?.title ?? 'Séance supprimée'}</h1>
       <p className="muted">
         {formatDate(a.date)}{a.time && ` · ${a.time}`}{a.location && ` · ${a.location}`}

@@ -610,3 +610,11 @@ input.attention { border-color: var(--warn); box-shadow: 0 0 0 2px var(--warn-so
 .back-link:hover { text-decoration: none; border-color: var(--primary); }
 .back-link:active { transform: scale(0.97); }
 .back-link span { font-size: 1.15rem; line-height: 1; }
+
+/* Séances du même jour : ‹ onglets › */
+.day-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin: 0.4rem 0 0.8rem; }
+.day-nav > .btn { min-width: 44px; min-height: 44px; font-size: 1.4rem; line-height: 1; }
+.day-nav-tabs { position: relative; display: flex; gap: 0.35rem; overflow-x: auto; flex: 1; min-width: 0; scrollbar-width: none; }
+.day-nav .chip { flex: none; padding: 0.4rem 0.75rem; min-height: 36px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: inherit; font: inherit; font-size: 0.85rem; cursor: pointer; white-space: nowrap; }
+.day-nav .chip.on { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); font-weight: 600; }
+.day-nav-hint { flex-basis: 100%; }
