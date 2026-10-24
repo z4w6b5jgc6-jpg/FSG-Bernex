@@ -69,6 +69,7 @@ export function Dashboard() {
           info: nextComp ? `${nextComp.name} · ${inDays(nextComp.date) > 0 ? `dans ${inDays(nextComp.date)} j` : 'aujourd’hui'}` : 'Aucune prévue' },
         { to: '/tests', icon: '📏', label: 'Tests', tone: 'orange', info: `${tests.length} tests · résultats et VMA` },
         { to: '/conseils', icon: '💡', label: 'Conseils', tone: 'pink', info: 'Nutrition, sommeil, récup' },
+        { to: '/reglages', icon: '⚙️', label: 'Réglages', tone: 'violet', info: 'Lieux, saison, mon groupe' },
       ]} />
 
       {alerts.length > 0 && (

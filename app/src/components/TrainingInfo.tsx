@@ -5,17 +5,17 @@ import { RichText } from './RichText'
 import { errorMessage } from '../lib/utils'
 
 const TEMPLATE = `## Horaires
-- **Mercredi** 18h00 – 20h00 : entraînement du groupe U16/U18
+- **Jour** 18h00 – 20h00 : entraînement du groupe
 
 ## Lieux
-- **Avril à octobre** : Evaux
-- **Novembre à mars** : Pavillon des sports au Bout-du-Monde
+- **Belle saison** : stade
+- **Hiver** : salle
 
 ## À prendre
 - Tenue de sport selon la météo, baskets et pointes, gourde
 
 ## Absences
-- Prévenir les entraîneurs sur WhatsApp avant la séance`
+- Prévenir les entraîneurs avant la séance`
 
 const OPEN_KEY = 'athle-training-info-open'
 

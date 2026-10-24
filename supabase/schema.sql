@@ -24,6 +24,8 @@ create table if not exists clubs (
 
 -- Organisation générale des entraînements (horaires, lieux…), affichée dans le planning
 alter table clubs add column if not exists training_info text not null default '';
+-- Réglages de l'espace : lieux, règle été / hiver, description du groupe pour l'assistant
+alter table clubs add column if not exists settings jsonb not null default '{}'::jsonb;
 
 -- Autres entraîneurs du club : ajoutés par email, reliés à leur compte à la première connexion
 create table if not exists club_coaches (
@@ -468,7 +470,8 @@ begin
   select * into v_club from clubs where coach_id = my_club();
   if found then
     return json_build_object('role', 'coach', 'club_name', v_club.name, 'invite_code', v_club.invite_code,
-                             'is_owner', v_club.coach_id = auth.uid(), 'training_info', v_club.training_info);
+                             'is_owner', v_club.coach_id = auth.uid(), 'training_info', v_club.training_info,
+                             'settings', v_club.settings);
   end if;
   select * into v_ath from athletes where user_id = auth.uid();
   if found then
@@ -629,6 +632,14 @@ begin
   if my_club() is null then raise exception 'not_coach'; end if;
   update clubs set training_info = coalesce(p_text, '') where coach_id = my_club();
 end $$;
+create or replace function set_club_settings(p_settings jsonb) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if my_club() is null then raise exception 'not_coach'; end if;
+  update clubs set settings = coalesce(p_settings, '{}'::jsonb) where coach_id = my_club();
+end $$;
+revoke all on function set_club_settings(jsonb) from public;
+grant execute on function set_club_settings(jsonb) to authenticated;
 revoke all on function set_training_info(text) from public;
 grant execute on function set_training_info(text) to authenticated;
 

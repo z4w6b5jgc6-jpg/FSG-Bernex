@@ -1,3 +1,4 @@
+import { applySettings } from './settings'
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { api, type Draft, type Row } from '../api'
 import type { Me, TableName, Tables } from '../types'
@@ -101,6 +102,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (ids.length) await api.removeMany(table, ids)
     await reload()
   }, [reload])
+
+  // réglages de l'espace (lieux, saison, description du groupe) lus par les fonctions qui en dépendent
+  applySettings(me?.settings)
 
   if (!ready) return null
 

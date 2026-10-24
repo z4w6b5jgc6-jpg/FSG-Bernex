@@ -1,7 +1,6 @@
 import type { Block, SessionItem } from '../types'
 import { normText, type Cell, type SheetIn } from './importResults'
 import { emptyItem, uid } from './utils'
-import { VENUES } from '../data/defaults'
 import { item } from './sessionText'
 
 /** Séance lue dans un fichier : une ligne par exercice, regroupées par date + nom de séance */
@@ -83,12 +82,8 @@ export function parseSessions(sheets: SheetIn[]): SessionIn[] | null {
   return null
 }
 
-/** Lieu habituel du groupe : Evaux d'avril à octobre, Pavillon des sports au Bout-du-Monde de novembre à mars */
-export function defaultLocation(date: string): string {
-  const m = Number(date.slice(5, 7))
-  if (!m) return ''
-  return m >= 4 && m <= 10 ? VENUES[0] : VENUES[1]
-}
+/** Lieu habituel du groupe à cette date (réglages de l'espace) */
+export { defaultLocation } from './settings'
 
 const WEEKDAYS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi']
 const firstOf = (name: string) => normText(name.split(/\s+/)[0])

@@ -3,7 +3,8 @@ import { BackLink } from '../components/BackLink'
 import { useNavigate } from 'react-router-dom'
 import { useData } from '../lib/data'
 import { Field } from '../components/ui'
-import { FOCUSES, OLD_VENUES, VENUES } from '../data/defaults'
+import { FOCUSES, OLD_VENUES } from '../data/defaults'
+import { MONTHS, seasonRule, venues } from '../lib/settings'
 import { matchAthlete, type Cell } from '../lib/importResults'
 import { defaultLocation, parsePlanGrid, parseSessions, type SessionIn } from '../lib/importSessions'
 import { docxLines, parseSessionText } from '../lib/sessionText'
@@ -256,10 +257,10 @@ export function ImportSessions() {
                 </p>
               </div>
             )}
-            {plan && <p className="tiny muted">Lieu proposé : Evaux d’avril à octobre, Pavillon des sports au Bout-du-Monde de novembre à mars (modifiable par séance).</p>}
+            {plan && (() => { const r = seasonRule(); return <p className="tiny muted">Lieu proposé : {r.summer} de {MONTHS[r.from - 1]} à {MONTHS[r.to - 1]}, {r.winter} le reste de l’année (modifiable par séance, et dans Réglages).</p> })()}
           </section>
 
-          <datalist id="venues">{VENUES.map((v) => <option key={v} value={v} />)}</datalist>
+          <datalist id="venues">{venues().map((v) => <option key={v} value={v} />)}</datalist>
           <h2>{rows.length} séance(s) trouvée(s)</h2>
           {offDays.length > 0 && (
             <div className="alert warn small">📅 {offDays.length} séance(s) ne tombent pas un {DAYS[usual]} comme les autres : vérifie la date ({offDays.map((r) => formatDate(r.date, { weekday: 'long', day: 'numeric', month: 'long' })).join(', ')}).</div>

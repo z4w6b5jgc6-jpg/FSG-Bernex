@@ -1,3 +1,4 @@
+import { settings } from '../lib/settings'
 import { createClient } from '@supabase/supabase-js'
 import type { ClubInfo, Me, TableName } from '../types'
 import type { Api, Draft, Row } from './types'
@@ -91,7 +92,7 @@ export function createSupabaseApi(url: string, key: string): Api {
         method: 'POST',
         headers: { 'content-type': 'application/json', authorization: `Bearer ${data.session?.access_token ?? ''}` },
         body: JSON.stringify({
-          messages,
+          messages, groupe: settings().group ?? '',
           session: s ? { title: s.title, objective: s.objective, focus: s.focus, duration_min: s.duration_min,
             blocks: s.blocks.map((b) => ({ title: b.title, items: b.items.map(({ id: _id, ...it }) => (void _id, it)) })) } : null,
         }),
@@ -107,13 +108,16 @@ export function createSupabaseApi(url: string, key: string): Api {
         headers: { 'content-type': 'application/json', authorization: `Bearer ${data.session?.access_token ?? ''}` },
         // Contenu d'entraînement uniquement : pas d'identifiants, pas d'athlètes
         body: JSON.stringify({
-          title: s.title, objective: s.objective, focus: s.focus, duration_min: s.duration_min,
+          title: s.title, objective: s.objective, focus: s.focus, duration_min: s.duration_min, groupe: settings().group ?? '',
           blocks: s.blocks.map((b) => ({ title: b.title, items: b.items.map(({ id: _id, ...it }) => (void _id, it)) })),
         }),
       })
       const out = await res.json().catch(() => null)
       if (!res.ok || !out) throw new Error(out?.error ?? (res.status === 404 ? 'Le service IA n’est pas encore en ligne.' : `Erreur ${res.status}`))
       return out
+    },
+    async saveSettings(settings) {
+      check(await sb.rpc('set_club_settings', { p_settings: settings }))
     },
     async saveTrainingInfo(text) {
       check(await sb.rpc('set_training_info', { p_text: text }))

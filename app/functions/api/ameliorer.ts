@@ -1,7 +1,8 @@
 // Cloudflare Pages Function : POST /api/ameliorer — suggestions structurées pour une séance.
-import { COACH_CONTEXT, FIELDS, MODEL, cleanSession, cut, isCoach, json, type Env, type SessionBody } from '../../server/ai'
+import { COACH_CONTEXT, FIELDS, MODEL, cleanSession, cut, groupContext, isCoach, json, type Env, type SessionBody } from '../../server/ai'
 
-const SYSTEM = `Tu es un entraîneur d'athlétisme expérimenté (sprint, sauts, demi-fond) qui aide un collègue à améliorer une séance, en t'appuyant sur la recherche en sciences du sport et sur les bonnes pratiques de terrain actuelles.
+const SYSTEM = (groupe?: string) => `Tu es un entraîneur d'athlétisme expérimenté (sprint, sauts, lancers, demi-fond) qui aide un collègue à améliorer une séance, en t'appuyant sur la recherche en sciences du sport et sur les bonnes pratiques de terrain actuelles.
+${groupContext(groupe)}
 ${COACH_CONTEXT}
 Réponds UNIQUEMENT en JSON valide, en français, sous cette forme :
 {"resume": "2 phrases maximum sur la séance", "suggestions": [{"bloc": "titre du bloc concerné", "exercice": "nom exact de l'exercice concerné ou vide", "champ": "sets|reps|distance|duration|recovery|intensity|notes ou vide", "valeur": "nouvelle valeur courte si champ renseigné", "proposition": "ce que tu proposes", "pourquoi": "justification courte"}]}
@@ -11,10 +12,11 @@ export const onRequestPost = async ({ request, env }: { request: Request; env: E
   try {
     if (!env.AI) return json({ error: 'L’IA n’est pas activée sur ce site (liaison « AI » manquante dans Cloudflare).' }, 503)
     if (!(await isCoach(request, env))) return json({ error: 'Réservé aux entraîneurs connectés.' }, 401)
-    const seance = cleanSession((await request.json()) as SessionBody)
+    const body = (await request.json()) as SessionBody & { groupe?: string }
+    const seance = cleanSession(body)
     if (!seance.blocs.some((b) => b.exercices.length)) return json({ error: 'La séance est vide.' }, 400)
     const out = await env.AI.run(MODEL, {
-      messages: [{ role: 'system', content: SYSTEM }, { role: 'user', content: JSON.stringify(seance) }],
+      messages: [{ role: 'system', content: SYSTEM(body.groupe) }, { role: 'user', content: JSON.stringify(seance) }],
       max_tokens: 1200, temperature: 0.3,
     })
     const raw = typeof out.response === 'string' ? out.response : JSON.stringify(out.response ?? '')

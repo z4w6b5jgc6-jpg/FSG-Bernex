@@ -21,6 +21,7 @@ export interface Api {
   joinClub(code: string, profile: JoinProfile): Promise<void>
   regenerateInviteCode(): Promise<string>
   saveTrainingInfo(text: string): Promise<void>
+  saveSettings(settings: import('../lib/settings').ClubSettings): Promise<void>
   /** Suggestions de l'IA (contenu de la séance seulement, aucune donnée d'athlète) */
   improveSession(session: Pick<Session, 'title' | 'objective' | 'focus' | 'duration_min' | 'blocks'>): Promise<AiAdvice>
   /** Conversation avec l'assistant (noms déjà masqués), éventuellement à propos d'une séance */

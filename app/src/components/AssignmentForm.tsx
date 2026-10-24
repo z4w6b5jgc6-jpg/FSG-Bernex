@@ -3,7 +3,7 @@ import { useData } from '../lib/data'
 import type { Assignment } from '../types'
 import { errorMessage, fullName } from '../lib/utils'
 import { Field, Modal } from './ui'
-import { VENUES } from '../data/defaults'
+import { venues } from '../lib/settings'
 
 export function AssignmentForm({
   initial, onClose, onSaved,
@@ -56,7 +56,7 @@ export function AssignmentForm({
         </div>
         <Field label="Lieu">
           <input list="venues" value={a.location ?? ''} onChange={(e) => set({ location: e.target.value })} placeholder="Stade, salle…" />
-          <datalist id="venues">{VENUES.map((v) => <option key={v} value={v} />)}</datalist>
+          <datalist id="venues">{venues().map((v) => <option key={v} value={v} />)}</datalist>
         </Field>
         <Field label="Groupe">
           <select value={a.group_id ?? ''} onChange={(e) => set({ group_id: e.target.value || null })}>

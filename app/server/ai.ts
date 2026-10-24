@@ -38,7 +38,7 @@ export async function isCoach(req: Request, env: Env): Promise<boolean> {
 export function cleanSession(b: SessionBody) {
   return {
     titre: cut(b.title, 120), objectif: cut(b.objective, 300), theme: cut(b.focus, 40),
-    duree_min: typeof b.duration_min === 'number' ? b.duration_min : null, niveau: cut(b.level, 60) || 'U16/U18',
+    duree_min: typeof b.duration_min === 'number' ? b.duration_min : null, niveau: cut(b.level, 60) || undefined,
     blocs: (b.blocks ?? []).slice(0, 15).map((bl) => ({
       titre: cut(bl.title, 80),
       exercices: (bl.items ?? []).slice(0, 25).map((it) => Object.fromEntries([['nom', cut(it.name, 200)], ...FIELDS.map((f) => [f, cut(it[f], 120)]).filter(([, v]) => v)])),
@@ -46,9 +46,12 @@ export function cleanSession(b: SessionBody) {
   }
 }
 
-/** Repères partagés par les deux fonctions : contexte du groupe et types de séances (tableau « Sprint », S. Charlet) */
-export const COACH_CONTEXT = `Contexte : groupe d'athlétisme U16/U18 (15 à 18 ans) du club FSG Bernex-Confignon (Genève), surtout sprint et saut en longueur, quelques lanceurs et demi-fondeurs. Entraînement collectif le mercredi 18h–20h (Evaux d'avril à octobre, salle de novembre à mars).
-Repères de types de séances (tableau « Sprint » de S. Charlet, complétés par les pratiques actuelles) :
+/** Description du groupe donnée par ses coachs (Réglages), sinon un groupe jeunes du club (sans noms d'athlètes) */
+export const groupContext = (groupe?: unknown) =>
+  `Contexte : club d'athlétisme FSG Bernex-Confignon (Genève). Groupe : ${cut(groupe, 600).trim() || 'jeunes athlètes (U14 à U20) et adultes, toutes disciplines'}. Adapte toujours les volumes, intensités et exercices à l'âge et au niveau de ce groupe (pour les plus jeunes : jeu, technique et coordination avant le volume).`
+
+/** Repères partagés : types de séances (tableau « Sprint », S. Charlet) et références */
+export const COACH_CONTEXT = `Repères de types de séances (tableau « Sprint » de S. Charlet, complétés par les pratiques actuelles) :
 - S7 Vitesse / puissance anaérobie alactique : 30–60 m à 95–100 %, récup 1'30–3' (≈ 1 min / 10 m), 3–5' entre séries, volume 400–800 m.
 - S8 Séance courte / capacité anaérobie alactique : 80–150 m à 90–95 %, récup 1–2' entre répétitions, 12–15' entre séries, volume 700–1200 m.
 - Séance spécifique : 80–200 m à 95–100 %, récup complète.

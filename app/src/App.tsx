@@ -17,6 +17,7 @@ import { WhoDoesWhat } from './pages/WhoDoesWhat'
 import { Messages } from './pages/Messages'
 import { feedbackToAnswer, unreadByAthlete, unreadByCoach } from './lib/messages'
 import { NotificationsSetup } from './pages/NotificationsSetup'
+import { Settings } from './pages/Settings'
 import { MondayToday } from './pages/monday/MondayToday'
 import { MondayEdit, MondayPlan } from './pages/monday/MondayPlan'
 import { MondayImport } from './pages/monday/MondayImport'
@@ -98,6 +99,7 @@ function CoachApp() {
         <Route path="/planning" element={<Planning />} />
         <Route path="/messages" element={<Messages coach />} />
         <Route path="/notifications" element={<NotificationsSetup />} />
+        <Route path="/reglages" element={<Settings />} />
         <Route path="/lundi" element={<MondayToday />} />
         <Route path="/lundi/plan" element={<MondayPlan />} />
         <Route path="/lundi/plan/:date" element={<MondayEdit />} />

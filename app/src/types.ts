@@ -273,6 +273,8 @@ export interface Me {
   is_owner?: boolean
   /** organisation générale des entraînements (texte mis en forme) */
   training_info?: string
+  /** réglages de l'espace (coachs) */
+  settings?: import('./lib/settings').ClubSettings
 }
 
 /** Entraîneur associé, ajouté par email */
