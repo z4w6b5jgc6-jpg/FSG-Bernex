@@ -24,9 +24,10 @@ export function Planning() {
 
   return (
     <div>
-      <div className="row between">
+      <div className="row between wrap">
         <h1>Planning</h1>
-        <div className="row gap">
+        <div className="row gap wrap">
+          <Link className="btn" to="/planning/athletes">👥 Qui fait quoi</Link>
           <Link className="btn" to="/planning/export">📥 Excel</Link>
           <button className="btn primary" onClick={() => setForm({ date: today >= week && today <= addDays(week, 6) ? today : week })}>+ Planifier</button>
         </div>

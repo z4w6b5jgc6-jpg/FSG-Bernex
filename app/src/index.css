@@ -647,3 +647,9 @@ body.track-mode .app { padding-left: 0; }
 .lundi-nav { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; margin: 0.4rem 0; }
 .lundi-nav select { flex: 1 1 12rem; min-width: 0; width: auto; }
 .lundi-nav > .btn { min-height: 44px; min-width: 44px; }
+
+/* Qui fait quoi : athlètes d'une série */
+.who-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.who-chip { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.2rem 0.2rem 0.2rem 0.65rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); font-size: 0.9rem; }
+.who-chip button { border: 0; background: transparent; color: var(--muted); min-width: 32px; min-height: 32px; border-radius: 999px; cursor: pointer; font-size: 0.9rem; }
+.who-chip button:hover { color: #b91c1c; background: var(--primary-soft); }
