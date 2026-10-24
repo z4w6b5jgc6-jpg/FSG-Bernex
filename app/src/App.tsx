@@ -12,6 +12,7 @@ import { Onboarding } from './pages/Onboarding'
 import { Dashboard } from './pages/Dashboard'
 import { Planning } from './pages/Planning'
 import { AssignmentDetail } from './pages/AssignmentDetail'
+import { ExportSessions } from './pages/ExportSessions'
 import { Sessions } from './pages/Sessions'
 import { SessionEditor } from './pages/SessionEditor'
 import { Athletes } from './pages/Athletes'
@@ -85,6 +86,7 @@ function CoachApp() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/planning" element={<Planning />} />
+        <Route path="/planning/export" element={<ExportSessions />} />
         <Route path="/planning/:id" element={<AssignmentDetail />} />
         <Route path="/seances" element={<Sessions />} />
         <Route path="/seances/import" element={<ImportSessions />} />
