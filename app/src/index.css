@@ -671,3 +671,30 @@ body.track-mode .app { padding-left: 0; }
 .key-row code { min-width: 9.5rem; font-size: 0.8rem; }
 .key-row input { flex: 1 1 12rem; font-family: ui-monospace, monospace; font-size: 0.75rem; }
 ol.steps li { margin-bottom: 0.7rem; }
+
+/* Petits écrans (iPhone SE) : rien ne déborde */
+.topbar { gap: 0.5rem; min-width: 0; }
+.brand { min-width: 0; }
+.brand-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.topbar > .btn { flex-shrink: 0; }
+.pill.wrap { white-space: normal; }
+.grid2 > * { min-width: 0; }
+input[type="date"], input[type="time"] { min-width: 0; max-width: 100%; }
+@media (max-width: 720px) {
+  .bottomnav a { min-width: 0; flex: 1 1 0; }
+  .bottomnav a span { width: min(46px, 100%); position: relative; }
+  .bottomnav a small { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+@media (max-width: 360px) {
+  .brand-name { font-size: 0.95rem; }
+  .bottomnav a small { font-size: 0.62rem; }
+}
+.nav-badge { position: absolute; top: -4px; right: -2px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 999px; background: #dc2626; color: #fff; font-size: 0.68rem; line-height: 18px; text-align: center; font-weight: 700; }
+.topnav a { position: relative; }
+.topnav .nav-badge { position: static; margin-left: 0.35rem; display: inline-block; }
+/* Lignes cliquables des listes (records, perfs) : zone de toucher confortable */
+button.link.left { min-height: 40px; display: inline-flex; align-items: center; gap: 0.3rem; flex-wrap: wrap; text-align: left; }
+@media (max-width: 720px) {
+  .chips { margin: 0 -0.85rem; padding-left: 0.85rem; padding-right: 0.85rem; }
+}
+.sticky-bar { flex-wrap: wrap; gap: 0.4rem; }

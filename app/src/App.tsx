@@ -15,6 +15,7 @@ import { AssignmentDetail } from './pages/AssignmentDetail'
 import { ExportSessions } from './pages/ExportSessions'
 import { WhoDoesWhat } from './pages/WhoDoesWhat'
 import { Messages } from './pages/Messages'
+import { feedbackToAnswer, unreadByAthlete, unreadByCoach } from './lib/messages'
 import { NotificationsSetup } from './pages/NotificationsSetup'
 import { MondayToday } from './pages/monday/MondayToday'
 import { MondayEdit, MondayPlan } from './pages/monday/MondayPlan'
@@ -45,7 +46,7 @@ const COACH_NAV: NavItem[] = [
   { to: '/seances', label: 'Séances', icon: '📋' },
   { to: '/athletes', label: 'Athlètes', icon: '🏃' },
   { to: '/competitions', label: 'Compét.', icon: '🏆' },
-  { to: '/conseils', label: 'Conseils', icon: '💡' },
+  { to: '/messages', label: 'Messages', icon: '💬' },
 ]
 
 const ATHLETE_NAV: NavItem[] = [
@@ -57,13 +58,16 @@ const ATHLETE_NAV: NavItem[] = [
 ]
 
 function Shell({ nav, brand, right, children }: { nav: NavItem[]; brand: ReactNode; right?: ReactNode; children: ReactNode }) {
-  const { error } = useData()
+  const { error, me, messages, feedback } = useData()
+  // Pastille du menu Messages : non lus (+ retours sans réponse pour le coach)
+  const badge = me?.role === 'coach' ? unreadByCoach(messages).length + feedbackToAnswer(feedback, messages).length : unreadByAthlete(messages).length
+  const dot = (to: string) => (to === '/messages' && badge > 0 ? <b className="nav-badge" aria-label={`${badge} à lire`}>{badge}</b> : null)
   return (
     <div className="app">
       <header className="topbar">
         <span className="brand">{brand}</span>
         <nav className="topnav">
-          {nav.map((n) => <NavLink key={n.to} to={n.to} end={n.to === '/'}><span className="nav-ico" aria-hidden>{n.icon}</span>{n.label}</NavLink>)}
+          {nav.map((n) => <NavLink key={n.to} to={n.to} end={n.to === '/'}><span className="nav-ico" aria-hidden>{n.icon}</span>{n.label}{dot(n.to)}</NavLink>)}
         </nav>
         {right}
       </header>
@@ -73,7 +77,7 @@ function Shell({ nav, brand, right, children }: { nav: NavItem[]; brand: ReactNo
       <nav className="bottomnav">
         {nav.map((n) => (
           <NavLink key={n.to} to={n.to} end={n.to === '/'}>
-            <span>{n.icon}</span>
+            <span>{n.icon}{dot(n.to)}</span>
             <small>{n.label}</small>
           </NavLink>
         ))}
@@ -86,7 +90,7 @@ function CoachApp() {
   const { me } = useData()
   useEffect(() => applyAccent(null), [])
   return (
-    <Shell nav={COACH_NAV} brand={<><picture><source srcSet="logo-symbol-dark.png" media="(prefers-color-scheme: dark)" /><img src="logo-symbol.png" alt="" className="brand-logo" /></picture>{me?.club_name ?? 'Coach Athlé'}</>}
+    <Shell nav={COACH_NAV} brand={<><picture><source srcSet="logo-symbol-dark.png" media="(prefers-color-scheme: dark)" /><img src="logo-symbol.png" alt="" className="brand-logo" /></picture><span className="brand-name">{me?.club_name ?? 'Coach Athlé'}</span></>}
       right={<button className="btn ghost small" onClick={() => api.signOut()}>Déconnexion</button>}>
       <InstallPrompt who="coach" />
       <Routes>

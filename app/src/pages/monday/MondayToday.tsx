@@ -53,7 +53,7 @@ export function MondayToday() {
       <div className="lundi-nav">
         <button className="btn small" disabled={i <= 0} onClick={() => go(i - 1)} aria-label="Lundi précédent">←</button>
         <select value={date} onChange={(e) => go(dates.indexOf(e.target.value))} aria-label="Date de la séance">
-          {dates.map((d, k) => <option key={d} value={d}>S{String(k + 1).padStart(2, '0')} · {formatDate(d, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</option>)}
+          {dates.map((d, k) => <option key={d} value={d}>S{String(k + 1).padStart(2, '0')} · {formatDate(d, { weekday: 'short', day: 'numeric', month: 'short' })}</option>)}
         </select>
         <button className="btn small" disabled={i >= dates.length - 1} onClick={() => go(i + 1)} aria-label="Lundi suivant">→</button>
         <button className={`btn small ${track ? 'primary' : ''}`} onClick={() => setTrack(!track)}>{track ? '✕ Quitter le mode piste' : '🏟️ Mode piste'}</button>

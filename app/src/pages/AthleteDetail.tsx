@@ -75,7 +75,7 @@ export function AthleteDetail() {
       </div>
       {a.goals && <div className="goal">🎯 <b>Objectif :</b> {a.goals}</div>}
       <div className="small">
-        {a.user_id ? <span className="pill ok">✓ Inscrit·e dans l’app</span> : <span className="pill">⏳ Pas encore inscrit·e — sa fiche se remplira dès son inscription</span>}
+        {a.user_id ? <span className="pill ok">✓ Inscrit·e dans l’app</span> : <span className="pill wrap">⏳ Pas encore inscrit·e — sa fiche se remplira dès son inscription</span>}
       </div>
       <div className="row gap wrap actions">
         {a.phone && <a className="btn small whatsapp" href={whatsappUrl(`Salut ${a.first_name} !`, a.phone)} target="_blank" rel="noreferrer">📲 WhatsApp</a>}
