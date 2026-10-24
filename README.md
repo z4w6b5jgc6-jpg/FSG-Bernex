@@ -64,7 +64,7 @@ Puis ouvrir http://localhost:5173 :
 3. Dans **Project Settings → API**, noter l'**URL** du projet et la clé **anon public**.
 
 ### 2. Héberger le site (Cloudflare Pages)
-Le site du club est publié sur **https://entrainementu18.pages.dev** : chaque push sur la branche de production le republie automatiquement.
+Le site du club est publié sur **https://fsg-bernex-athle.pages.dev** : chaque push sur la branche de production le republie automatiquement.
 - Cloudflare : *Workers & Pages → Create → Pages → Connect to Git*, choisir ce dépôt, puis
   **Framework preset = None**, **Build command = `npm run build`**, **Build output directory = `dist`**, **Root directory = `app`**.
 - Après un changement d'adresse : dans Supabase, *Authentication → URL Configuration*, mettre la nouvelle adresse en **Site URL** et l'ajouter aux **Redirect URLs** (`https://…/**`).

@@ -1,5 +1,5 @@
-# Configuration Cloudflare Pages (site entrainementu18.pages.dev)
-name = "entrainementu18"
+# Configuration Cloudflare Pages (site fsg-bernex-athle.pages.dev)
+name = "fsg-bernex-athle"
 pages_build_output_dir = "./dist"
 compatibility_date = "2025-06-01"
 
