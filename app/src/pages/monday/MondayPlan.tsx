@@ -18,8 +18,8 @@ export function MondayPlan() {
   const cycles = [...new Set(dates.map((d) => planOf(plan.find((s) => planOf(s)!.date === d)!)!.cycle))]
   return (
     <div>
-      <BackLink to="/lundi" label="Séance du lundi" />
-      <h1>📋 Plan du lundi</h1>
+      <BackLink to="/lundi" label="Temps cibles" />
+      <h1>📋 Plan</h1>
       {!dates.length && <Empty>Aucun plan importé. <Link to="/lundi/import">Importer le plan</Link></Empty>}
       {cycles.map((c) => (
         <section key={c}>

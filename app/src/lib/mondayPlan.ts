@@ -1,7 +1,8 @@
 // Plan des séances du lundi : fichier JSON (seances_lundi_2026-2027.json) → séances de l'app
 import type { Block, Session, SessionPlan, Target, TargetBase } from '../types'
 import { toItems } from './importSessions'
-import { uid } from './utils'
+import { parseISODate, uid } from './utils'
+import { DAYS } from './series'
 import { SUBGROUPS } from './targets'
 
 export interface PlanAthleteIn {
@@ -54,14 +55,17 @@ export function planBlocks(p: SessionPlan): Block[] {
   return parts.filter(([, t]) => t.trim()).map(([title, t, plain]) => ({ id: uid(), title, items: toItems(t.split(/\n+/), plain) }))
 }
 
-export const planTitle = (p: Pick<SessionPlan, 'subgroup'>, n: number) => `Lundi S${String(n).padStart(2, '0')} · ${subgroupLabel(p.subgroup)}`
+// « Lundi S01 · Sprint / Sauts / Haies » : jour de la semaine de la séance, numéro, sous-groupe
+const dayName = (date: string) => { const d = DAYS[parseISODate(date).getDay()]; return d[0].toUpperCase() + d.slice(1) }
+export const planTitle = (p: Pick<SessionPlan, 'subgroup' | 'date'>, n: number) => `${dayName(p.date)} S${String(n).padStart(2, '0')} · ${subgroupLabel(p.subgroup)}`
 export const planObjective = (p: Pick<SessionPlan, 'cycle' | 'objective' | 'light'>) =>
   [p.cycle, p.objective].filter(Boolean).join(' – ') + (p.light && !/allég/i.test(p.objective) ? ' (semaine allégée)' : '')
 
 /** Une séance de l'app par date et par sous-groupe */
 export function planDrafts(d: PlanFile): (Pick<Session, 'title' | 'objective' | 'focus' | 'duration_min' | 'blocks' | 'plan' | 'targets'> & { notes: string })[] {
   const dates = [...new Set(d.seances.map((s) => s.date))].sort()
-  const name = `Lundi ${d.saison ?? ''}`.trim()
+  const first = [...d.seances].map((s) => s.date).sort()[0]
+  const name = `${first ? dayName(first) : 'Plan'} ${d.saison ?? ''}`.trim()
   return d.seances.flatMap((s) => {
     const groups = [...new Set([...Object.keys(s.contenu ?? {}), ...s.cibles.map((c) => c.sous_groupe)])]
     return groups.map((sg) => {

@@ -49,7 +49,7 @@ export function ImportResults() {
   const [mode, setMode] = useState<'replace' | 'merge'>('replace')
   // Groupe attribué aux fiches créées par l'import ('' = sans groupe, '+' = nouveau groupe)
   const [newGroup, setNewGroup] = useState<string | null>(null)
-  const [newGroupName, setNewGroupName] = useState('U18')
+  const [newGroupName, setNewGroupName] = useState('')
   const groupChoice = newGroup ?? (groups[0]?.id ?? '+')
 
   const known = useMemo(() => availableTests(tests, [...DEFAULT_TESTS, ...EXTRA_TESTS]), [tests])

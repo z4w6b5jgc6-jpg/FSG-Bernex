@@ -4,6 +4,7 @@ import { useData } from '../lib/data'
 import { FeedbackCard } from '../components/FeedbackCard'
 import { Empty, GroupBadge } from '../components/ui'
 import { InviteCard } from '../components/InviteCard'
+import { FirstSteps } from '../components/FirstSteps'
 import { feedbackToAnswer, unreadByCoach } from '../lib/messages'
 import { addDays, athletesFor, formatDate, formatShort, todayISO } from '../lib/utils'
 
@@ -49,6 +50,7 @@ export function Dashboard() {
       <h1>Bonjour 👋</h1>
       <p className="muted">{me?.club_name} · {formatDate(today)}</p>
 
+      <FirstSteps />
       {athletes.length === 0 && <InviteCard />}
       {pending > 0 && (
         <Link to="/athletes" className="alert warn link-card">
@@ -63,7 +65,7 @@ export function Dashboard() {
         { to: '/messages', icon: '💬', label: 'Messages', tone: 'pink', badge: unread + unanswered,
           info: unread ? `${unread} message(s) non lu(s)` : unanswered ? `${unanswered} retour(s) sans réponse` : 'Retours et discussions des athlètes' },
         { to: '/seances', icon: '📋', label: 'Séances', tone: 'violet', info: `${sessions.length} séance(s) type` },
-        { to: '/lundi', icon: '⏱️', label: 'Lundi', tone: 'orange', info: 'Temps cibles par athlète, mode piste' },
+        { to: '/lundi', icon: '⏱️', label: 'Temps cibles', tone: 'orange', info: 'Plan avec temps par athlète, mode piste' },
         { to: '/assistant', icon: '🤖', label: 'Assistant', tone: 'blue', info: 'Météo, intention, période : demande une séance' },
         { to: '/competitions', icon: '🏆', label: 'Compétitions', tone: 'yellow', badge: deadlines,
           info: nextComp ? `${nextComp.name} · ${inDays(nextComp.date) > 0 ? `dans ${inDays(nextComp.date)} j` : 'aujourd’hui'}` : 'Aucune prévue' },

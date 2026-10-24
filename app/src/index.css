@@ -698,3 +698,5 @@ button.link.left { min-height: 40px; display: inline-flex; align-items: center; 
   .chips { margin: 0 -0.85rem; padding-left: 0.85rem; padding-right: 0.85rem; }
 }
 .sticky-bar { flex-wrap: wrap; gap: 0.4rem; }
+.first-steps ul li { padding: 0.3rem 0; }
+.first-steps ul li a { font-weight: 600; }

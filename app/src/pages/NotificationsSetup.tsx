@@ -49,7 +49,7 @@ export function NotificationsSetup() {
             {keys && (
               <>
                 <li>
-                  Dans <b>Cloudflare</b> → Workers & Pages → <b>entrainementu18</b> → <b>Settings</b> → <b>Variables and Secrets</b> → <b>+ Add</b>,
+                  Dans <b>Cloudflare</b> → Workers & Pages → <b>ton projet</b> → <b>Settings</b> → <b>Variables and Secrets</b> → <b>+ Add</b>,
                   ajoute deux variables de type <b>Secret</b> (environnement Production) :
                   <div className="key-row"><code>VAPID_PUBLIC_KEY</code><input readOnly value={keys.pub} onFocus={(e) => e.target.select()} /><button className="btn small" onClick={() => copy('pub', keys.pub)}>{copied === 'pub' ? '✓ Copié' : 'Copier'}</button></div>
                   <div className="key-row"><code>VAPID_PRIVATE_KEY</code><input readOnly value={keys.priv} onFocus={(e) => e.target.select()} /><button className="btn small" onClick={() => copy('priv', keys.priv)}>{copied === 'priv' ? '✓ Copié' : 'Copier'}</button></div>

@@ -28,8 +28,11 @@ export function MondayToday() {
   if (!dates.length) {
     return (
       <div>
-        <h1>⏱️ Séances du lundi</h1>
-        <Empty>Aucun plan importé. <Link to="/lundi/import">Importer le plan du lundi (fichier JSON)</Link></Empty>
+        <h1>⏱️ Temps cibles</h1>
+        <Empty>
+          Aucun plan à temps cibles. Un plan avec une colonne par partie de séance et un onglet de cibles (distance, base VMA / RVA / record, %)
+          donne à chaque athlète son temps à réaliser. <Link to="/lundi/import">Importer un plan (Excel ou JSON)</Link>
+        </Empty>
       </div>
     )
   }
@@ -44,7 +47,7 @@ export function MondayToday() {
     <div className={track ? 'track' : ''}>
       {!track && (
         <div className="row between wrap">
-          <h1>⏱️ Séance du lundi</h1>
+          <h1>⏱️ {p0.name || 'Temps cibles'}</h1>
           <div className="row gap">
             <Link className="btn" to="/lundi/plan">📋 Plan</Link>
             <Link className="btn ghost" to="/lundi/import">📥 Importer</Link>

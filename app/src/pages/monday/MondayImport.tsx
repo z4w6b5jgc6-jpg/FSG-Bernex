@@ -207,8 +207,8 @@ export function MondayImport() {
   const kept = rows.filter((r) => r.target !== 'skip')
   return (
     <div>
-      <BackLink to="/lundi" label="Lundi" />
-      <h1>Importer le plan du lundi</h1>
+      <BackLink to="/lundi" label="Temps cibles" />
+      <h1>Importer un plan à temps cibles</h1>
       <div className="card form">
         <p className="small">
           Choisis ton <b>classeur Excel du lundi</b> (onglets Plan lundi, Cibles, Athlètes) ou le fichier <b>JSON</b> du plan.
