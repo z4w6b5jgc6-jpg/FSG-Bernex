@@ -182,6 +182,8 @@ export interface Feedback {
   rpe: number | null
   fatigue: number | null
   mood: number | null
+  /** récupérations : 1 trop courtes, 2 adaptées, 3 trop longues */
+  recovery_fit?: number | null
   pain: string
   comment: string
   coach_reply: string

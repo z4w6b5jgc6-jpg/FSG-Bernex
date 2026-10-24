@@ -10,7 +10,7 @@ import { Thread } from '../../components/Thread'
 import { api } from '../../api'
 import { feedbackWorthNotice } from '../../lib/messages'
 import { FeedbackScores } from '../../components/FeedbackCard'
-import { Empty, FATIGUE_LABELS, FATIGUE_TEXT, MOOD_LABELS, MOOD_TEXT, RPE_LABELS, Scale } from '../../components/ui'
+import { Empty, FATIGUE_LABELS, FATIGUE_TEXT, MOOD_LABELS, MOOD_TEXT, RECOVERY_ICON, RECOVERY_TEXT, RPE_LABELS, Scale } from '../../components/ui'
 import type { Assignment, Feedback } from '../../types'
 import { myAssignments } from '../../lib/athlete'
 import { latestVma } from '../../lib/vma'
@@ -95,7 +95,7 @@ function FeedbackForm({ athleteId, assignmentId, fb }: { athleteId: string; assi
   const [editing, setEditing] = useState(!fb)
   const [f, setF] = useState({
     completed: fb?.completed ?? true, rpe: fb?.rpe ?? null, fatigue: fb?.fatigue ?? null,
-    mood: fb?.mood ?? null, pain: fb?.pain ?? '', comment: fb?.comment ?? '',
+    mood: fb?.mood ?? null, recovery_fit: fb?.recovery_fit ?? null, pain: fb?.pain ?? '', comment: fb?.comment ?? '',
   })
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
@@ -107,7 +107,12 @@ function FeedbackForm({ athleteId, assignmentId, fb }: { athleteId: string; assi
     setBusy(true)
     setErr(null)
     try {
-      const saved = await save('feedback', { ...f, id: fb?.id, assignment_id: assignmentId, athlete_id: athleteId })
+      const row = { ...f, id: fb?.id, assignment_id: assignmentId, athlete_id: athleteId }
+      // base pas encore mise à jour (#/base) : le retour part quand même, sans la question sur la récup
+      const saved = await save('feedback', row).catch((e2) => {
+        if (/recovery_fit/.test(errorMessage(e2))) { const { recovery_fit: _r, ...rest } = row; void _r; return save('feedback', rest) }
+        throw e2
+      })
       // le coach est prévenu s'il y a un commentaire, une douleur, une forte fatigue ou un gros effort
       if (feedbackWorthNotice(f)) api.notify('feedback', saved.id)
       setEditing(false)
@@ -151,6 +156,18 @@ function FeedbackForm({ athleteId, assignmentId, fb }: { athleteId: string; assi
         <Scale min={1} max={5} value={f.fatigue} onChange={(fatigue) => set({ fatigue })} labels={FATIGUE_LABELS} />
         {f.fatigue != null && <span className="hint">{FATIGUE_TEXT[f.fatigue]}</span>}
       </div>
+      {f.completed && (
+        <div className="field">
+          <span className="field-label">Les temps de récupération étaient…</span>
+          <div className="scale">
+            {[1, 2, 3].map((v) => (
+              <button key={v} type="button" className={`scale-btn wide ${f.recovery_fit === v ? 'active' : ''}`} onClick={() => set({ recovery_fit: f.recovery_fit === v ? null : v })}>
+                {RECOVERY_ICON[v]} {RECOVERY_TEXT[v]}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="field">
         <span className="field-label">Ton plaisir</span>
         <Scale min={1} max={5} value={f.mood} onChange={(mood) => set({ mood })} labels={MOOD_LABELS} />

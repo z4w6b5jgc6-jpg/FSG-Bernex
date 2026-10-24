@@ -147,6 +147,8 @@ create table if not exists feedback (
   updated_at     timestamptz not null default now(),
   unique (assignment_id, athlete_id)
 );
+-- Temps de récupération ressentis : 1 trop courts, 2 adaptés, 3 trop longs
+alter table feedback add column if not exists recovery_fit int check (recovery_fit between 1 and 3);
 
 -- Conseils (nutrition, sommeil, récupération…) rédigés par l'entraîneur
 create table if not exists tips (

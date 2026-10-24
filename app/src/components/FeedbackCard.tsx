@@ -5,15 +5,16 @@ import { useData } from '../lib/data'
 import { fullName } from '../lib/utils'
 import { threadOf, unreadByCoach } from '../lib/messages'
 import { Thread } from './Thread'
-import { FATIGUE_LABELS, FATIGUE_TEXT, MOOD_LABELS, MOOD_TEXT, RPE_LABELS, rpeClass } from './ui'
+import { FATIGUE_LABELS, FATIGUE_TEXT, MOOD_LABELS, MOOD_TEXT, RECOVERY_ICON, RECOVERY_TEXT, RPE_LABELS, rpeClass } from './ui'
 
-export function FeedbackScores({ fb }: { fb: Pick<Feedback, 'completed' | 'rpe' | 'fatigue' | 'mood'> }) {
+export function FeedbackScores({ fb }: { fb: Pick<Feedback, 'completed' | 'rpe' | 'fatigue' | 'mood' | 'recovery_fit'> }) {
   return (
     <div className="scores">
       {!fb.completed && <span className="pill danger">Séance non faite</span>}
       {fb.rpe != null && <span className={`pill ${rpeClass(fb.rpe)}`} title={RPE_LABELS[fb.rpe]}>Effort {fb.rpe}/10</span>}
       {fb.fatigue != null && <span className={`pill ${fb.fatigue >= 4 ? 'warn' : ''}`}>{FATIGUE_LABELS[fb.fatigue]} {FATIGUE_TEXT[fb.fatigue]}</span>}
       {fb.mood != null && <span className="pill">{MOOD_LABELS[fb.mood]} {MOOD_TEXT[fb.mood]}</span>}
+      {fb.recovery_fit != null && <span className={`pill ${fb.recovery_fit !== 2 ? 'warn' : ''}`}>{RECOVERY_ICON[fb.recovery_fit]} Récup {RECOVERY_TEXT[fb.recovery_fit].toLowerCase()}</span>}
     </div>
   )
 }

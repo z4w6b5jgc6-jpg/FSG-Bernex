@@ -68,6 +68,8 @@ export const FATIGUE_LABELS: Record<number, string> = { 1: '😄', 2: '🙂', 3:
 export const FATIGUE_TEXT: Record<number, string> = { 1: 'En pleine forme', 2: 'Bien', 3: 'Moyen', 4: 'Fatigué·e', 5: 'Épuisé·e' }
 export const MOOD_LABELS: Record<number, string> = { 1: '😞', 2: '😕', 3: '😐', 4: '😊', 5: '🤩' }
 export const MOOD_TEXT: Record<number, string> = { 1: 'Pas bien', 2: 'Bof', 3: 'Correct', 4: 'Bien', 5: 'Super' }
+export const RECOVERY_TEXT: Record<number, string> = { 1: 'Trop courtes', 2: 'Adaptées', 3: 'Trop longues' }
+export const RECOVERY_ICON: Record<number, string> = { 1: '⏩', 2: '👌', 3: '⏳' }
 
 export function GroupBadge({ name, color }: { name: string; color: string }) {
   return (

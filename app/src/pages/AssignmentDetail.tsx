@@ -9,7 +9,7 @@ import { SessionView } from '../components/SessionView'
 import { TargetTable } from '../components/TargetTable'
 import { Thread } from '../components/Thread'
 import { SessionNoteCard } from '../components/SessionNoteCard'
-import { Empty, GroupBadge } from '../components/ui'
+import { Empty, GroupBadge, RECOVERY_TEXT } from '../components/ui'
 import { athletesFor, formatDate, fullName, nativeShare, todayISO, whatsappUrl } from '../lib/utils'
 
 export function AssignmentDetail() {
@@ -75,6 +75,10 @@ export function AssignmentDetail() {
 
       <section>
         <h2>Retours {past && <span className="muted small">({fbs.length}/{targets.length}{avgRpe && ` · effort moyen ${avgRpe}/10`})</span>}</h2>
+        {fbs.some((f) => f.recovery_fit != null) && (
+          <p className="small">⏱️ Récupérations : {[1, 2, 3].map((v) => ({ v, n: fbs.filter((f) => f.recovery_fit === v).length })).filter((x) => x.n)
+            .map((x) => `${x.n} ${RECOVERY_TEXT[x.v].toLowerCase()}`).join(' · ')}</p>
+        )}
         {!past && fbs.length === 0 ? (
           <Empty>Les athlètes pourront donner leur retour à partir du jour de la séance.</Empty>
         ) : (

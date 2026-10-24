@@ -492,7 +492,7 @@ function defaults(table: TableName): Record<string, unknown> {
     case 'exercises': return { category: 'Autre', description: '' }
     case 'sessions': return { objective: '', focus: '', duration_min: null, blocks: [], plan: {}, targets: [] }
     case 'assignments': return { time: '', location: '', group_id: null, athlete_ids: [], note: '' }
-    case 'feedback': return { completed: true, rpe: null, fatigue: null, mood: null, pain: '', comment: '', coach_reply: '' }
+    case 'feedback': return { completed: true, rpe: null, fatigue: null, mood: null, recovery_fit: null, pain: '', comment: '', coach_reply: '' }
     case 'tips': return { category: 'Hygiène de vie', emoji: '💡', summary: '', body: '', published: true }
     case 'records': return { competition: '', date: todayISO() }
     case 'competitions': return { end_date: null, location: '', level: 'B', program_url: '', registration_url: '', results_url: '', registration_deadline: null, notes: '', athlete_ids: [], entries: {} }
