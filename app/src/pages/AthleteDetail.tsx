@@ -10,6 +10,7 @@ import { RecordForm } from '../components/RecordForm'
 import { TestResults } from '../components/TestResults'
 import { VmaPaces } from '../components/VmaPaces'
 import { SprintEquivalence } from '../components/SprintEquivalence'
+import { MondayAthleteCard } from '../components/MondayAthleteCard'
 import { ReportCard, ReportForm } from '../components/TestInsights'
 import { parseValue } from '../lib/tests'
 import type { PersonalRecord } from '../types'
@@ -131,6 +132,8 @@ export function AthleteDetail() {
           </>
         )}
       </section>
+
+      <MondayAthleteCard athlete={a} />
 
       <section>
         <div className="row between">

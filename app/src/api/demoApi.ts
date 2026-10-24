@@ -443,12 +443,16 @@ export function createDemoApi(): Api {
       return out
     },
     async remove(table, id) {
+      return this.removeMany(table, [id])
+    },
+    async removeMany(table, list) {
+      const ids = new Set(list)
       db = load()
-      ;(db[table] as { id: string }[]) = (db[table] as { id: string }[]).filter((r) => r.id !== id)
-      if (table === 'sessions') db.assignments = db.assignments.filter((a) => a.session_id !== id)
+      ;(db[table] as { id: string }[]) = (db[table] as { id: string }[]).filter((r) => !ids.has(r.id))
+      if (table === 'sessions') db.assignments = db.assignments.filter((a) => !ids.has(a.session_id))
       if (table === 'groups') {
-        db.assignments = db.assignments.filter((a) => a.group_id !== id)
-        db.athletes = db.athletes.map((a) => (a.group_id === id ? { ...a, group_id: null } : a))
+        db.assignments = db.assignments.filter((a) => !a.group_id || !ids.has(a.group_id))
+        db.athletes = db.athletes.map((a) => (a.group_id && ids.has(a.group_id) ? { ...a, group_id: null } : a))
       }
       const assignmentIds = new Set(db.assignments.map((a) => a.id))
       const athleteIds = new Set(db.athletes.map((a) => a.id))
@@ -467,10 +471,10 @@ export function createDemoApi(): Api {
 function defaults(table: TableName): Record<string, unknown> {
   switch (table) {
     case 'groups': return { color: '#2563eb' }
-    case 'athletes': return { user_id: null, group_id: null, last_name: '', birth_year: null, events: '', phone: '', avatar: '🏃', color: '#e85d04', goals: '', favorite_tips: [], active: true, email: '', linked_at: null, signup_reviewed: true }
+    case 'athletes': return { user_id: null, group_id: null, last_name: '', birth_year: null, events: '', phone: '', avatar: '🏃', color: '#e85d04', goals: '', favorite_tips: [], active: true, email: '', linked_at: null, signup_reviewed: true, subgroup: '' }
     case 'athlete_notes': return {}
     case 'exercises': return { category: 'Autre', description: '' }
-    case 'sessions': return { objective: '', focus: '', duration_min: null, blocks: [] }
+    case 'sessions': return { objective: '', focus: '', duration_min: null, blocks: [], plan: {}, targets: [] }
     case 'assignments': return { time: '', location: '', group_id: null, athlete_ids: [], note: '' }
     case 'feedback': return { completed: true, rpe: null, fatigue: null, mood: null, pain: '', comment: '', coach_reply: '' }
     case 'tips': return { category: 'Hygiène de vie', emoji: '💡', summary: '', body: '', published: true }

@@ -13,6 +13,7 @@ interface DataCtx extends Store {
   save: <K extends TableName>(table: K, row: Draft<K>) => Promise<Row<K>>
   saveMany: <K extends TableName>(table: K, rows: Draft<K>[]) => Promise<Row<K>[]>
   remove: (table: TableName, id: string) => Promise<void>
+  removeMany: (table: TableName, ids: string[]) => Promise<void>
 }
 
 const TABLES: TableName[] = ['groups', 'athletes', 'athlete_notes', 'exercises', 'sessions', 'assignments', 'feedback', 'tips', 'records', 'wellness', 'tests', 'test_results', 'test_reports', 'competitions']
@@ -96,10 +97,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
     await reload()
   }, [reload])
 
+  const removeMany = useCallback(async (table: TableName, ids: string[]) => {
+    if (ids.length) await api.removeMany(table, ids)
+    await reload()
+  }, [reload])
+
   if (!ready) return null
 
   return (
-    <Ctx.Provider value={{ ...store, me, loading, error, refreshMe, reload, save, saveMany, remove }}>
+    <Ctx.Provider value={{ ...store, me, loading, error, refreshMe, reload, save, saveMany, remove, removeMany }}>
       {children}
     </Ctx.Provider>
   )

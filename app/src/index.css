@@ -618,3 +618,32 @@ input.attention { border-color: var(--warn); box-shadow: 0 0 0 2px var(--warn-so
 .day-nav .chip { flex: none; padding: 0.4rem 0.75rem; min-height: 36px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: inherit; font: inherit; font-size: 0.85rem; cursor: pointer; white-space: nowrap; }
 .day-nav .chip.on { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); font-weight: 600; }
 .day-nav-hint { flex-basis: 100%; }
+
+/* Séances du lundi : temps cibles */
+.day-filter { margin: 0.4rem 0 0.8rem; }
+.day-filter .chip { padding: 0.45rem 0.85rem; min-height: 40px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: inherit; font: inherit; font-size: 0.9rem; cursor: pointer; }
+.day-filter .chip.on { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); font-weight: 600; }
+.table.targets th { font-size: 0.8rem; white-space: normal; min-width: 6.5rem; }
+.table.targets td.time { font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
+.table.targets td.effort { font-style: italic; white-space: nowrap; }
+.table.targets.big { font-size: 1.5rem; }
+.table.targets.big th { font-size: 1rem; }
+.table.targets.big td { padding: 0.6rem 0.5rem; }
+.paces-ref { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: 0.5rem; }
+.paces-ref > div { display: flex; flex-direction: column; padding: 0.5rem 0.6rem; border: 1px solid var(--border); border-radius: 10px; }
+.target-row { display: grid; grid-template-columns: 1fr 2fr 1fr auto; gap: 0.5rem; align-items: end; }
+@media (max-width: 520px) { .target-row { grid-template-columns: 1fr 1fr auto; } .target-row > :nth-child(2) { grid-column: 1 / -1; order: -1; } }
+.my-targets h3 { margin: 0 0 0.4rem; }
+.my-targets .target-time { font-size: 1.35rem; font-variant-numeric: tabular-nums; color: var(--primary); }
+.my-targets { margin-bottom: 0.8rem; }
+/* Mode piste : plein écran, gros caractères, contraste maximal */
+body.track-mode .topbar, body.track-mode .bottomnav, body.track-mode .demo-banner, body.track-mode .sidebar, body.track-mode .install-prompt, body.track-mode .install { display: none !important; }
+body.track-mode main.container { max-width: none; padding-bottom: 1rem; }
+body.track-mode .app { padding-left: 0; }
+.track { font-size: 1.15rem; }
+.track h2 { font-size: 1.6rem; margin-top: 1rem; }
+.track .track-content { font-size: 1.1rem; font-weight: 600; }
+.track .lundi-nav select { font-size: 1.1rem; }
+.lundi-nav { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; margin: 0.4rem 0; }
+.lundi-nav select { flex: 1 1 12rem; min-width: 0; width: auto; }
+.lundi-nav > .btn { min-height: 44px; min-width: 44px; }

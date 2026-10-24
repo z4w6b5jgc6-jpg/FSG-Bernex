@@ -155,5 +155,8 @@ export function createSupabaseApi(url: string, key: string): Api {
     async remove(table, id) {
       check(await sb.from(table).delete().eq('id', id))
     },
+    async removeMany(table, ids) {
+      for (let i = 0; i < ids.length; i += 100) check(await sb.from(table).delete().in('id', ids.slice(i, i + 100)))
+    },
   }
 }

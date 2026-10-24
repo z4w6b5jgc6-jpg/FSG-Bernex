@@ -81,6 +81,8 @@ alter table athletes drop column if exists notes;
 alter table athletes add column if not exists email text not null default '';
 alter table athletes add column if not exists linked_at timestamptz;
 alter table athletes add column if not exists signup_reviewed boolean not null default true;
+-- Sous-groupe des séances du lundi : 'sprint' (Sprint / Sauts / Haies), '400-800' ou '' (aucun)
+alter table athletes add column if not exists subgroup text not null default '';
 
 -- Notes de suivi privées de l'entraîneur (jamais visibles par l'athlète)
 create table if not exists athlete_notes (
@@ -112,6 +114,10 @@ create table if not exists sessions (
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );
+-- Plan du lundi : plan = { name, date, cycle, light, objective, warmup, speed, content, cooldown, remarks, subgroup }
+-- targets = répétitions chronométrées [{ ordre, d, base: 'VMA'|'RVA'|'REC'|'INT', pct }] (temps calculés par athlète dans l'app)
+alter table sessions add column if not exists plan jsonb not null default '{}'::jsonb;
+alter table sessions add column if not exists targets jsonb not null default '[]'::jsonb;
 
 create table if not exists assignments (
   id           uuid primary key default gen_random_uuid(),
@@ -412,6 +418,7 @@ begin
     new.user_id  := old.user_id;
     new.email    := old.email;
     new.signup_reviewed := old.signup_reviewed;
+    new.subgroup := old.subgroup;
   elsif new.user_id is not null and new.user_id is distinct from old.user_id
         and coalesce(current_setting('app.linking', true), '') <> '1' then
     new.user_id := old.user_id;

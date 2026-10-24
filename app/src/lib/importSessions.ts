@@ -160,7 +160,7 @@ function splitByAudience(cell: string, members: string[], header: string): { lab
   return out
 }
 
-const toItems = (lines: string[], plain = false) =>
+export const toItems = (lines: string[], plain = false) =>
   lines.flatMap((l) => l.split(/(?<=\.)\s+(?=[A-ZÀ-Ý0-9«])/)).map((p) => p.trim().replace(/\.$/, '')).filter(Boolean).map((p) => (plain ? emptyItem(p) : item(p)))
 
 /**

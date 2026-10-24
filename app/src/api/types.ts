@@ -42,4 +42,5 @@ export interface Api {
   save<K extends TableName>(table: K, row: Draft<K>): Promise<Row<K>>
   saveMany<K extends TableName>(table: K, rows: Draft<K>[]): Promise<Row<K>[]>
   remove(table: TableName, id: string): Promise<void>
+  removeMany(table: TableName, ids: string[]): Promise<void>
 }

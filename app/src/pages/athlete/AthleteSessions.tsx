@@ -5,6 +5,7 @@ import { TrainingInfo } from '../../components/TrainingInfo'
 import { Link, useParams } from 'react-router-dom'
 import { useData, useMyAthlete } from '../../lib/data'
 import { SessionView } from '../../components/SessionView'
+import { MyTargets } from '../../components/TargetTable'
 import { FeedbackScores } from '../../components/FeedbackCard'
 import { Empty, FATIGUE_LABELS, FATIGUE_TEXT, MOOD_LABELS, MOOD_TEXT, RPE_LABELS, Scale } from '../../components/ui'
 import type { Assignment, Feedback } from '../../types'
@@ -67,6 +68,7 @@ export function AthleteSessionDetail() {
       <h1>{s.title}</h1>
       <p className="muted">{formatDate(a.date)}{a.time && ` · ${a.time}`}{a.location && ` · ${a.location}`}</p>
       {a.note && <div className="alert info">{a.note}</div>}
+      {!!s.targets?.length && <MyTargets targets={s.targets} athleteId={me.id} />}
       <div className="card"><SessionView session={s} vma={latestVma(tests, test_results)?.value} sprintLevel={sprintReference(tests, test_results, records)?.level} /></div>
       <section>
         <h2>Mon retour</h2>

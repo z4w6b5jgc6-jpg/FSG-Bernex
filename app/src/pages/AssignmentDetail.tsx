@@ -6,6 +6,7 @@ import { useData } from '../lib/data'
 import { AssignmentForm } from '../components/AssignmentForm'
 import { FeedbackCard, FeedbackScores } from '../components/FeedbackCard'
 import { SessionView } from '../components/SessionView'
+import { TargetTable } from '../components/TargetTable'
 import { Empty, GroupBadge } from '../components/ui'
 import { athletesFor, formatDate, fullName, nativeShare, todayISO, whatsappUrl } from '../lib/utils'
 
@@ -97,6 +98,13 @@ export function AssignmentDetail() {
           </>
         )}
       </section>
+
+      {!!s?.targets?.length && (
+        <section>
+          <h2>⏱️ Temps à réaliser</h2>
+          <TargetTable targets={s.targets} athletes={targets} />
+        </section>
+      )}
 
       {s && (
         <section>

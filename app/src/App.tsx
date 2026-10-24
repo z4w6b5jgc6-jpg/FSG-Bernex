@@ -13,6 +13,9 @@ import { Dashboard } from './pages/Dashboard'
 import { Planning } from './pages/Planning'
 import { AssignmentDetail } from './pages/AssignmentDetail'
 import { ExportSessions } from './pages/ExportSessions'
+import { MondayToday } from './pages/monday/MondayToday'
+import { MondayEdit, MondayPlan } from './pages/monday/MondayPlan'
+import { MondayImport } from './pages/monday/MondayImport'
 import { Sessions } from './pages/Sessions'
 import { SessionEditor } from './pages/SessionEditor'
 import { Athletes } from './pages/Athletes'
@@ -86,6 +89,10 @@ function CoachApp() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/planning" element={<Planning />} />
+        <Route path="/lundi" element={<MondayToday />} />
+        <Route path="/lundi/plan" element={<MondayPlan />} />
+        <Route path="/lundi/plan/:date" element={<MondayEdit />} />
+        <Route path="/lundi/import" element={<MondayImport />} />
         <Route path="/planning/export" element={<ExportSessions />} />
         <Route path="/planning/:id" element={<AssignmentDetail />} />
         <Route path="/seances" element={<Sessions />} />

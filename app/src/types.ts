@@ -23,6 +23,8 @@ export interface Athlete {
   /** false = nouvelle inscription à vérifier par l'entraîneur */
   signup_reviewed: boolean
   active: boolean
+  /** sous-groupe des séances du lundi : 'sprint', '400-800' ou '' */
+  subgroup?: string
   created_at?: string
 }
 
@@ -136,7 +138,29 @@ export interface Session {
   focus: string
   duration_min: number | null
   blocks: Block[]
+  /** séance d'un plan (lundi) : textes d'origine, cycle, sous-groupe */
+  plan?: SessionPlan | Record<string, never>
+  /** répétitions chronométrées : temps calculé pour chaque athlète */
+  targets?: Target[]
   updated_at?: string
+}
+
+export type TargetBase = 'VMA' | 'RVA' | 'REC' | 'INT'
+/** Cible : distance en m (durée en s pour INT), base de calcul et pourcentage (0.85 = 85 %) */
+export interface Target { ordre: number; d: number; base: TargetBase; pct: number }
+
+export interface SessionPlan {
+  name: string
+  date: string
+  cycle: string
+  light: boolean
+  objective: string
+  warmup: string
+  speed: string
+  content: string
+  cooldown: string
+  remarks: string
+  subgroup: string
 }
 
 export interface Assignment {
