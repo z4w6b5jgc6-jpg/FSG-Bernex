@@ -8,6 +8,7 @@ import { FeedbackCard, FeedbackScores } from '../components/FeedbackCard'
 import { SessionView } from '../components/SessionView'
 import { TargetTable } from '../components/TargetTable'
 import { Thread } from '../components/Thread'
+import { SessionNoteCard } from '../components/SessionNoteCard'
 import { Empty, GroupBadge } from '../components/ui'
 import { athletesFor, formatDate, fullName, nativeShare, todayISO, whatsappUrl } from '../lib/utils'
 
@@ -63,6 +64,7 @@ export function AssignmentDetail() {
         <span className="muted small">{targets.length} athlète(s)</span>
       </div>
       {a.note && <div className="alert info">{a.note}</div>}
+      {s && <SessionNoteCard key={s.id} sessionId={s.id} />}
       <div className="row gap wrap actions">
         <a className="btn whatsapp" href={whatsappUrl(announcement)} target="_blank" rel="noreferrer">📲 Annoncer sur WhatsApp</a>
         {typeof navigator.share === 'function' && <button className="btn" onClick={() => nativeShare(announcement)}>📤 Partager</button>}

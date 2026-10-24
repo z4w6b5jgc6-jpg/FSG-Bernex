@@ -7,11 +7,13 @@ import { FOCUSES, OLD_VENUES, VENUES } from '../data/defaults'
 import { matchAthlete, type Cell } from '../lib/importResults'
 import { defaultLocation, parsePlanGrid, parseSessions, type SessionIn } from '../lib/importSessions'
 import { docxLines, parseSessionText } from '../lib/sessionText'
+import { noteOf, saveNote, splitRemarks } from '../lib/notes'
 import type { Assignment, Athlete } from '../types'
 import { errorMessage, formatDate, fullName, parseISODate } from '../lib/utils'
 
 // ids / unknown : plan par groupes, athlètes de la séance retrouvés (ou non) dans l'app
-interface Row extends SessionIn { include: boolean; location: string; ids: string[]; unknown: string[]; fileLocation: boolean }
+// notes : « Remarques » du fichier, rangées dans les notes du coach (pas dans la séance)
+interface Row extends SessionIn { include: boolean; location: string; ids: string[]; unknown: string[]; fileLocation: boolean; notes: string }
 
 // « Demi-fond S03 – Côtes courtes » → « demifonds03 » : même séance même si la fin du titre change dans le fichier
 // (« Lundi S01 · 400 / Demi-fond (800) » garde son groupe : « lundis01400demifond800 »)
@@ -31,7 +33,7 @@ const notForJumps = (a: Athlete) => OTHER_EVENTS.test(a.events) && !JUMP_EVENTS.
 
 /** Import d'un plan de séances (Excel : une ligne par exercice) → séances types, planifiées si on le souhaite */
 export function ImportSessions() {
-  const { sessions, assignments, groups, athletes, save, saveMany, reload } = useData()
+  const { sessions, assignments, groups, athletes, session_notes, save, saveMany, reload } = useData()
   const nav = useNavigate()
   const [rows, setRows] = useState<Row[] | null>(null)
   const [err, setErr] = useState<string | null>(null)
@@ -64,7 +66,10 @@ export function ImportSessions() {
   const existing = (r: Row) => { const a = plannedOf(r); return a ? sessions.find((x) => x.id === a.session_id) : sessions.find((x) => x.title === r.title) }
   const exists = (r: Row) => !!existing(r)
   // Contenu modifié dans le fichier (séance planifiée à cette date seulement)
-  const changed = (r: Row) => { const e = plannedOf(r) && existing(r); return !!e && contentOf(e) !== contentOf(r) }
+  const changed = (r: Row) => {
+    const e = plannedOf(r) && existing(r)
+    return !!e && (contentOf(e) !== contentOf(r) || (!!r.notes && (noteOf(session_notes, e.id)?.text ?? '') !== r.notes))
+  }
   const set = (key: string, patch: Partial<Row>) => setRows((rs) => rs && rs.map((r) => (r.key === key ? { ...r, ...patch } : r)))
 
   const active = useMemo(() => athletes.filter((a) => a.active).sort((a, b) => fullName(a).localeCompare(fullName(b))), [athletes])
@@ -76,7 +81,8 @@ export function ImportSessions() {
       if (m && !ids.includes(m.athlete.id)) ids.push(m.athlete.id)
       else if (!m) unknown.push(name)
     }
-    return { ...s, include: true, location: s.location || defaultLocation(s.date), ids, unknown, fileLocation: !!s.location }
+    const { blocks, remarks } = splitRemarks(s.blocks)
+    return { ...s, blocks, notes: remarks, include: true, location: s.location || defaultLocation(s.date), ids, unknown, fileLocation: !!s.location }
   }))
   // Plan par groupes : chaque séance a ses athlètes (onglet des athlètes du fichier)
   const perRow = !!rows?.some((r) => r.who)
@@ -130,12 +136,14 @@ export function ImportSessions() {
       const shared = (r: Row) => assignments.some((a) => a.session_id === existing(r)!.id && a.date !== r.date)
       for (const r of toRefresh.filter((x) => !shared(x))) {
         await save('sessions', { id: existing(r)!.id, title: r.title, objective: r.objective, blocks: r.blocks })
+        if (r.notes) await saveNote(save, session_notes, existing(r)!.id, r.notes)
       }
       const copies = toRefresh.filter(shared)
       const created = await saveMany('sessions', [...fresh, ...copies].map((r) => ({
         title: r.title, objective: r.objective, focus: fresh.includes(r) ? focus : existing(r)!.focus, duration_min: 120, blocks: r.blocks,
       })))
       const ids = new Map([...fresh, ...copies].map((r, i) => [r.key, created[i].id]))
+      for (const [i, r] of [...fresh, ...copies].entries()) if (r.notes) await saveNote(save, session_notes, created[i].id, r.notes)
       if (plan && canPlan) {
         const rows = []
         for (const r of chosen) {

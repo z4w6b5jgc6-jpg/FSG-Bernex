@@ -10,7 +10,7 @@ const DAYS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'sa
 
 /** Planning → fichier Excel (plan une ligne par jour + détail une ligne par exercice) */
 export function ExportSessions() {
-  const { assignments, sessions, athletes, groups } = useData()
+  const { assignments, sessions, athletes, groups, session_notes } = useData()
   const dates = assignments.map((a) => a.date).sort()
   const [from, setFrom] = useState(dates.find((d) => d >= todayISO()) ?? dates[0] ?? todayISO())
   const [to, setTo] = useState(dates[dates.length - 1] ?? todayISO())
@@ -32,7 +32,7 @@ export function ExportSessions() {
       const what = day >= 0 ? `du ${DAYS[day]}` : ''
       const title = `Séances ${what} – ${formatDate(from, { day: 'numeric', month: 'long', year: 'numeric' })} au ${formatDate(to, { day: 'numeric', month: 'long', year: 'numeric' })}`.replace('  ', ' ')
       const name = `Seances${day >= 0 ? '_' + DAYS[day] : ''}_${from}_${to}.xlsx`
-      downloadXlsx(name, writeXlsx(exportSheets(list, { sessions, athletes, groups }, title)))
+      downloadXlsx(name, writeXlsx(exportSheets(list, { sessions, athletes, groups, notes: session_notes }, title)))
     } catch (e) {
       setErr(String(e))
     }

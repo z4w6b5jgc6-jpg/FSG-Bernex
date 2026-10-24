@@ -676,6 +676,37 @@ grant execute on function club_by_code(text) to anon, authenticated;
 grant execute on function join_club(text, text, text, int, uuid, text, text) to authenticated;
 grant execute on function merge_athletes(uuid, uuid) to authenticated;
 
+-- ===== Notes du coach sur une séance : réservées aux coachs (jamais visibles par les athlètes) =====
+create table if not exists session_notes (
+  id         uuid primary key default gen_random_uuid(),
+  coach_id   uuid not null default my_club() references auth.users (id) on delete cascade,
+  session_id uuid not null unique references sessions (id) on delete cascade,
+  text       text not null default '',
+  updated_at timestamptz not null default now()
+);
+alter table session_notes enable row level security;
+drop policy if exists coach_all on session_notes;
+create policy coach_all on session_notes for all to authenticated
+  using (coach_id = my_club())
+  with check (coach_id = my_club() and exists (select 1 from sessions s where s.id = session_id and s.coach_id = my_club()));
+
+-- Reprise des anciennes remarques (plan du lundi, blocs « Remarques ») dans les notes du coach, puis retrait des séances
+insert into session_notes (session_id, coach_id, text)
+select s.id, s.coach_id, coalesce(nullif(s.plan->>'remarks', ''), (
+  select string_agg(i->>'name', E'\n' order by b.n, i.m)
+  from jsonb_array_elements(s.blocks) with ordinality b(v, n), jsonb_array_elements(b.v->'items') with ordinality i(i, m)
+  where lower(trim(b.v->>'title')) in ('remarque', 'remarques')))
+from sessions s
+where coalesce(s.plan->>'remarks', '') <> ''
+   or exists (select 1 from jsonb_array_elements(s.blocks) b where lower(trim(b->>'title')) in ('remarque', 'remarques'))
+on conflict (session_id) do nothing;
+update sessions s set
+  blocks = (select coalesce(jsonb_agg(b.v order by b.n), '[]'::jsonb) from jsonb_array_elements(s.blocks) with ordinality b(v, n)
+            where lower(trim(b.v->>'title')) not in ('remarque', 'remarques')),
+  plan = case when s.plan ? 'remarks' then s.plan || '{"remarks": ""}'::jsonb else s.plan end
+where coalesce(s.plan->>'remarks', '') <> ''
+   or exists (select 1 from jsonb_array_elements(s.blocks) b where lower(trim(b->>'title')) in ('remarque', 'remarques'));
+
 -- ===== Messages : fil de discussion entre l'athlète et ses coachs, pour chaque séance planifiée =====
 create table if not exists messages (
   id            uuid primary key default gen_random_uuid(),

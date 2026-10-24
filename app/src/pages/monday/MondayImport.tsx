@@ -9,6 +9,7 @@ import { defaultLocation } from '../../lib/importSessions'
 import { markOf, planDrafts, readPlanFile, subgroupLabel, type PlanAthleteIn, type PlanFile } from '../../lib/mondayPlan'
 import { isFlyTest, isVmaTest, planOf, planSessions, recordsByDistance } from '../../lib/targets'
 import { planFromWorkbook } from '../../lib/mondayExcel'
+import { noteOf, saveNote } from '../../lib/notes'
 import type { Cell } from '../../lib/importResults'
 import type { Athlete, Session, TestDef } from '../../types'
 import { errorMessage, fullName, todayISO } from '../../lib/utils'
@@ -32,7 +33,7 @@ interface Row { a: PlanAthleteIn; target: string /* id | 'new' | 'skip' */; fuzz
 
 /** Import du plan du lundi (JSON) : remplace les séances du lundi, complète les fiches sans écraser */
 export function MondayImport() {
-  const { athletes, sessions, assignments, tests, test_results, records, groups, save, saveMany, removeMany, reload } = useData()
+  const { athletes, sessions, assignments, tests, test_results, records, groups, session_notes, save, saveMany, removeMany, reload } = useData()
   const nav = useNavigate()
   const [file, setFile] = useState<PlanFile | null>(null)
   const [rows, setRows] = useState<Row[]>([])
@@ -74,7 +75,8 @@ export function MondayImport() {
   // Séances du plan déjà dans l'app (même date et même sous-groupe) : mises à jour sur place, retours gardés
   const keyOf = (p: { date: string; subgroup: string }) => `${p.date}|${p.subgroup}`
   const current = useMemo(() => new Map(planSessions(sessions).map((x) => [keyOf(planOf(x)!), x])), [sessions])
-  const same = (x: Session, d: (typeof drafts)[number]) => stable([x.title, x.plan, x.targets]) === stable([d.title, d.plan, d.targets])
+  const same = (x: Session, d: (typeof drafts)[number]) =>
+    stable([x.title, x.plan, x.targets, noteOf(session_notes, x.id)?.text ?? '']) === stable([d.title, d.plan, d.targets, d.notes])
   const updates = drafts.filter((d) => current.has(keyOf(d.plan as { date: string; subgroup: string })))
   const changedCount = updates.filter((d) => !same(current.get(keyOf(d.plan as { date: string; subgroup: string }))!, d)).length
   // Anciennes séances du lundi à retirer : autres séances à ces dates, « Lundi S01 … » d'un ancien import,
@@ -168,7 +170,10 @@ export function MondayImport() {
       const fresh = drafts.filter((d) => !current.has(keyOf(d.plan as { date: string; subgroup: string })))
       for (const d of updates) {
         const x = current.get(keyOf(d.plan as { date: string; subgroup: string }))!
-        if (!same(x, d)) await save('sessions', { id: x.id, ...d })
+        if (same(x, d)) continue
+        const { notes, ...row } = d
+        await save('sessions', { id: x.id, ...row })
+        await saveNote(save, session_notes, x.id, notes)
       }
       // 5. Anciennes séances du lundi
       if (replace) {
@@ -178,7 +183,8 @@ export function MondayImport() {
       }
       // 6. Nouvelles séances (et séances du plan sans planification), pour les athlètes de chaque sous-groupe
       setBusy('Séances…')
-      const made = await saveMany('sessions', fresh)
+      const made = await saveMany('sessions', fresh.map(({ notes: _n, ...row }) => (void _n, row)))
+      for (const [i, m] of made.entries()) await saveNote(save, session_notes, m.id, fresh[i].notes)
       const unplanned = updates.map((d) => current.get(keyOf(d.plan as { date: string; subgroup: string }))!)
         .filter((x) => !assignments.some((a) => a.session_id === x.id && a.date === planOf(x)!.date))
       const athleteIds = (sg: string) => [...subgroupOf].filter(([, g]) => g === sg).map(([id]) => id)

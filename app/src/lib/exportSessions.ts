@@ -1,4 +1,4 @@
-import type { Assignment, Athlete, Group, Session, SessionItem } from '../types'
+import type { Assignment, Athlete, Group, Session, SessionItem, SessionNote } from '../types'
 import { athletesFor, fullName } from './utils'
 import type { XCell, XSheet } from './xlsx'
 
@@ -19,7 +19,7 @@ function isoWeek(iso: string): number {
 /** Libellé court d'une séance dans sa journée : fin du titre après « · » (groupe), sinon le titre */
 const labelOf = (s: Session) => (s.title.includes(' · ') ? s.title.split(' · ').slice(1).join(' · ') : s.title)
 
-interface Ctx { sessions: Session[]; athletes: Athlete[]; groups: Group[] }
+interface Ctx { sessions: Session[]; athletes: Athlete[]; groups: Group[]; notes?: SessionNote[] }
 
 /**
  * Deux feuilles :
@@ -27,7 +27,7 @@ interface Ctx { sessions: Session[]; athletes: Athlete[]; groups: Group[] }
  *    Une partie identique pour tous les groupes du jour s'écrit une fois ; sinon chaque groupe a sa ligne « groupe : … ».
  *  - « Détail » : une ligne par exercice (Date, Séance, Bloc, Exercice…), que l'import relit tel quel.
  */
-export function exportSheets(list: Assignment[], { sessions, athletes, groups }: Ctx, title: string): XSheet[] {
+export function exportSheets(list: Assignment[], { sessions, athletes, groups, notes = [] }: Ctx, title: string): XSheet[] {
   const planned = list
     .map((a) => ({ a, s: sessions.find((x) => x.id === a.session_id) }))
     .filter((x): x is { a: Assignment; s: Session } => !!x.s)
@@ -54,7 +54,9 @@ export function exportSheets(list: Assignment[], { sessions, athletes, groups }:
   const cols = [...parts.filter((t) => !remarks.includes(t)), ...remarks]
 
   const days = [...new Set(planned.map((x) => x.a.date))]
-  const plan: XCell[][] = [['Sem.', 'Date', 'Séances du jour', 'Objectif', 'Lieu / heure', ...cols]]
+  const noteOf = (s: Session) => notes.find((n) => n.session_id === s.id)?.text ?? ''
+  const withNotes = planned.some(({ s }) => noteOf(s))
+  const plan: XCell[][] = [['Sem.', 'Date', 'Séances du jour', 'Objectif', 'Lieu / heure', ...cols, ...(withNotes ? ['Remarques'] : [])]]
   for (const day of days) {
     const today = planned.filter((x) => x.a.date === day)
     const uniq = (v: string[]) => [...new Set(v.filter(Boolean))]
@@ -77,6 +79,7 @@ export function exportSheets(list: Assignment[], { sessions, athletes, groups }:
       uniq(today.map((x) => x.s.objective)).join('\n'),
       uniq(today.map(({ a }) => [a.location, a.time].filter(Boolean).join(', '))).join('\n'),
       ...cells,
+      ...(withNotes ? [uniq(today.map(({ s }) => noteOf(s))).join('\n')] : []),
     ])
   }
 

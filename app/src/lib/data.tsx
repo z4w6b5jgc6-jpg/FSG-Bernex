@@ -16,7 +16,7 @@ interface DataCtx extends Store {
   removeMany: (table: TableName, ids: string[]) => Promise<void>
 }
 
-const TABLES: TableName[] = ['groups', 'athletes', 'athlete_notes', 'exercises', 'sessions', 'assignments', 'feedback', 'tips', 'records', 'wellness', 'tests', 'test_results', 'test_reports', 'competitions', 'messages']
+const TABLES: TableName[] = ['groups', 'athletes', 'athlete_notes', 'exercises', 'sessions', 'assignments', 'feedback', 'tips', 'records', 'wellness', 'tests', 'test_results', 'test_reports', 'competitions', 'messages', 'session_notes']
 const empty = Object.fromEntries(TABLES.map((t) => [t, []])) as unknown as Store
 const Ctx = createContext<DataCtx | null>(null)
 

@@ -188,6 +188,9 @@ export interface Feedback {
   updated_at: string
 }
 
+/** Notes du coach sur une séance : jamais visibles par les athlètes */
+export interface SessionNote { id: string; session_id: string; text: string }
+
 /** Message d'un fil (une séance planifiée × un athlète), entre l'athlète et ses coachs */
 export interface Message {
   id: string
@@ -251,6 +254,7 @@ export interface Tables {
   test_reports: TestReport
   competitions: Competition
   messages: Message
+  session_notes: SessionNote
 }
 
 export type TableName = keyof Tables

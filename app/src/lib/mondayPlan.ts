@@ -43,14 +43,13 @@ export function readPlanFile(text: string): PlanFile {
 /** Libellé d'un sous-groupe (« sprint » → « Sprint / Sauts / Haies ») */
 export const subgroupLabel = (sg: string, file?: PlanFile) => file?.sous_groupes?.[sg] ?? SUBGROUPS[sg] ?? sg
 
-/** Blocs de la séance à partir des textes du plan */
+/** Blocs de la séance à partir des textes du plan (les remarques vont dans les notes du coach) */
 export function planBlocks(p: SessionPlan): Block[] {
   const parts: [string, string, boolean][] = [
     ['Échauffement', p.warmup, false],
     ['Bloc vitesse', p.speed, false],
     [subgroupLabel(p.subgroup), p.content, false],
     ['Retour au calme / prévention', p.cooldown, false],
-    ['Remarques', p.remarks, true],
   ]
   return parts.filter(([, t]) => t.trim()).map(([title, t, plain]) => ({ id: uid(), title, items: toItems(t.split(/\n+/), plain) }))
 }
@@ -60,7 +59,7 @@ export const planObjective = (p: Pick<SessionPlan, 'cycle' | 'objective' | 'ligh
   [p.cycle, p.objective].filter(Boolean).join(' – ') + (p.light && !/allég/i.test(p.objective) ? ' (semaine allégée)' : '')
 
 /** Une séance de l'app par date et par sous-groupe */
-export function planDrafts(d: PlanFile): Pick<Session, 'title' | 'objective' | 'focus' | 'duration_min' | 'blocks' | 'plan' | 'targets'>[] {
+export function planDrafts(d: PlanFile): (Pick<Session, 'title' | 'objective' | 'focus' | 'duration_min' | 'blocks' | 'plan' | 'targets'> & { notes: string })[] {
   const dates = [...new Set(d.seances.map((s) => s.date))].sort()
   const name = `Lundi ${d.saison ?? ''}`.trim()
   return d.seances.flatMap((s) => {
@@ -69,14 +68,15 @@ export function planDrafts(d: PlanFile): Pick<Session, 'title' | 'objective' | '
       const plan: SessionPlan = {
         name, date: s.date, cycle: s.cycle ?? '', light: !!s.semaine_allegee, objective: s.objectif ?? '',
         warmup: s.echauffement ?? '', speed: s.bloc_vitesse ?? '', content: s.contenu?.[sg] ?? '',
-        cooldown: s.retour_au_calme ?? '', remarks: s.remarques ?? '', subgroup: sg,
+        // les remarques restent hors de la séance (notes réservées aux coachs)
+        cooldown: s.retour_au_calme ?? '', remarks: '', subgroup: sg,
       }
       const targets: Target[] = s.cibles.filter((c) => c.sous_groupe === sg && BASES.includes(c.base as TargetBase))
         .sort((a, b) => a.ordre - b.ordre)
         .map((c) => ({ ordre: c.ordre, d: Number(c.distance_ou_duree), base: c.base as TargetBase, pct: Number(c.pct) }))
       return {
         title: planTitle(plan, dates.indexOf(s.date) + 1), objective: planObjective(plan), focus: 'Vitesse', duration_min: 120,
-        blocks: planBlocks(plan), plan, targets,
+        blocks: planBlocks(plan), plan, targets, notes: s.remarques ?? '',
       }
     })
   })

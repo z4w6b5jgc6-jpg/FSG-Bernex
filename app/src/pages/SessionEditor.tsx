@@ -9,6 +9,7 @@ import { emptyItem, errorMessage, itemSummary, uid } from '../lib/utils'
 import { suggestRecovery } from '../lib/recovery'
 import { AiAdvicePanel } from '../components/AiAdvicePanel'
 import { planOf } from '../lib/targets'
+import { SessionNoteCard } from '../components/SessionNoteCard'
 
 const ITEM_FIELDS: { key: keyof SessionItem; label: string; placeholder: string }[] = [
   { key: 'sets', label: 'Séries', placeholder: 'ex. 3' },
@@ -101,6 +102,7 @@ export function SessionEditor() {
           (une modification ici serait remplacée à la prochaine édition du plan).
         </div>
       )}
+      <SessionNoteCard key={draft.id} sessionId={draft.id} />
 
       <div className="card form">
         <Field label="Titre"><input value={draft.title} onChange={(e) => update({ title: e.target.value })} /></Field>

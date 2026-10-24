@@ -138,6 +138,7 @@ function seed(): Db {
       { id: uid(), name: 'Championnats régionaux en salle U16/U18', date: addDays(today, 80), end_date: addDays(today, 81), location: 'Macolin', level: 'A', program_url: '', registration_url: '', results_url: '', registration_deadline: addDays(today, 60), notes: '', athlete_ids: [athletes[0].id, athletes[2].id], entries: { [athletes[0].id]: '60 m, longueur', [athletes[2].id]: '60 m haies' } },
     ],
     messages: [],
+    session_notes: [],
   }
 }
 
@@ -151,6 +152,7 @@ function load(): Db {
       const db = JSON.parse(raw) as Db
       db.competitions ??= [] // données démo enregistrées avant l'ajout des compétitions
       db.messages ??= []
+      db.session_notes ??= []
       for (const c of db.competitions) c.entries ??= {}
       return db
     }
@@ -220,6 +222,7 @@ export function createDemoApi(): Api {
       records: (x) => x.athlete_id === me.id,
       wellness: (x) => x.athlete_id === me.id,
       messages: (x) => x.athlete_id === me.id,
+      session_notes: () => false,
     }
     return rows.filter(filters[table] as (x: Row<K>) => boolean)
   }
@@ -474,6 +477,8 @@ export function createDemoApi(): Api {
       db.test_results = db.test_results.filter((x) => athleteIds.has(x.athlete_id) && testIds.has(x.test_id))
       db.test_reports = db.test_reports.filter((x) => athleteIds.has(x.athlete_id))
       db.messages = (db.messages ?? []).filter((x) => assignmentIds.has(x.assignment_id) && athleteIds.has(x.athlete_id))
+      const sessionIds = new Set(db.sessions.map((x) => x.id))
+      db.session_notes = (db.session_notes ?? []).filter((x) => sessionIds.has(x.session_id))
       persist(db)
     },
   }
@@ -494,6 +499,7 @@ function defaults(table: TableName): Record<string, unknown> {
     case 'tests': return { unit: '', higher_is_better: true, category: 'Autre', description: '' }
     case 'test_results': return { notes: '', trials: [], date: todayISO() }
     case 'test_reports': return { title: 'Bilan des tests', strengths: '', priority: '', training: '', message: '', date: todayISO() }
+    case 'session_notes': return { text: '' }
     case 'messages': return { author: '', read_at: null, created_at: new Date().toISOString() }
     case 'wellness': return { sleep_hours: null, sleep_quality: null, energy: null, soreness: null, stress: null, note: '', date: todayISO() }
   }

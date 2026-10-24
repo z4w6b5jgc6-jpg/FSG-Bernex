@@ -6,10 +6,11 @@ import { useData } from '../../lib/data'
 import { subgroupLabel } from '../../lib/mondayPlan'
 import { planOf, planSessions, SUBGROUPS } from '../../lib/targets'
 import { formatDate, fullName, todayISO } from '../../lib/utils'
+import { noteOf } from '../../lib/notes'
 
 /** Séance du jour (coachs) : contenu et temps à réaliser par athlète, mode « piste » lisible dehors */
 export function MondayToday() {
-  const { sessions, athletes } = useData()
+  const { sessions, athletes, session_notes } = useData()
   const [params, setParams] = useSearchParams()
   const plan = useMemo(() => planSessions(sessions), [sessions])
   const dates = useMemo(() => [...new Set(plan.map((s) => planOf(s)!.date))], [plan])
@@ -76,7 +77,7 @@ export function MondayToday() {
             {p0.speed && <p><b>Bloc vitesse :</b> {p0.speed}</p>}
             {shown.map((s) => <p key={s.id}><b>{subgroupLabel(planOf(s)!.subgroup)} :</b> {planOf(s)!.content}</p>)}
             {p0.cooldown && <p><b>Retour au calme :</b> {p0.cooldown}</p>}
-            {p0.remarks && <p className="muted"><b>Remarques :</b> {p0.remarks}</p>}
+            {(() => { const n = noteOf(session_notes, today[0].id)?.text || p0.remarks; return n && <p className="muted"><b>🔒 Remarques (coachs) :</b> {n}</p> })()}
           </div>
         </details>
       )}

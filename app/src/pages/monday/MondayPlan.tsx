@@ -6,6 +6,7 @@ import { Empty, Field } from '../../components/ui'
 import { useData } from '../../lib/data'
 import { planBlocks, planObjective, subgroupLabel } from '../../lib/mondayPlan'
 import { planOf, planSessions, targetLabel } from '../../lib/targets'
+import { noteOf, saveNote } from '../../lib/notes'
 import type { Session, SessionPlan, Target, TargetBase } from '../../types'
 import { errorMessage, formatDate, fullName } from '../../lib/utils'
 
@@ -66,9 +67,11 @@ export function MondayEdit() {
 }
 
 function EditDay({ date, day }: { date: string; day: Session[] }) {
-  const { athletes, save } = useData()
+  const { athletes, session_notes, save } = useData()
   const nav = useNavigate()
   const [common, setCommon] = useState<SessionPlan>({ ...planOf(day[0])! })
+  // Remarques : notes réservées aux coachs (table à part), communes aux séances du jour
+  const [remarks, setRemarks] = useState(noteOf(session_notes, day[0].id)?.text || planOf(day[0])!.remarks || '')
   const [parts, setParts] = useState<Record<string, { content: string; targets: Target[] }>>(
     () => Object.fromEntries(day.map((s) => [s.id, { content: planOf(s)!.content, targets: [...(s.targets ?? [])] }])),
   )
@@ -83,9 +86,10 @@ function EditDay({ date, day }: { date: string; day: Session[] }) {
     setErr(null)
     try {
       for (const s of day) {
-        const p: SessionPlan = { ...common, subgroup: planOf(s)!.subgroup, content: parts[s.id].content }
+        const p: SessionPlan = { ...common, remarks: '', subgroup: planOf(s)!.subgroup, content: parts[s.id].content }
         const targets = parts[s.id].targets.filter((t) => t.d > 0 && t.pct > 0).map((t, i) => ({ ...t, ordre: i + 1 }))
         await save('sessions', { id: s.id, plan: p, objective: planObjective(p), blocks: planBlocks(p), targets } as Partial<Session> & { id: string })
+        await saveNote(save, session_notes, s.id, remarks)
       }
       nav(`/lundi?date=${date}`)
     } catch (e) {
@@ -108,7 +112,7 @@ function EditDay({ date, day }: { date: string; day: Session[] }) {
         <Field label="Échauffement"><textarea rows={2} value={common.warmup} onChange={(e) => setC({ warmup: e.target.value })} /></Field>
         <Field label="Bloc vitesse (commun)"><textarea rows={2} value={common.speed} onChange={(e) => setC({ speed: e.target.value })} /></Field>
         <Field label="Retour au calme / prévention"><textarea rows={2} value={common.cooldown} onChange={(e) => setC({ cooldown: e.target.value })} /></Field>
-        <Field label="Remarques"><textarea rows={2} value={common.remarks} onChange={(e) => setC({ remarks: e.target.value })} /></Field>
+        <Field label="🔒 Remarques (visibles seulement par les coachs)"><textarea rows={2} value={remarks} onChange={(e) => setRemarks(e.target.value)} /></Field>
       </section>
 
       {day.map((s) => {
