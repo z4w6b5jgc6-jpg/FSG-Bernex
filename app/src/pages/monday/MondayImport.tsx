@@ -7,8 +7,10 @@ import { useData } from '../../lib/data'
 import { matchAthlete, normText } from '../../lib/importResults'
 import { defaultLocation } from '../../lib/importSessions'
 import { markOf, planDrafts, readPlanFile, subgroupLabel, type PlanAthleteIn, type PlanFile } from '../../lib/mondayPlan'
-import { isFlyTest, isVmaTest, planOf, recordsByDistance } from '../../lib/targets'
-import type { Athlete, TestDef } from '../../types'
+import { isFlyTest, isVmaTest, planOf, planSessions, recordsByDistance } from '../../lib/targets'
+import { planFromWorkbook } from '../../lib/mondayExcel'
+import type { Cell } from '../../lib/importResults'
+import type { Athlete, Session, TestDef } from '../../types'
 import { errorMessage, fullName, todayISO } from '../../lib/utils'
 
 const is40 = (t: TestDef) => /\b40\s*m\b/i.test(t.name) && /arret|depart/.test(normText(t.name)) && !/lance/.test(normText(t.name))
@@ -19,6 +21,12 @@ const TESTS: { key: 'vma_kmh' | 'lance_20m_s' | 'lance_30m_s' | 'depart_40m_s'; 
   { key: 'lance_30m_s', pick: isFlyTest(30), name: '30 m lancé' },
   { key: 'depart_40m_s', pick: is40, name: '40 m départ arrêté' },
 ]
+
+// JSON à clés triées : la base renvoie les champs d'un objet dans un autre ordre
+const stable = (v: unknown): string =>
+  Array.isArray(v) ? `[${v.map(stable).join(',')}]`
+    : v && typeof v === 'object' ? `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${stable((v as Record<string, unknown>)[k])}`).join(',')}}`
+      : JSON.stringify(v ?? null)
 
 interface Row { a: PlanAthleteIn; target: string /* id | 'new' | 'skip' */; fuzzy: boolean }
 
@@ -38,7 +46,14 @@ export function MondayImport() {
   const onFile = async (f: File) => {
     setErr(null)
     try {
-      const d = readPlanFile(await f.text())
+      let d: PlanFile
+      if (/\.xlsx$/i.test(f.name)) {
+        const { default: readXlsxFile } = await import('read-excel-file/browser')
+        const sheets = await readXlsxFile(f)
+        const found = planFromWorkbook(sheets.map((x) => ({ name: x.sheet, rows: x.data as Cell[][] })))
+        if (!found) throw new Error('Je n’ai pas trouvé l’onglet du plan (colonnes Date, Cycle, Objectif, Échauffement et une colonne par sous-groupe).')
+        d = found
+      } else d = readPlanFile(await f.text())
       const taken = new Set<string>()
       setRows(d.athletes.map((a) => {
         const [first, ...last] = a.nom.trim().split(/\s+/)
@@ -56,15 +71,23 @@ export function MondayImport() {
 
   const drafts = useMemo(() => (file ? planDrafts(file) : []), [file])
   const dates = useMemo(() => new Set(drafts.map((x) => (x.plan as { date: string }).date)), [drafts])
-  // Séances actuelles du lundi : planifiées à ces dates, d'un import précédent du plan, ou « Lundi S01 … » non planifiées
+  // Séances du plan déjà dans l'app (même date et même sous-groupe) : mises à jour sur place, retours gardés
+  const keyOf = (p: { date: string; subgroup: string }) => `${p.date}|${p.subgroup}`
+  const current = useMemo(() => new Map(planSessions(sessions).map((x) => [keyOf(planOf(x)!), x])), [sessions])
+  const same = (x: Session, d: (typeof drafts)[number]) => stable([x.title, x.plan, x.targets]) === stable([d.title, d.plan, d.targets])
+  const updates = drafts.filter((d) => current.has(keyOf(d.plan as { date: string; subgroup: string })))
+  const changedCount = updates.filter((d) => !same(current.get(keyOf(d.plan as { date: string; subgroup: string }))!, d)).length
+  // Anciennes séances du lundi à retirer : autres séances à ces dates, « Lundi S01 … » d'un ancien import,
+  // séances du plan qui ne sont plus dans le fichier
   const old = useMemo(() => {
-    const onDates = assignments.filter((a) => dates.has(a.date))
-    const ids = new Set([...onDates.map((a) => a.session_id), ...sessions.filter((s) => planOf(s) || /^Lundi S\d{2}\b/.test(s.title)).map((s) => s.id)])
+    const kept = new Set(updates.map((d) => current.get(keyOf(d.plan as { date: string; subgroup: string }))!.id))
+    const onDates = assignments.filter((a) => dates.has(a.date) && !kept.has(a.session_id))
+    const ids = new Set([...onDates.map((a) => a.session_id), ...sessions.filter((x) => (planOf(x) || /^Lundi S\d{2}\b/.test(x.title)) && !kept.has(x.id)).map((x) => x.id)])
     // séance aussi planifiée à d'autres dates : on ne retire que ces planifications
     const sessionIds = [...ids].filter((id) => assignments.every((a) => a.session_id !== id || dates.has(a.date)))
     const assignmentIds = onDates.filter((a) => !sessionIds.includes(a.session_id)).map((a) => a.id)
     return { sessionIds, assignmentIds, planned: onDates.length }
-  }, [assignments, sessions, dates])
+  }, [assignments, sessions, dates, updates, current])
 
   const has = (id: string, pick: (t: TestDef) => boolean) => {
     const ids = new Set(tests.filter(pick).map((t) => t.id))
@@ -140,17 +163,26 @@ export function MondayImport() {
         return Object.entries(r.a.records_s ?? {}).filter(([d, v]) => v && !have[+d])
           .map(([d, v]) => ({ athlete_id: id, event: `${d} m`, mark: markOf(v), date: todayISO(), competition: '' }))
       }))
-      // 4. Anciennes séances du lundi
+      // 4. Séances déjà importées : contenu et cibles mis à jour (planification et retours gardés)
+      setBusy('Mise à jour des séances…')
+      const fresh = drafts.filter((d) => !current.has(keyOf(d.plan as { date: string; subgroup: string })))
+      for (const d of updates) {
+        const x = current.get(keyOf(d.plan as { date: string; subgroup: string }))!
+        if (!same(x, d)) await save('sessions', { id: x.id, ...d })
+      }
+      // 5. Anciennes séances du lundi
       if (replace) {
         setBusy('Remplacement des anciennes séances…')
         if (old.assignmentIds.length) await removeMany('assignments', old.assignmentIds)
         if (old.sessionIds.length) await removeMany('sessions', old.sessionIds)
       }
-      // 5. Nouvelles séances, planifiées pour les athlètes de chaque sous-groupe
+      // 6. Nouvelles séances (et séances du plan sans planification), pour les athlètes de chaque sous-groupe
       setBusy('Séances…')
-      const made = await saveMany('sessions', drafts)
+      const made = await saveMany('sessions', fresh)
+      const unplanned = updates.map((d) => current.get(keyOf(d.plan as { date: string; subgroup: string }))!)
+        .filter((x) => !assignments.some((a) => a.session_id === x.id && a.date === planOf(x)!.date))
       const athleteIds = (sg: string) => [...subgroupOf].filter(([, g]) => g === sg).map(([id]) => id)
-      await saveMany('assignments', made.map((s) => {
+      await saveMany('assignments', [...made, ...unplanned].map((s) => {
         const p = planOf(s)!
         return { session_id: s.id, date: p.date, time, location: defaultLocation(p.date), group_id: null, athlete_ids: athleteIds(p.subgroup), note: '' }
       }))
@@ -173,10 +205,11 @@ export function MondayImport() {
       <h1>Importer le plan du lundi</h1>
       <div className="card form">
         <p className="small">
-          Choisis le fichier <b>seances_lundi_2026-2027.json</b>. Les séances du lundi actuelles sont remplacées. Les fiches des athlètes
-          sont <b>complétées sans rien écraser</b> : sous-groupe, et tests ou records seulement s’ils manquent.
+          Choisis ton <b>classeur Excel du lundi</b> (onglets Plan lundi, Cibles, Athlètes) ou le fichier <b>JSON</b> du plan.
+          Si tu l’as modifié, réimporte-le : les séances déjà importées sont <b>mises à jour</b> (les retours des athlètes sont gardés).
+          Les fiches des athlètes sont <b>complétées sans rien écraser</b> : sous-groupe, et tests ou records seulement s’ils manquent.
         </p>
-        <input type="file" accept=".json,application/json" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
+        <input type="file" accept=".xlsx,.json,application/json" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
         {err && <div className="alert warn">{err}</div>}
       </div>
 
@@ -186,11 +219,15 @@ export function MondayImport() {
             <h2>Séances</h2>
             <p className="small">
               <b>{dates.size}</b> lundis, <b>{drafts.length}</b> séances (une par sous-groupe), {drafts.reduce((n, d) => n + (d.targets?.length ?? 0), 0)} temps cibles.
+              {updates.length > 0 && <> Déjà dans l’app : {updates.length}, dont <b>{changedCount} modifiée(s)</b> dans le fichier (mises à jour, retours gardés).</>}
+              {drafts.length > updates.length && <> Nouvelles : <b>{drafts.length - updates.length}</b>.</>}
             </p>
-            <label className="check">
-              <input type="checkbox" checked={replace} onChange={(e) => setReplace(e.target.checked)} />
-              <span>Remplacer les séances du lundi actuelles : <b>{old.sessionIds.length}</b> séance(s), {old.planned} planification(s) à ces dates et leurs retours</span>
-            </label>
+            {old.sessionIds.length + old.assignmentIds.length > 0 && (
+              <label className="check">
+                <input type="checkbox" checked={replace} onChange={(e) => setReplace(e.target.checked)} />
+                <span>Supprimer les autres séances du lundi : <b>{old.sessionIds.length}</b> séance(s) (ancien import ou lundis retirés du fichier), {old.planned} planification(s) et leurs retours</span>
+              </label>
+            )}
             <div className="grid2">
               <Field label="Heure"><input type="time" value={time} onChange={(e) => setTime(e.target.value)} /></Field>
               {kept.some((r) => r.target === 'new') && (
@@ -226,7 +263,12 @@ export function MondayImport() {
           </div>
           <div className="sticky-actions">
             <button className="btn primary block" disabled={!!busy} onClick={run}>
-              {busy || `Importer ${drafts.length} séances${replace && old.sessionIds.length ? ` (remplace ${old.sessionIds.length})` : ''} et compléter ${kept.length} fiche(s)`}
+              {busy || [
+                drafts.length > updates.length && `Importer ${drafts.length - updates.length} séance(s)`,
+                changedCount > 0 && `mettre à jour ${changedCount} séance(s)`,
+                replace && old.sessionIds.length > 0 && `supprimer ${old.sessionIds.length} ancienne(s)`,
+                `compléter ${kept.length} fiche(s)`,
+              ].filter(Boolean).join(' · ').replace(/^./, (c) => c.toUpperCase())}
             </button>
           </div>
         </>

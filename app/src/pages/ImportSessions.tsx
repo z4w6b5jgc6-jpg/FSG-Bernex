@@ -11,7 +11,18 @@ import type { Assignment, Athlete } from '../types'
 import { errorMessage, formatDate, fullName, parseISODate } from '../lib/utils'
 
 // ids / unknown : plan par groupes, athlètes de la séance retrouvés (ou non) dans l'app
-interface Row extends SessionIn { include: boolean; location: string; ids: string[]; unknown: string[] }
+interface Row extends SessionIn { include: boolean; location: string; ids: string[]; unknown: string[]; fileLocation: boolean }
+
+// « Demi-fond S03 – Côtes courtes » → « demifonds03 » : même séance même si la fin du titre change dans le fichier
+// (« Lundi S01 · 400 / Demi-fond (800) » garde son groupe : « lundis01400demifond800 »)
+const squash = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '')
+function seriesKey(title: string): string {
+  const m = title.match(/^(.*?\bS\d{1,2})\b/i)
+  return m ? squash(m[1] + (title.match(/·\s*(.+)$/)?.[1] ?? '')) : squash(title)
+}
+// Contenu comparable (sans les identifiants) : pour savoir si le fichier a changé
+const contentOf = (x: Pick<SessionIn, 'title' | 'objective' | 'blocks'>) =>
+  JSON.stringify([x.title, x.objective, x.blocks.map((b) => [b.title, b.items.map((i) => [i.name, i.sets, i.reps, i.distance, i.duration, i.recovery, i.intensity, i.notes])])])
 
 // Spécialités sans saut ni sprint : décochées par défaut (demi-fond, fond, lancers)
 const OTHER_EVENTS = /(400|800|1500|3000|fond|cross|poids|javelot|disque|marteau|lancer)/i
@@ -44,9 +55,16 @@ export function ImportSessions() {
   const target = (): Pick<Assignment, 'group_id' | 'athlete_ids'> =>
     out.length === 0 ? { group_id: group, athlete_ids: [] } : { group_id: null, athlete_ids: members.filter((a) => !out.includes(a.id)).map((a) => a.id) }
 
-  const existing = (r: Row) => sessions.find((s) => s.title === r.title)
+  const [refresh, setRefresh] = useState(true)
+  // Déjà importée : planifiée à la même date dans la même série (ou même titre) ; sinon séance type du même titre
+  const plannedOf = (r: Row) => (r.date ? assignments.find((a) => {
+    const t = sessions.find((x) => x.id === a.session_id)?.title
+    return a.date === r.date && !!t && seriesKey(t) === seriesKey(r.title)
+  }) : undefined)
+  const existing = (r: Row) => { const a = plannedOf(r); return a ? sessions.find((x) => x.id === a.session_id) : sessions.find((x) => x.title === r.title) }
   const exists = (r: Row) => !!existing(r)
-  const plannedOf = (r: Row) => { const s = existing(r); return s ? assignments.find((a) => a.session_id === s.id && a.date === r.date) : undefined }
+  // Contenu modifié dans le fichier (séance planifiée à cette date seulement)
+  const changed = (r: Row) => { const e = plannedOf(r) && existing(r); return !!e && contentOf(e) !== contentOf(r) }
   const set = (key: string, patch: Partial<Row>) => setRows((rs) => rs && rs.map((r) => (r.key === key ? { ...r, ...patch } : r)))
 
   const active = useMemo(() => athletes.filter((a) => a.active).sort((a, b) => fullName(a).localeCompare(fullName(b))), [athletes])
@@ -58,7 +76,7 @@ export function ImportSessions() {
       if (m && !ids.includes(m.athlete.id)) ids.push(m.athlete.id)
       else if (!m) unknown.push(name)
     }
-    return { ...s, include: true, location: s.location || defaultLocation(s.date), ids, unknown }
+    return { ...s, include: true, location: s.location || defaultLocation(s.date), ids, unknown, fileLocation: !!s.location }
   }))
   // Plan par groupes : chaque séance a ses athlètes (onglet des athlètes du fichier)
   const perRow = !!rows?.some((r) => r.who)
@@ -91,6 +109,7 @@ export function ImportSessions() {
   const chosen = rows?.filter((r) => r.include) ?? []
   const weekday = (d: string) => (d ? parseISODate(d).getDay() : -1)
   const fresh = chosen.filter((r) => !exists(r))
+  const toRefresh = refresh ? chosen.filter(changed) : []
   const toUpdate = plan ? chosen.filter((r) => plannedOf(r)).length : 0
   // Jour habituel du fichier (le plus fréquent) : on signale les dates qui s'en écartent
   const DAYS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi']
@@ -106,19 +125,32 @@ export function ImportSessions() {
     setBusy(true)
     setErr(null)
     try {
-      // Séances déjà dans l'app : leur contenu n'est pas touché (tu as pu les modifier)
-      const created = await saveMany('sessions', fresh.map((r) => ({
-        title: r.title, objective: r.objective, focus, duration_min: 120, blocks: r.blocks,
+      // Séances modifiées dans le fichier : contenu mis à jour (retours des athlètes conservés).
+      // Une séance aussi planifiée à d'autres dates est copiée pour ne changer que celle-ci.
+      const shared = (r: Row) => assignments.some((a) => a.session_id === existing(r)!.id && a.date !== r.date)
+      for (const r of toRefresh.filter((x) => !shared(x))) {
+        await save('sessions', { id: existing(r)!.id, title: r.title, objective: r.objective, blocks: r.blocks })
+      }
+      const copies = toRefresh.filter(shared)
+      const created = await saveMany('sessions', [...fresh, ...copies].map((r) => ({
+        title: r.title, objective: r.objective, focus: fresh.includes(r) ? focus : existing(r)!.focus, duration_min: 120, blocks: r.blocks,
       })))
-      const ids = new Map(fresh.map((r, i) => [r.key, created[i].id]))
+      const ids = new Map([...fresh, ...copies].map((r, i) => [r.key, created[i].id]))
       if (plan && canPlan) {
         const rows = []
         for (const r of chosen) {
           if (!r.date || (perRow && r.ids.length === 0)) continue
           const t = perRow ? { group_id: null, athlete_ids: r.ids } : target()
           const done = plannedOf(r)
-          // seulement « pour qui » (et un ancien libellé de lieu proposé par l'app)
-          if (done) await save('assignments', { id: done.id, ...t, ...(OLD_VENUES.includes(done.location) ? { location: r.location } : {}) })
+          // « pour qui », et lieu / heure s'ils sont dans le fichier (ou un ancien libellé de lieu proposé par l'app)
+          if (done) {
+            await save('assignments', {
+              id: done.id, ...t,
+              ...(ids.has(r.key) ? { session_id: ids.get(r.key) } : {}),
+              ...(r.fileLocation || OLD_VENUES.includes(done.location) ? { location: r.location } : {}),
+              ...(r.time ? { time: r.time } : {}),
+            })
+          }
           else rows.push({ session_id: ids.get(r.key) ?? existing(r)!.id, date: r.date, time: r.time || time, location: r.location, ...t, note: '' })
         }
         await saveMany('assignments', rows)
@@ -172,6 +204,12 @@ export function ImportSessions() {
               </select>
             </Field>
             <label className="check"><input type="checkbox" checked={plan} onChange={(e) => setPlan(e.target.checked)} /> <span><b>Planifier aussi</b> chaque séance à sa date</span></label>
+            {rows.some(changed) && (
+              <label className="check">
+                <input type="checkbox" checked={refresh} onChange={(e) => setRefresh(e.target.checked)} />
+                <span><b>Mettre à jour</b> les {rows.filter(changed).length} séance(s) déjà importée(s) et modifiée(s) dans le fichier <span className="tiny muted">(les retours des athlètes sont gardés ; les changements faits dans l’app sur ces séances sont remplacés)</span></span>
+              </label>
+            )}
             {plan && perRow && (
               <div className="grid2">
                 <p className="small">👥 Une séance par groupe : chacune est planifiée pour les athlètes de son groupe (d’après ton fichier). Tu peux ajuster sous chaque séance.</p>
@@ -227,7 +265,11 @@ export function ImportSessions() {
               <div key={r.key} className={`card form ${r.include ? '' : 'muted'}`}>
                 <label className="check">
                   <input type="checkbox" checked={r.include} onChange={(e) => set(r.key, { include: e.target.checked })} />
-                  <span><b>{r.title}</b>{exists(r) && <span className="tiny muted"> · déjà dans tes séances{plan && plannedOf(r) ? ' et planifiée : seuls les athlètes seront mis à jour' : ''}</span>}</span>
+                  <span><b>{r.title}</b>{exists(r) && (
+                    <span className="tiny muted"> · {plannedOf(r)
+                      ? changed(r) ? (refresh ? '✏️ modifiée dans le fichier : mise à jour' : 'modifiée dans le fichier (pas mise à jour)') : 'déjà importée, inchangée'
+                      : 'déjà dans tes séances'}</span>
+                  )}</span>
                 </label>
                 <div className="grid2">
                   <Field label="Date">
@@ -265,6 +307,7 @@ export function ImportSessions() {
             <button className="btn primary block" disabled={busy || chosen.length === 0 || (plan && !canPlan) || (plan && !perRow && members.length > 0 && out.length === members.length)} onClick={run}>
               {busy ? 'Import…' : [
                 fresh.length > 0 && `Importer ${fresh.length} séance(s)${plan && canPlan ? ' et les planifier' : ''}`,
+                toRefresh.length > 0 && `mettre à jour ${toRefresh.length} séance(s) modifiée(s)`,
                 toUpdate > 0 && `mettre à jour ${toUpdate} planification(s)`,
                 chosen.length > fresh.length + toUpdate && plan && `planifier ${chosen.length - fresh.length - toUpdate} séance(s) existante(s)`,
               ].filter(Boolean).join(' · ').replace(/^./, (c) => c.toUpperCase()) || 'Rien à importer'}
