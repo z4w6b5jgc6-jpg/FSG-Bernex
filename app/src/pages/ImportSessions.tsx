@@ -58,7 +58,7 @@ export function ImportSessions() {
       if (m && !ids.includes(m.athlete.id)) ids.push(m.athlete.id)
       else if (!m) unknown.push(name)
     }
-    return { ...s, include: true, location: defaultLocation(s.date), ids, unknown }
+    return { ...s, include: true, location: s.location || defaultLocation(s.date), ids, unknown }
   }))
   // Plan par groupes : chaque séance a ses athlètes (onglet des athlètes du fichier)
   const perRow = !!rows?.some((r) => r.who)
@@ -119,7 +119,7 @@ export function ImportSessions() {
           const done = plannedOf(r)
           // seulement « pour qui » (et un ancien libellé de lieu proposé par l'app)
           if (done) await save('assignments', { id: done.id, ...t, ...(OLD_VENUES.includes(done.location) ? { location: r.location } : {}) })
-          else rows.push({ session_id: ids.get(r.key) ?? existing(r)!.id, date: r.date, time, location: r.location, ...t, note: '' })
+          else rows.push({ session_id: ids.get(r.key) ?? existing(r)!.id, date: r.date, time: r.time || time, location: r.location, ...t, note: '' })
         }
         await saveMany('assignments', rows)
       }
@@ -174,7 +174,7 @@ export function ImportSessions() {
             <label className="check"><input type="checkbox" checked={plan} onChange={(e) => setPlan(e.target.checked)} /> <span><b>Planifier aussi</b> chaque séance à sa date</span></label>
             {plan && perRow && (
               <div className="grid2">
-                <p className="small">👥 Une séance par groupe : chacune est planifiée pour les athlètes de son groupe (d’après l’onglet des athlètes de ton fichier). Tu peux ajuster sous chaque séance.</p>
+                <p className="small">👥 Une séance par groupe : chacune est planifiée pour les athlètes de son groupe (d’après ton fichier). Tu peux ajuster sous chaque séance.</p>
                 <Field label="Heure"><input type="time" value={time} onChange={(e) => setTime(e.target.value)} /></Field>
               </div>
             )}

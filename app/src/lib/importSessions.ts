@@ -14,14 +14,17 @@ export interface SessionIn {
   /** Plan par groupes : athlètes prévus (noms tels qu'écrits dans le fichier) et libellé du groupe */
   who?: string[]
   audience?: string
+  /** lieu et heure lus dans le fichier (colonnes Lieu / Heure) */
+  location?: string
+  time?: string
 }
 
-type Field = 'date' | 'title' | 'cycle' | 'phase' | 'block' | 'name' | keyof Omit<SessionItem, 'id' | 'name'>
+type Field = 'date' | 'title' | 'cycle' | 'phase' | 'block' | 'name' | 'who' | 'location' | 'time' | keyof Omit<SessionItem, 'id' | 'name'>
 const COLS: [RegExp, Field][] = [
   [/^date/, 'date'], [/^(seance|titre)/, 'title'], [/^cycle/, 'cycle'], [/^(phase|objectif)/, 'phase'],
   [/^(bloc|partie)/, 'block'], [/^exercice/, 'name'], [/^series?$/, 'sets'], [/^(rep|repetitions?)$/, 'reps'],
   [/^distance/, 'distance'], [/^duree/, 'duration'], [/^recup/, 'recovery'], [/^intensite/, 'intensity'],
-  [/^(consignes?|notes?|remarques?)$/, 'notes'],
+  [/^(consignes?|notes?|remarques?)$/, 'notes'], [/^pourqui/, 'who'], [/^lieu/, 'location'], [/^heure/, 'time'],
 ]
 
 const cellStr = (c: Cell | undefined) => (c instanceof Date ? '' : String(c ?? '').trim())
@@ -60,6 +63,11 @@ export function parseSessions(sheets: SheetIn[]): SessionIn[] | null {
       if (!cur) {
         const objective = [text(get(r, 'cycle')), text(get(r, 'phase'))].filter(Boolean).join(' – ')
         cur = { key, date, title, objective, blocks: [] }
+        // « Pour qui » (export de l'app) : planifiée pour ces athlètes ; « Groupe … » = pas de liste
+        const who = text(get(r, 'who'))
+        if (cols.has('who') && who && !/^groupe\b/i.test(who)) cur.who = who.split(/\s*,\s*/).filter(Boolean)
+        if (text(get(r, 'location'))) cur.location = text(get(r, 'location'))
+        if (/^\d{1,2}[:h]\d{2}$/.test(text(get(r, 'time')))) cur.time = text(get(r, 'time')).replace('h', ':').padStart(5, '0')
         out.push(cur)
         block = ''
       }
