@@ -64,6 +64,7 @@ export function AthleteSessionDetail() {
   const s = a && sessions.find((x) => x.id === a.session_id)
   if (!me || !a || !s) return loading ? <p className="muted">Chargement…</p> : <Empty>Séance introuvable. <Link to="/seances">Retour</Link></Empty>
   const fb = feedback.find((f) => f.assignment_id === a.id)
+  // Les « Remarques » du plan sont des notes de coach (elles citent parfois d'autres athlètes) : pas affichées ici
 
   return (
     <div>
@@ -72,7 +73,7 @@ export function AthleteSessionDetail() {
       <p className="muted">{formatDate(a.date)}{a.time && ` · ${a.time}`}{a.location && ` · ${a.location}`}</p>
       {a.note && <div className="alert info">{a.note}</div>}
       {!!s.targets?.length && <MyTargets targets={s.targets} athleteId={me.id} />}
-      <div className="card"><SessionView session={s} vma={latestVma(tests, test_results)?.value} sprintLevel={sprintReference(tests, test_results, records)?.level} /></div>
+      <div className="card"><SessionView session={{ ...s, blocks: s.blocks.filter((b) => !/^remarques?$/i.test(b.title.trim())) }} vma={latestVma(tests, test_results)?.value} sprintLevel={sprintReference(tests, test_results, records)?.level} /></div>
       <section>
         <h2>Mon retour</h2>
         {a.date <= todayISO() ? (
