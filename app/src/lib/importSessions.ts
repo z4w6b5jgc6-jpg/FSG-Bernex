@@ -1,4 +1,4 @@
-import type { Block, SessionItem } from '../types'
+import type { Block, SessionItem, Target } from '../types'
 import { normText, type Cell, type SheetIn } from './importResults'
 import { emptyItem, uid } from './utils'
 import { item } from './sessionText'
@@ -16,6 +16,8 @@ export interface SessionIn {
   /** lieu et heure lus dans le fichier (colonnes Lieu / Heure) */
   location?: string
   time?: string
+  /** temps cibles (répétitions chronométrées) reconnus dans le plan */
+  targets?: Target[]
 }
 
 type Field = 'date' | 'title' | 'cycle' | 'phase' | 'block' | 'name' | 'who' | 'location' | 'time' | keyof Omit<SessionItem, 'id' | 'name'>

@@ -349,6 +349,9 @@ export function createDemoApi(): Api {
       }
       return delay(`(Mode démo, réponse d’exemple) Tu as demandé : « ${q.slice(0, 120)} »${s ? ` à propos de la séance « ${s.title} »` : ''}.\n\n## Piste\n- Vitesse en début de séance, sur athlètes frais\n- **Récupération** : environ 1 min par 10 m en vitesse maximale\n- Terminer par un retour au calme`)
     },
+    async readPlan() {
+      throw new Error('La lecture intelligente n’est pas disponible en démo.')
+    },
     async improveSession(s) {
       // Démo : réponse d'exemple (pas d'IA appelée)
       const first = s.blocks.flatMap((b) => b.items.map((it) => ({ b, it }))).find(({ it }) => /m\b/.test(it.distance) && !it.recovery)

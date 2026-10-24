@@ -9,6 +9,10 @@ import { matchAthlete, type Cell } from '../lib/importResults'
 import { defaultLocation, parsePlanGrid, parseSessions, type SessionIn } from '../lib/importSessions'
 import { docxLines, parseSessionText } from '../lib/sessionText'
 import { noteOf, saveNote, splitRemarks } from '../lib/notes'
+import { chunks, extractTargets, looksLikePlan, redact, sheetText, toSessionIn, type RawSeance } from '../lib/smartImport'
+import type { SheetIn } from '../lib/importResults'
+import { api } from '../api'
+import { targetLabel } from '../lib/targets'
 import type { Assignment, Athlete } from '../types'
 import { errorMessage, formatDate, fullName, parseISODate } from '../lib/utils'
 
@@ -24,8 +28,9 @@ function seriesKey(title: string): string {
   return m ? squash(m[1] + (title.match(/·\s*(.+)$/)?.[1] ?? '')) : squash(title)
 }
 // Contenu comparable (sans les identifiants) : pour savoir si le fichier a changé
-const contentOf = (x: Pick<SessionIn, 'title' | 'objective' | 'blocks'>) =>
-  JSON.stringify([x.title, x.objective, x.blocks.map((b) => [b.title, b.items.map((i) => [i.name, i.sets, i.reps, i.distance, i.duration, i.recovery, i.intensity, i.notes])])])
+const contentOf = (x: Pick<SessionIn, 'title' | 'objective' | 'blocks' | 'targets'>) =>
+  JSON.stringify([x.title, x.objective, x.blocks.map((b) => [b.title, b.items.map((i) => [i.name, i.sets, i.reps, i.distance, i.duration, i.recovery, i.intensity, i.notes])]),
+    (x.targets ?? []).map((t) => [t.d, t.base, t.pct])])
 
 // Spécialités sans saut ni sprint : décochées par défaut (demi-fond, fond, lancers)
 const OTHER_EVENTS = /(400|800|1500|3000|fond|cross|poids|javelot|disque|marteau|lancer)/i
@@ -47,6 +52,10 @@ export function ImportSessions() {
   // Document Word ou texte collé : nom de base des séances (« Longueur » → « Longueur S01 – … »)
   const [base, setBase] = useState('Séance')
   const [paste, setPaste] = useState('')
+  // Lecture intelligente : le fichier lu (onglets ou lignes), les onglets choisis, l'avancement
+  const [source, setSource] = useState<{ sheets?: SheetIn[]; lines?: string[] } | null>(null)
+  const [picked, setPicked] = useState<Record<string, boolean>>({})
+  const [ai, setAi] = useState('')
   const [skipped, setSkipped] = useState<string[]>([])
   const group = groupId || groups[0]?.id || ''
   const members = useMemo(() => athletes.filter((a) => a.active && a.group_id === group).sort((a, b) => fullName(a).localeCompare(fullName(b))), [athletes, group])
@@ -83,16 +92,39 @@ export function ImportSessions() {
       else if (!m) unknown.push(name)
     }
     const { blocks, remarks } = splitRemarks(s.blocks)
-    return { ...s, blocks, notes: remarks, include: true, location: s.location || defaultLocation(s.date), ids, unknown, fileLocation: !!s.location }
+    // temps cibles : ceux du plan, sinon ceux écrits dans les exercices (« 200 m à 95 % VMA »)
+    const targets = s.targets?.length ? s.targets : extractTargets(blocks)
+    return { ...s, blocks, targets, notes: remarks, include: true, location: s.location || defaultLocation(s.date), ids, unknown, fileLocation: !!s.location }
   }))
   // Plan par groupes : chaque séance a ses athlètes (onglet des athlètes du fichier)
   const perRow = !!rows?.some((r) => r.who)
   const toggleId = (r: Row, id: string) => set(r.key, { ids: r.ids.includes(id) ? r.ids.filter((i) => i !== id) : [...r.ids, id] })
   const fromText = (lines: string[]) => {
+    setSource({ lines })
     const { sessions: found, skipped: sk } = parseSessionText(lines, base)
     setSkipped(sk)
-    if (!found.length) return setErr('Je n’ai trouvé aucune date de séance (ex. « Mercredi 28 octobre 2026 ») dans ce texte.')
+    if (!found.length) return setErr('Format non reconnu automatiquement : utilise la lecture intelligente ci-dessous.')
     show(found)
+  }
+
+  /** Plan lu par l'IA, morceau par morceau (noms d'athlètes masqués avant l'envoi) */
+  const readWithAi = async () => {
+    if (!source) return
+    setErr(null)
+    const text = source.sheets ? source.sheets.filter((x) => picked[x.name]).map(sheetText).join('\n') : (source.lines ?? []).join('\n')
+    const parts = chunks(redact(text, athletes))
+    if (!parts.length) return setErr('Choisis au moins un onglet à lire.')
+    const found: RawSeance[] = []
+    let failed = 0
+    for (const [i, part] of parts.entries()) {
+      setAi(`Lecture ${i + 1}/${parts.length}…`)
+      try { found.push(...await api.readPlan(part)) } catch (e) { failed++; if (failed === parts.length) setErr(errorMessage(e)) }
+    }
+    setAi('')
+    const sessionsIn = found.map(toSessionIn).filter((x) => x.blocks.length)
+    if (!sessionsIn.length) return setErr((e) => e ?? 'L’IA n’a trouvé aucune séance dans ce plan.')
+    if (failed) setErr(`${failed} passage(s) du plan n’ont pas pu être lus : vérifie qu’il ne manque pas de séance.`)
+    show(sessionsIn)
   }
 
   const onFile = async (file: File) => {
@@ -104,9 +136,11 @@ export function ImportSessions() {
       const { default: readXlsxFile } = await import('read-excel-file/browser')
       const sheets = await readXlsxFile(file)
       const input = sheets.map((s) => ({ name: s.sheet, rows: s.data as Cell[][] }))
+      setSource({ sheets: input })
+      setPicked(Object.fromEntries(input.map((x) => [x.name, looksLikePlan(x)])))
       // Une ligne par exercice, sinon plan en grille (une ligne par séance, une colonne par partie)
       const found = parseSessions(input) ?? parsePlanGrid(input, base)
-      if (!found?.length) return setErr('Je n’ai trouvé ni tableau avec une colonne « Exercice », ni plan avec une colonne « Date » et une colonne par partie de séance.')
+      if (!found?.length) return setErr('Format non reconnu automatiquement : utilise la lecture intelligente ci-dessous.')
       show(found)
     } catch (e) {
       setErr('Impossible de lire ce fichier : ' + errorMessage(e))
@@ -136,12 +170,12 @@ export function ImportSessions() {
       // Une séance aussi planifiée à d'autres dates est copiée pour ne changer que celle-ci.
       const shared = (r: Row) => assignments.some((a) => a.session_id === existing(r)!.id && a.date !== r.date)
       for (const r of toRefresh.filter((x) => !shared(x))) {
-        await save('sessions', { id: existing(r)!.id, title: r.title, objective: r.objective, blocks: r.blocks })
+        await save('sessions', { id: existing(r)!.id, title: r.title, objective: r.objective, blocks: r.blocks, targets: r.targets ?? [] })
         if (r.notes) await saveNote(save, session_notes, existing(r)!.id, r.notes)
       }
       const copies = toRefresh.filter(shared)
       const created = await saveMany('sessions', [...fresh, ...copies].map((r) => ({
-        title: r.title, objective: r.objective, focus: fresh.includes(r) ? focus : existing(r)!.focus, duration_min: 120, blocks: r.blocks,
+        title: r.title, objective: r.objective, focus: fresh.includes(r) ? focus : existing(r)!.focus, duration_min: 120, blocks: r.blocks, targets: r.targets ?? [],
       })))
       const ids = new Map([...fresh, ...copies].map((r, i) => [r.key, created[i].id]))
       for (const [i, r] of [...fresh, ...copies].entries()) if (r.notes) await saveNote(save, session_notes, created[i].id, r.notes)
@@ -196,6 +230,29 @@ export function ImportSessions() {
         </details>
         <a className="small" href="modele-seances.xlsx" download>📄 Télécharger le modèle Excel</a>
         {err && <div className="alert warn">{err}</div>}
+        {source && (
+          <div className="card form smart-import">
+            <b>🤖 Lecture intelligente</b>
+            <p className="small">
+              Pour un plan dans n’importe quelle forme : l’IA (gratuite, hébergée par Cloudflare) le lit et propose les séances,
+              que tu vérifies ci-dessous avant d’importer. <b>Les noms des athlètes sont masqués avant l’envoi</b> et rien n’est conservé.
+            </p>
+            {source.sheets && (
+              <div className="form">
+                <span className="small">Onglets à lire (seulement le plan, pas les listes d’athlètes) :</span>
+                {source.sheets.map((x) => (
+                  <label key={x.name} className="check small">
+                    <input type="checkbox" checked={!!picked[x.name]} onChange={(e) => setPicked({ ...picked, [x.name]: e.target.checked })} /> <span>{x.name}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+            <button className="btn primary" disabled={!!ai || (!!source.sheets && !Object.values(picked).some(Boolean))} onClick={readWithAi}>
+              {ai || (rows ? 'Relire avec l’IA' : 'Lire le plan avec l’IA')}
+            </button>
+            {ai && <p className="tiny muted">Compte environ 20 secondes par page de plan.</p>}
+          </div>
+        )}
         {skipped.length > 0 && (
           <details className="alert info small">
             <summary>{skipped.length} ligne(s) avant la première date, non importée(s)</summary>
@@ -288,6 +345,7 @@ export function ImportSessions() {
                 </div>
                 <Field label="Titre"><input value={r.title} onChange={(e) => set(r.key, { title: e.target.value })} /></Field>
                 {r.objective && <div className="tiny muted">🎯 {r.objective}</div>}
+                {!!r.targets?.length && <div className="tiny muted">⏱️ Temps cibles par athlète : {r.targets.map(targetLabel).join(' · ')}</div>}
                 {plan && r.who && (
                   <details className="small">
                     <summary>👥 {r.ids.length ? r.ids.map((id) => active.find((a) => a.id === id)?.first_name).filter(Boolean).join(', ') : 'Personne'}{r.unknown.length > 0 && <span className="muted"> · introuvable(s) : {r.unknown.join(', ')}</span>}</summary>

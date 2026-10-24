@@ -101,6 +101,17 @@ export function createSupabaseApi(url: string, key: string): Api {
       if (!res.ok || !out) throw new Error(out?.error ?? (res.status === 404 ? 'Le service IA n’est pas encore en ligne.' : `Erreur ${res.status}`))
       return out.reply as string
     },
+    async readPlan(texte) {
+      const { data } = await sb.auth.getSession()
+      const res = await fetch('/api/lire-plan', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${data.session?.access_token ?? ''}` },
+        body: JSON.stringify({ texte, groupe: settings().group ?? '', aujourdhui: new Date().toISOString().slice(0, 10) }),
+      })
+      const out = await res.json().catch(() => null)
+      if (!res.ok || !out) throw new Error(out?.error ?? (res.status === 404 ? 'Le service IA n’est pas encore en ligne.' : `Erreur ${res.status}`))
+      return out.seances
+    },
     async improveSession(s) {
       const { data } = await sb.auth.getSession()
       const res = await fetch('/api/ameliorer', {
