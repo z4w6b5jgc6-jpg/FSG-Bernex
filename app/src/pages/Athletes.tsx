@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useData } from '../lib/data'
 import { InviteCard } from '../components/InviteCard'
 import { Empty, Field, GroupBadge, Modal } from '../components/ui'
@@ -113,6 +113,7 @@ export function Athletes() {
 /** Nouvelles inscriptions à vérifier : reliées automatiquement à la liste, ou nouveaux profils */
 function PendingSignups() {
   const { athletes, groups, save, reload } = useData()
+  const nav = useNavigate()
   const [target, setTarget] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
   const pending = athletes.filter((a) => a.user_id && !a.signup_reviewed)
@@ -146,7 +147,12 @@ function PendingSignups() {
               <div className="small">{linked ? '✅ Relié·e automatiquement à sa fiche de ta liste' : '🆕 Profil créé à l’inscription (pas trouvé dans ta liste)'}</div>
             </div>
             <div className="row gap wrap">
-              <button className="btn small primary" disabled={busy} onClick={() => run(() => save('athletes', { id: a.id, signup_reviewed: true }))}>✓ C’est bon</button>
+              {linked ? (
+                <button className="btn small primary" disabled={busy} onClick={() => run(() => save('athletes', { id: a.id, signup_reviewed: true }))}>✓ C’est bon</button>
+              ) : (
+                // nouvel athlète : on confirme puis on choisit ses séances sur sa fiche
+                <button className="btn small primary" disabled={busy} onClick={() => run(async () => { await save('athletes', { id: a.id, signup_reviewed: true }); nav(`/athletes/${a.id}#seances`) })}>✓ Confirmer et choisir ses séances</button>
+              )}
               {linked ? (
                 <button className="btn small ghost danger" disabled={busy}
                   onClick={() => confirm(`Ce n’est pas ${fullName(a)} ? Le compte sera délié de ce profil.`) && run(() => save('athletes', { id: a.id, user_id: null, signup_reviewed: true }))}>

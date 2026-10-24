@@ -2,20 +2,9 @@ import { useMemo, useState } from 'react'
 import { BackLink } from '../components/BackLink'
 import { useData } from '../lib/data'
 import { Empty, Field } from '../components/ui'
-import type { Assignment, Athlete } from '../types'
-import { athletesFor, errorMessage, formatDate, fullName, parseISODate, todayISO } from '../lib/utils'
-
-const DAYS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi']
-
-/** « Longueur S03 – Vitesse » → « Longueur » ; « Lundi S01 · Sprint / Sauts / Haies » → « Lundi · Sprint / Sauts / Haies » */
-function seriesName(title: string): string {
-  const m = title.match(/^(.*?)\s+S\d{1,2}\b(.*)$/)
-  if (!m) return title
-  const audience = m[2].match(/·\s*(.+)$/)?.[1]
-  return audience ? `${m[1]} · ${audience}` : m[1]
-}
-
-interface Series { key: string; name: string; day: number; list: Assignment[] }
+import type { Athlete } from '../types'
+import { errorMessage, formatDate, fullName, todayISO } from '../lib/utils'
+import { buildSeries, countIn as countSeries, DAYS, seriesChanges, seriesLabel, type Series } from '../lib/series'
 
 /** Qui fait quoi : athlètes de chaque série de séances à venir, à retirer ou ajouter d'un coup */
 export function WhoDoesWhat() {
@@ -28,22 +17,10 @@ export function WhoDoesWhat() {
   const active = useMemo(() => athletes.filter((a) => a.active).sort((a, b) => fullName(a).localeCompare(fullName(b))), [athletes])
 
   // Séances à venir regroupées par série (nom sans le numéro) et par jour de la semaine
-  const series = useMemo(() => {
-    const map = new Map<string, Series>()
-    for (const a of assignments.filter((x) => x.date >= today).sort((x, y) => x.date.localeCompare(y.date))) {
-      const title = sessions.find((s) => s.id === a.session_id)?.title
-      if (!title) continue
-      const name = seriesName(title), day = parseISODate(a.date).getDay()
-      const key = `${day}|${name}`
-      if (!map.has(key)) map.set(key, { key, name, day, list: [] })
-      map.get(key)!.list.push(a)
-    }
-    return [...map.values()].sort((x, y) => ((x.day + 6) % 7) - ((y.day + 6) % 7) || x.name.localeCompare(y.name))
-  }, [assignments, sessions, today])
-
-  const countIn = (s: Series, id: string) => s.list.filter((a) => athletesFor(a, athletes).some((x) => x.id === id)).length
+  const series = useMemo(() => buildSeries(assignments, sessions, today), [assignments, sessions, today])
+  const countIn = (x: Series, id: string) => countSeries(x, id, athletes)
   const membersOf = (s: Series) => active.filter((a) => countIn(s, a.id) > 0)
-  const label = (s: Series) => `${s.name} (${DAYS[s.day]})`
+  const label = seriesLabel
 
   /** Retire ou ajoute un athlète dans toutes les séances à venir de la série */
   const apply = async (s: Series, a: Athlete, add: boolean) => {
@@ -52,12 +29,7 @@ export function WhoDoesWhat() {
     setBusy(s.key)
     setErr(null)
     try {
-      await Promise.all(s.list.flatMap((x) => {
-        const ids = athletesFor(x, athletes).map((t) => t.id)
-        if (ids.includes(a.id) === add) return []
-        // planifiée « pour le groupe » : devient la liste des athlètes du groupe, moins (ou plus) cet athlète
-        return [save('assignments', { id: x.id, group_id: null, athlete_ids: add ? [...ids, a.id] : ids.filter((i) => i !== a.id) })]
-      }))
+      await Promise.all(seriesChanges(s, a.id, add, athletes).map((x) => save('assignments', x)))
     } catch (e) {
       setErr(errorMessage(e))
     } finally {

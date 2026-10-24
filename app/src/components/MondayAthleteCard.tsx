@@ -23,7 +23,7 @@ export function MondayAthleteCard({ athlete }: { athlete: Athlete }) {
     try {
       await save('athletes', { id: athlete.id, subgroup: v })
       // il reçoit les prochaines séances de son nouveau sous-groupe
-      for (const a of subgroupChanges(athlete.id, v, sessions, assignments)) await save('assignments', a)
+      await Promise.all(subgroupChanges(athlete.id, v, sessions, assignments).map((a) => save('assignments', a)))
     } catch (e) {
       setErr(errorMessage(e))
     }

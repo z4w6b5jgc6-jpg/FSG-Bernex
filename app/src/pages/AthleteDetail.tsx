@@ -11,6 +11,7 @@ import { TestResults } from '../components/TestResults'
 import { VmaPaces } from '../components/VmaPaces'
 import { SprintEquivalence } from '../components/SprintEquivalence'
 import { MondayAthleteCard } from '../components/MondayAthleteCard'
+import { AthleteSeriesCard } from '../components/AthleteSeriesCard'
 import { ReportCard, ReportForm } from '../components/TestInsights'
 import { parseValue } from '../lib/tests'
 import type { PersonalRecord } from '../types'
@@ -133,6 +134,7 @@ export function AthleteDetail() {
         )}
       </section>
 
+      <AthleteSeriesCard athlete={a} />
       <MondayAthleteCard athlete={a} />
 
       <section>
