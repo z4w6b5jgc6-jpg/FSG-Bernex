@@ -2,7 +2,9 @@ import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import type { Athlete, Feedback } from '../types'
 import { useData } from '../lib/data'
-import { errorMessage, fullName } from '../lib/utils'
+import { fullName } from '../lib/utils'
+import { threadOf, unreadByCoach } from '../lib/messages'
+import { Thread } from './Thread'
 import { FATIGUE_LABELS, FATIGUE_TEXT, MOOD_LABELS, MOOD_TEXT, RPE_LABELS, rpeClass } from './ui'
 
 export function FeedbackScores({ fb }: { fb: Pick<Feedback, 'completed' | 'rpe' | 'fatigue' | 'mood'> }) {
@@ -17,23 +19,10 @@ export function FeedbackScores({ fb }: { fb: Pick<Feedback, 'completed' | 'rpe' 
 }
 
 export function FeedbackCard({ fb, athlete, subtitle }: { fb: Feedback; athlete?: Athlete; subtitle?: ReactNode }) {
-  const { save } = useData()
-  const [reply, setReply] = useState(fb.coach_reply)
-  const [editing, setEditing] = useState(false)
-  const [busy, setBusy] = useState(false)
-
-  const sendReply = async () => {
-    setBusy(true)
-    try {
-      await save('feedback', { id: fb.id, coach_reply: reply })
-      setEditing(false)
-    } catch (e) {
-      alert(errorMessage(e))
-    } finally {
-      setBusy(false)
-    }
-  }
-
+  const { messages } = useData()
+  const [open, setOpen] = useState(false)
+  const n = threadOf(messages, fb.assignment_id, fb.athlete_id).length + (fb.coach_reply ? 1 : 0)
+  const unread = unreadByCoach(threadOf(messages, fb.assignment_id, fb.athlete_id)).length
   return (
     <div className="card feedback-card">
       <div className="row between">
@@ -45,22 +34,15 @@ export function FeedbackCard({ fb, athlete, subtitle }: { fb: Feedback; athlete?
       </div>
       <FeedbackScores fb={fb} />
       {fb.pain && <div className="alert warn small">🩹 Douleur : {fb.pain}</div>}
-      {fb.comment && <p className="comment">« {fb.comment} »</p>}
-      {editing ? (
-        <div className="reply-form">
-          <textarea rows={2} value={reply} onChange={(e) => setReply(e.target.value)} placeholder="Réponse visible par l’athlète…" />
-          <div className="row gap">
-            <button className="btn primary small" onClick={sendReply} disabled={busy}>Envoyer</button>
-            <button className="btn ghost small" onClick={() => { setEditing(false); setReply(fb.coach_reply) }}>Annuler</button>
-          </div>
-        </div>
-      ) : fb.coach_reply ? (
-        <div className="reply">
-          <strong>Ta réponse :</strong> {fb.coach_reply}{' '}
-          <button className="link" onClick={() => setEditing(true)}>modifier</button>
-        </div>
+      {open ? (
+        <Thread assignmentId={fb.assignment_id} athleteId={fb.athlete_id} fb={fb} coach athleteName={athlete?.first_name} />
       ) : (
-        <button className="btn ghost small" onClick={() => setEditing(true)}>💬 Répondre</button>
+        <>
+          {fb.comment && <p className="comment">« {fb.comment} »</p>}
+          <button className="btn ghost small" onClick={() => setOpen(true)}>
+            💬 {n ? `Discussion (${n})` : 'Répondre'}{unread > 0 && <span className="pill warn">{unread} nouveau{unread > 1 ? 'x' : ''}</span>}
+          </button>
+        </>
       )}
     </div>
   )

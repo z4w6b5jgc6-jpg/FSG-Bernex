@@ -2,7 +2,7 @@
 // - fichiers de l'app (JS/CSS/icônes) : cache d'abord, mis à jour en arrière-plan
 // - page HTML : réseau d'abord, cache si hors-ligne
 // - données (Supabase) : jamais mises en cache ici
-const CACHE = 'coach-athle-v3'
+const CACHE = 'coach-athle-v4'
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html', './manifest.webmanifest', './icon-192.png'])))
@@ -47,4 +47,24 @@ self.addEventListener('fetch', (e) => {
       return cached || network
     }),
   )
+})
+
+// Notifications : aucun contenu n'est transmis (confidentialité), on invite à ouvrir l'app
+self.addEventListener('push', (e) => {
+  e.waitUntil(self.registration.showNotification('FSG Bernex – entraînement', {
+    body: 'Nouveau message ou retour de séance. Ouvre l’app pour le lire.',
+    icon: './icon-192.png',
+    badge: './icon-192.png',
+    tag: 'messages',
+    renotify: true,
+  }))
+})
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close()
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    const open = list.find((c) => 'focus' in c)
+    if (open) { open.navigate?.('./#/messages'); return open.focus() }
+    return self.clients.openWindow('./#/messages')
+  }))
 })

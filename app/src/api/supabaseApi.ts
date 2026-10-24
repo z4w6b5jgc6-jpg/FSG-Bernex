@@ -155,6 +155,25 @@ export function createSupabaseApi(url: string, key: string): Api {
     async remove(table, id) {
       check(await sb.from(table).delete().eq('id', id))
     },
+    async pushKey() {
+      const res = await fetch('/api/push-key').catch(() => null)
+      const out = res?.ok ? await res.json().catch(() => null) : null
+      return (out?.key as string | undefined) || null
+    },
+    async savePush(endpoint) {
+      check(await sb.rpc('save_push', { p_endpoint: endpoint }))
+    },
+    async removePush(endpoint) {
+      check(await sb.from('push_subscriptions').delete().eq('endpoint', endpoint))
+    },
+    async notify(kind, id) {
+      const { data } = await sb.auth.getSession()
+      await fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${data.session?.access_token ?? ''}` },
+        body: JSON.stringify({ kind, id }),
+      }).catch(() => null)
+    },
     async removeMany(table, ids) {
       for (let i = 0; i < ids.length; i += 100) check(await sb.from(table).delete().in('id', ids.slice(i, i + 100)))
     },

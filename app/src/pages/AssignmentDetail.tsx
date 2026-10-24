@@ -7,14 +7,16 @@ import { AssignmentForm } from '../components/AssignmentForm'
 import { FeedbackCard, FeedbackScores } from '../components/FeedbackCard'
 import { SessionView } from '../components/SessionView'
 import { TargetTable } from '../components/TargetTable'
+import { Thread } from '../components/Thread'
 import { Empty, GroupBadge } from '../components/ui'
 import { athletesFor, formatDate, fullName, nativeShare, todayISO, whatsappUrl } from '../lib/utils'
 
 export function AssignmentDetail() {
   const { id } = useParams()
   const nav = useNavigate()
-  const { assignments, sessions, groups, athletes, feedback, remove, loading } = useData()
+  const { assignments, sessions, groups, athletes, feedback, messages, remove, loading } = useData()
   const [editing, setEditing] = useState(false)
+  const [writeTo, setWriteTo] = useState('')
   const a = assignments.find((x) => x.id === id)
   if (!a) return loading ? <p className="muted">Chargement…</p> : <Empty>Planification introuvable. <Link to="/planning">Retour</Link></Empty>
 
@@ -91,11 +93,24 @@ export function AssignmentDetail() {
               </table>
             </div>
             <div className="list">
-              {fbs.filter((f) => f.comment || f.pain).map((f) => (
+              {fbs.filter((f) => f.comment || f.pain || messages.some((m) => m.assignment_id === a.id && m.athlete_id === f.athlete_id)).map((f) => (
                 <FeedbackCard key={f.id} fb={f} athlete={athletes.find((x) => x.id === f.athlete_id)} />
               ))}
             </div>
           </>
+        )}
+        {/* Discussions sans retour de séance (ou pour écrire avant la séance) */}
+        {targets.filter((t) => !fbs.some((f) => f.athlete_id === t.id) && (t.id === writeTo || messages.some((m) => m.assignment_id === a.id && m.athlete_id === t.id))).map((t) => (
+          <div key={t.id} className="card">
+            <Link to={`/athletes/${t.id}`}><strong>{fullName(t)}</strong></Link>
+            <Thread assignmentId={a.id} athleteId={t.id} coach athleteName={t.first_name} />
+          </div>
+        ))}
+        {targets.length > 0 && (
+          <select value="" onChange={(e) => setWriteTo(e.target.value)} aria-label="Écrire à un athlète">
+            <option value="">✉️ Écrire à un athlète de la séance…</option>
+            {targets.map((t) => <option key={t.id} value={t.id}>{fullName(t)}</option>)}
+          </select>
         )}
       </section>
 

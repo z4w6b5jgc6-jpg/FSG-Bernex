@@ -4,10 +4,11 @@ import { useData } from '../lib/data'
 import { FeedbackCard } from '../components/FeedbackCard'
 import { Empty, GroupBadge } from '../components/ui'
 import { InviteCard } from '../components/InviteCard'
+import { feedbackToAnswer, unreadByCoach } from '../lib/messages'
 import { addDays, athletesFor, formatDate, formatShort, todayISO } from '../lib/utils'
 
 export function Dashboard() {
-  const { assignments, sessions, groups, athletes, feedback, wellness, competitions, tests, me, loading } = useData()
+  const { assignments, sessions, groups, athletes, feedback, wellness, competitions, tests, messages, me, loading } = useData()
   const today = todayISO()
   const upcoming = assignments
     .filter((a) => a.date >= today && a.date <= addDays(today, 7))
@@ -31,7 +32,8 @@ export function Dashboard() {
   const pastWeek = assignments.filter((a) => a.date < today && a.date >= addDays(today, -7))
   const expected = pastWeek.reduce((n, a) => n + athletesFor(a, athletes).length, 0)
   const received = pastWeek.reduce((n, a) => n + feedback.filter((f) => f.assignment_id === a.id).length, 0)
-  const unanswered = feedback.filter((f) => !f.coach_reply && f.comment).length
+  const unanswered = feedbackToAnswer(feedback, messages).length
+  const unread = unreadByCoach(messages).length
 
   const pending = athletes.filter((a) => a.user_id && !a.signup_reviewed).length
   const nextComp = competitions.filter((c) => (c.end_date || c.date) >= today).sort((a, b) => a.date.localeCompare(b.date))[0]
@@ -58,6 +60,8 @@ export function Dashboard() {
           info: (upcoming.length ? `${upcoming.length} séance(s) dans les 7 j` : 'Rien de prévu cette semaine') + (rate !== null ? ` · retours ${rate} %` : '') },
         { to: '/athletes', icon: '🏃', label: 'Athlètes', tone: 'blue', badge: pending,
           info: `${athletes.filter((a) => a.active).length} athlètes` + (checkins ? ` · ${checkins} check-in(s) aujourd’hui` : '') },
+        { to: '/messages', icon: '💬', label: 'Messages', tone: 'pink', badge: unread + unanswered,
+          info: unread ? `${unread} message(s) non lu(s)` : unanswered ? `${unanswered} retour(s) sans réponse` : 'Retours et discussions des athlètes' },
         { to: '/seances', icon: '📋', label: 'Séances', tone: 'violet', info: `${sessions.length} séance(s) type` },
         { to: '/lundi', icon: '⏱️', label: 'Lundi', tone: 'orange', info: 'Temps cibles par athlète, mode piste' },
         { to: '/assistant', icon: '🤖', label: 'Assistant', tone: 'blue', info: 'Météo, intention, période : demande une séance' },

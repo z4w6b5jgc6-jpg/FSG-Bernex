@@ -137,6 +137,7 @@ function seed(): Db {
       { id: uid(), name: 'Meeting en salle de Genève', date: addDays(today, 24), end_date: null, location: 'Genève', level: 'C', program_url: 'https://example.org/programme', registration_url: '', results_url: '', registration_deadline: addDays(today, 10), notes: 'Premier test de la saison en salle.', athlete_ids: [], entries: {} },
       { id: uid(), name: 'Championnats régionaux en salle U16/U18', date: addDays(today, 80), end_date: addDays(today, 81), location: 'Macolin', level: 'A', program_url: '', registration_url: '', results_url: '', registration_deadline: addDays(today, 60), notes: '', athlete_ids: [athletes[0].id, athletes[2].id], entries: { [athletes[0].id]: '60 m, longueur', [athletes[2].id]: '60 m haies' } },
     ],
+    messages: [],
   }
 }
 
@@ -149,6 +150,7 @@ function load(): Db {
     if (raw) {
       const db = JSON.parse(raw) as Db
       db.competitions ??= [] // données démo enregistrées avant l'ajout des compétitions
+      db.messages ??= []
       for (const c of db.competitions) c.entries ??= {}
       return db
     }
@@ -217,6 +219,7 @@ export function createDemoApi(): Api {
       competitions: (c) => c.athlete_ids.length === 0 || c.athlete_ids.includes(me.id),
       records: (x) => x.athlete_id === me.id,
       wellness: (x) => x.athlete_id === me.id,
+      messages: (x) => x.athlete_id === me.id,
     }
     return rows.filter(filters[table] as (x: Row<K>) => boolean)
   }
@@ -413,6 +416,8 @@ export function createDemoApi(): Api {
       const rows = db[table] as Row<K>[]
       const extra: Record<string, unknown> = {}
       if (table === 'sessions' || table === 'feedback' || table === 'tips') extra.updated_at = new Date().toISOString()
+      // messages : l'expéditeur est fixé comme dans la base
+      if (table === 'messages' && !row.id) { extra.from_coach = role() === 'coach'; extra.author = role() === 'coach' ? 'Coach' : '' }
       let saved: Row<K>
       if (row.id && rows.some((r) => (r as { id: string }).id === row.id)) {
         if (!visible(table).some((r) => (r as { id: string }).id === row.id)) throw new Error('Accès refusé')
@@ -445,6 +450,11 @@ export function createDemoApi(): Api {
     async remove(table, id) {
       return this.removeMany(table, [id])
     },
+    // Notifications : pas disponibles en démo
+    async pushKey() { return null },
+    async savePush() {},
+    async removePush() {},
+    async notify() {},
     async removeMany(table, list) {
       const ids = new Set(list)
       db = load()
@@ -463,6 +473,7 @@ export function createDemoApi(): Api {
       const testIds = new Set(db.tests.map((t) => t.id))
       db.test_results = db.test_results.filter((x) => athleteIds.has(x.athlete_id) && testIds.has(x.test_id))
       db.test_reports = db.test_reports.filter((x) => athleteIds.has(x.athlete_id))
+      db.messages = (db.messages ?? []).filter((x) => assignmentIds.has(x.assignment_id) && athleteIds.has(x.athlete_id))
       persist(db)
     },
   }
@@ -483,6 +494,7 @@ function defaults(table: TableName): Record<string, unknown> {
     case 'tests': return { unit: '', higher_is_better: true, category: 'Autre', description: '' }
     case 'test_results': return { notes: '', trials: [], date: todayISO() }
     case 'test_reports': return { title: 'Bilan des tests', strengths: '', priority: '', training: '', message: '', date: todayISO() }
+    case 'messages': return { author: '', read_at: null, created_at: new Date().toISOString() }
     case 'wellness': return { sleep_hours: null, sleep_quality: null, energy: null, soreness: null, stress: null, note: '', date: todayISO() }
   }
 }

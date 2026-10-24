@@ -188,6 +188,21 @@ export interface Feedback {
   updated_at: string
 }
 
+/** Message d'un fil (une séance planifiée × un athlète), entre l'athlète et ses coachs */
+export interface Message {
+  id: string
+  assignment_id: string
+  athlete_id: string
+  /** écrit par un coach (fixé par la base) */
+  from_coach: boolean
+  /** prénom du coach (vide pour l'athlète) */
+  author: string
+  body: string
+  /** lu par le destinataire */
+  read_at: string | null
+  created_at: string
+}
+
 /** Compétition visée ; athlete_ids vide = tout le club */
 export interface Competition {
   id: string
@@ -235,6 +250,7 @@ export interface Tables {
   test_results: TestResult
   test_reports: TestReport
   competitions: Competition
+  messages: Message
 }
 
 export type TableName = keyof Tables

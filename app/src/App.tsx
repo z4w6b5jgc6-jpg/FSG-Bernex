@@ -14,6 +14,8 @@ import { Planning } from './pages/Planning'
 import { AssignmentDetail } from './pages/AssignmentDetail'
 import { ExportSessions } from './pages/ExportSessions'
 import { WhoDoesWhat } from './pages/WhoDoesWhat'
+import { Messages } from './pages/Messages'
+import { NotificationsSetup } from './pages/NotificationsSetup'
 import { MondayToday } from './pages/monday/MondayToday'
 import { MondayEdit, MondayPlan } from './pages/monday/MondayPlan'
 import { MondayImport } from './pages/monday/MondayImport'
@@ -90,6 +92,8 @@ function CoachApp() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/planning" element={<Planning />} />
+        <Route path="/messages" element={<Messages coach />} />
+        <Route path="/notifications" element={<NotificationsSetup />} />
         <Route path="/lundi" element={<MondayToday />} />
         <Route path="/lundi/plan" element={<MondayPlan />} />
         <Route path="/lundi/plan/:date" element={<MondayEdit />} />
@@ -134,6 +138,7 @@ function AthleteApp() {
         <Route path="/conseils" element={<Tips />} />
         <Route path="/conseils/:id" element={<TipDetail />} />
         <Route path="/progres" element={<AthleteProgress />} />
+        <Route path="/messages" element={<Messages coach={false} />} />
         <Route path="/competitions" element={<Competitions />} />
         <Route path="/profil" element={<AthleteProfile key={athlete.id} />} />
         <Route path="*" element={<Navigate to="/" replace />} />

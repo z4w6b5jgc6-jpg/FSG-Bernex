@@ -6,6 +6,9 @@ import { Link, useParams } from 'react-router-dom'
 import { useData, useMyAthlete } from '../../lib/data'
 import { SessionView } from '../../components/SessionView'
 import { MyTargets } from '../../components/TargetTable'
+import { Thread } from '../../components/Thread'
+import { api } from '../../api'
+import { feedbackWorthNotice } from '../../lib/messages'
 import { FeedbackScores } from '../../components/FeedbackCard'
 import { Empty, FATIGUE_LABELS, FATIGUE_TEXT, MOOD_LABELS, MOOD_TEXT, RPE_LABELS, Scale } from '../../components/ui'
 import type { Assignment, Feedback } from '../../types'
@@ -72,12 +75,15 @@ export function AthleteSessionDetail() {
       <div className="card"><SessionView session={s} vma={latestVma(tests, test_results)?.value} sprintLevel={sprintReference(tests, test_results, records)?.level} /></div>
       <section>
         <h2>Mon retour</h2>
-        {fb?.coach_reply && <div className="reply">💬 <strong>Message de ton coach :</strong> {fb.coach_reply}</div>}
         {a.date <= todayISO() ? (
           <FeedbackForm key={fb?.id ?? 'new'} athleteId={me.id} assignmentId={a.id} fb={fb} />
         ) : (
           <p className="muted">Tu pourras donner ton ressenti le jour de la séance.</p>
         )}
+      </section>
+      <section>
+        <h2>💬 Échanger avec ton coach</h2>
+        <div className="card"><Thread assignmentId={a.id} athleteId={me.id} fb={fb} coach={false} /></div>
       </section>
     </div>
   )
@@ -100,7 +106,9 @@ function FeedbackForm({ athleteId, assignmentId, fb }: { athleteId: string; assi
     setBusy(true)
     setErr(null)
     try {
-      await save('feedback', { ...f, id: fb?.id, assignment_id: assignmentId, athlete_id: athleteId })
+      const saved = await save('feedback', { ...f, id: fb?.id, assignment_id: assignmentId, athlete_id: athleteId })
+      // le coach est prévenu s'il y a un commentaire, une douleur, une forte fatigue ou un gros effort
+      if (feedbackWorthNotice(f)) api.notify('feedback', saved.id)
       setEditing(false)
     } catch (e2) {
       setErr(errorMessage(e2))

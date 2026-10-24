@@ -676,5 +676,100 @@ grant execute on function club_by_code(text) to anon, authenticated;
 grant execute on function join_club(text, text, text, int, uuid, text, text) to authenticated;
 grant execute on function merge_athletes(uuid, uuid) to authenticated;
 
+-- ===== Messages : fil de discussion entre l'athlète et ses coachs, pour chaque séance planifiée =====
+create table if not exists messages (
+  id            uuid primary key default gen_random_uuid(),
+  assignment_id uuid not null references assignments (id) on delete cascade,
+  athlete_id    uuid not null references athletes (id) on delete cascade,
+  from_coach    boolean not null default false,
+  author        text not null default '',
+  body          text not null check (length(body) between 1 and 2000),
+  read_at       timestamptz,
+  created_at    timestamptz not null default now()
+);
+create index if not exists messages_thread_idx on messages (athlete_id, assignment_id, created_at);
+alter table messages enable row level security;
+
+-- L'expéditeur est fixé par la base (coach ou athlète) ; ensuite seul le destinataire peut marquer « lu »
+create or replace function messages_protect() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if tg_op = 'INSERT' then
+    new.from_coach := is_my_athlete(new.athlete_id);
+    new.author := case when new.from_coach then coalesce(nullif(initcap(split_part(split_part(
+      (select email from auth.users where id = auth.uid()), '@', 1), '.', 1)), ''), 'Coach') else '' end;
+    new.read_at := null;
+    new.created_at := now();
+  else
+    new.body := old.body; new.from_coach := old.from_coach; new.author := old.author;
+    new.created_at := old.created_at; new.assignment_id := old.assignment_id; new.athlete_id := old.athlete_id;
+    if old.from_coach = is_my_athlete(old.athlete_id) then new.read_at := old.read_at; end if;
+  end if;
+  return new;
+end $$;
+drop trigger if exists messages_protect on messages;
+create trigger messages_protect before insert or update on messages for each row execute function messages_protect();
+
+drop policy if exists coach_all on messages;
+create policy coach_all on messages for all to authenticated
+  using (is_my_athlete(athlete_id))
+  with check (is_my_athlete(athlete_id) and exists (select 1 from assignments a where a.id = assignment_id and a.coach_id = my_club()));
+drop policy if exists athlete_read on messages;
+create policy athlete_read on messages for select to authenticated using (athlete_id = my_athlete_id());
+drop policy if exists athlete_write on messages;
+create policy athlete_write on messages for insert to authenticated
+  with check (athlete_id = my_athlete_id()
+    and exists (select 1 from assignments a where a.id = assignment_id and targets_me(a.coach_id, a.group_id, a.athlete_ids)));
+drop policy if exists athlete_mark_read on messages;
+create policy athlete_mark_read on messages for update to authenticated
+  using (athlete_id = my_athlete_id()) with check (athlete_id = my_athlete_id());
+
+-- ===== Notifications sur le téléphone (Web Push) : un abonnement par appareil =====
+create table if not exists push_subscriptions (
+  endpoint   text primary key,
+  user_id    uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+alter table push_subscriptions enable row level security;
+drop policy if exists own on push_subscriptions;
+create policy own on push_subscriptions for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- Enregistre l'appareil pour l'utilisateur connecté (un appareil partagé passe au dernier connecté)
+create or replace function save_push(p_endpoint text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null or p_endpoint !~ '^https://' then raise exception 'invalid'; end if;
+  delete from push_subscriptions where endpoint = p_endpoint;
+  insert into push_subscriptions (endpoint, user_id) values (p_endpoint, auth.uid());
+end $$;
+
+-- Appareils à prévenir après un message ou un retour que l'utilisateur connecté vient d'écrire
+-- (les notifications ne contiennent aucun texte : seulement « nouveau message »)
+create or replace function push_targets(p_kind text, p_id uuid) returns setof text
+language plpgsql stable security definer set search_path = public as $$
+declare v_athlete uuid; v_to_coach boolean; v_coach uuid;
+begin
+  if p_kind = 'message' then
+    select m.athlete_id, not m.from_coach into v_athlete, v_to_coach from messages m
+     where m.id = p_id and m.created_at > now() - interval '10 minutes'
+       and ((m.from_coach and is_my_athlete(m.athlete_id)) or (not m.from_coach and m.athlete_id = my_athlete_id()));
+  elsif p_kind = 'feedback' then
+    select f.athlete_id, true into v_athlete, v_to_coach from feedback f
+     where f.id = p_id and f.athlete_id = my_athlete_id() and f.updated_at > now() - interval '10 minutes';
+  end if;
+  if v_athlete is null then return; end if;
+  if v_to_coach then
+    select coach_id into v_coach from athletes where id = v_athlete;
+    return query select s.endpoint from push_subscriptions s
+      where s.user_id = v_coach or s.user_id in (select c.user_id from club_coaches c where c.owner_id = v_coach and c.user_id is not null);
+  else
+    return query select s.endpoint from push_subscriptions s join athletes a on a.user_id = s.user_id where a.id = v_athlete and a.active;
+  end if;
+end $$;
+revoke all on function save_push(text) from public;
+revoke all on function push_targets(text, uuid) from public;
+grant execute on function save_push(text) to authenticated;
+grant execute on function push_targets(text, uuid) to authenticated;
+
 -- Fait connaître tout de suite les nouvelles tables à l'API (sinon « schema cache » quelques minutes)
 notify pgrst, 'reload schema';

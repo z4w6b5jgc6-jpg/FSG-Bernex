@@ -5,10 +5,11 @@ import { WellnessCheckin } from '../../components/WellnessCheckin'
 import { InstallPrompt } from '../../components/InstallPrompt'
 import { allTips, computeBadges, feedbackStreak, greeting, myAssignments, tipOfTheDay } from '../../lib/athlete'
 import { addDays, formatDate, todayISO } from '../../lib/utils'
+import { unreadByAthlete } from '../../lib/messages'
 
 export function AthleteHome() {
   const me = useMyAthlete()
-  const { assignments, sessions, feedback, records, wellness, tips, groups, test_reports, competitions, loading } = useData()
+  const { assignments, sessions, feedback, records, wellness, tips, groups, test_reports, competitions, messages, loading } = useData()
   if (!me) return <p className="muted">{loading ? 'Chargement…' : 'Profil introuvable.'}</p>
 
   const today = todayISO()
@@ -45,6 +46,9 @@ export function AthleteHome() {
       )}
 
       <InstallPrompt who="athlete" />
+      {unreadByAthlete(messages).length > 0 && (
+        <Link to="/messages" className="alert info link-card">💬 {unreadByAthlete(messages).length} nouveau(x) message(s) de ton coach →</Link>
+      )}
 
       <Tiles items={[
         { to: '/seances', icon: '📅', label: 'Mes séances', tone: 'green', badge: todo.length,

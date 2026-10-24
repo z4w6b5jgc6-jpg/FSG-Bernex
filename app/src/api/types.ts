@@ -43,4 +43,12 @@ export interface Api {
   saveMany<K extends TableName>(table: K, rows: Draft<K>[]): Promise<Row<K>[]>
   remove(table: TableName, id: string): Promise<void>
   removeMany(table: TableName, ids: string[]): Promise<void>
+
+  // Notifications sur le téléphone (Web Push, sans contenu : seulement « nouveau message »)
+  /** clé publique du serveur, null si les notifications ne sont pas configurées */
+  pushKey(): Promise<string | null>
+  savePush(endpoint: string): Promise<void>
+  removePush(endpoint: string): Promise<void>
+  /** prévient les destinataires d'un message ou d'un retour qu'on vient d'écrire (sans erreur si indisponible) */
+  notify(kind: 'message' | 'feedback' | 'test', id?: string): Promise<void>
 }

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { api } from '../../api'
 import { useData, useMyAthlete } from '../../lib/data'
 import { Field } from '../../components/ui'
+import { PushToggle } from '../../components/PushToggle'
 import { ACCENTS, AVATARS, applyAccent, shownColor } from '../../lib/athlete'
 import type { Athlete } from '../../types'
 import { errorMessage } from '../../lib/utils'
@@ -39,6 +40,8 @@ export function AthleteProfile() {
           <div className="hero-sub"><span>{account?.club_name}</span>{group && <span>{group.name}</span>}</div>
         </div>
       </div>
+
+      <PushToggle />
 
       <section>
         <h2>Mon avatar</h2>
