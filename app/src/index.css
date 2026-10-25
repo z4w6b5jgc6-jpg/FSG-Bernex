@@ -754,8 +754,6 @@ details.fold > summary { cursor: pointer; color: var(--muted); padding: 0.3rem 0
 details.section-fold { border-top: 1px solid var(--border); padding: 0.4rem 0; }
 details.section-fold > summary { cursor: pointer; font-weight: 700; padding: 0.5rem 0; list-style-position: inside; }
 
-.lock-screen { display: flex; flex-direction: column; gap: 0.8rem; align-items: center; justify-content: center; min-height: 80vh; max-width: 360px; margin: 0 auto; padding: 1rem; text-align: center; }
-.lock-screen .club-logo { width: min(220px, 60vw); height: auto; border-radius: 12px; }
 
 /* ---------- Personnalisation (par appareil) ---------- */
 :root[data-tiles='couleur'] .tile.tone-green { --tone: #22a02f; }

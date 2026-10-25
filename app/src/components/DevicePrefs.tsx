@@ -64,10 +64,10 @@ export function DevicePrefs({ email }: { email: string }) {
         <p className="tiny muted">Sur iPhone, l’icône est prise quand on ajoute l’app à l’écran d’accueil : après un changement, supprime l’icône actuelle puis, dans Safari, Partager → « Sur l’écran d’accueil ».</p>
       </div>
       {supported === false ? (
-        <p className="tiny muted">Verrouillage par Face ID / empreinte : non disponible sur cet appareil ou ce navigateur.</p>
+        <p className="tiny muted">Connexion par Face ID / empreinte : non disponible sur cet appareil ou ce navigateur.</p>
       ) : supported && (
         <div className="row between gap">
-          <span className="small"><b>Verrouiller avec Face ID / empreinte</b><br /><span className="tiny muted">Demandé à l’ouverture de l’app et après 5 min en arrière-plan.</span></span>
+          <span className="small"><b>Se connecter avec Face ID / empreinte</b><br /><span className="tiny muted">À l’ouverture de l’app (et après 5 min en arrière-plan), Face ID remplace le mot de passe. « Déconnexion » ramène à cet écran.</span></span>
           <button type="button" className={`btn small ${lock ? '' : 'primary'}`} onClick={toggleLock}>{lock ? 'Désactiver' : 'Activer'}</button>
         </div>
       )}

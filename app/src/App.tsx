@@ -7,6 +7,7 @@ import { applyAccent } from './lib/athlete'
 import { InstallPrompt } from './components/InstallPrompt'
 import { Logo } from './components/Logo'
 import { AppLock } from './components/AppLock'
+import { logout } from './lib/lock'
 import { Login } from './pages/Login'
 import { Join } from './pages/Join'
 import { CoachJoin } from './pages/CoachJoin'
@@ -95,7 +96,7 @@ function CoachApp() {
   useEffect(() => applyAccent(null), [])
   return (
     <Shell nav={COACH_NAV} brand={<><Logo kind="symbol" className="brand-logo" /><span className="brand-name">{me?.club_name ?? 'Coach Athlé'}</span></>}
-      right={<button className="btn ghost small" onClick={() => api.signOut()}>Déconnexion</button>}>
+      right={<button className="btn ghost small" onClick={() => logout(me?.email, api.signOut)}>Déconnexion</button>}>
       <InstallPrompt who="coach" />
       <Routes>
         <Route path="/" element={<Dashboard />} />

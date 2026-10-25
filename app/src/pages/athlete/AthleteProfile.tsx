@@ -5,6 +5,7 @@ import { useData, useMyAthlete } from '../../lib/data'
 import { Field } from '../../components/ui'
 import { PushToggle } from '../../components/PushToggle'
 import { DevicePrefs } from '../../components/DevicePrefs'
+import { logout } from '../../lib/lock'
 import { ACCENTS, applyAccent, shownColor } from '../../lib/athlete'
 import type { Athlete } from '../../types'
 import { errorMessage } from '../../lib/utils'
@@ -72,7 +73,7 @@ export function AthleteProfile() {
       <section className="card">
         <div className="muted small">Connecté·e avec {account?.email}</div>
         <p className="small">Ton groupe est géré par ton entraîneur.</p>
-        <button className="btn ghost danger" onClick={() => api.signOut()}>Se déconnecter</button>
+        <button className="btn ghost danger" onClick={() => logout(account?.email, api.signOut)}>Se déconnecter</button>
       </section>
     </div>
   )

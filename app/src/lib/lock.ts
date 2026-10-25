@@ -62,6 +62,12 @@ export async function unlock(): Promise<boolean> {
   }
 }
 
+/** « Déconnexion » : avec Face ID activé, on revient à l'écran « Se connecter avec Face ID » (la session reste) ; sinon vraie déconnexion */
+export function logout(email: string | undefined, signOut: () => unknown) {
+  if (lockEnabled(email)) window.dispatchEvent(new Event('athle-lock-now'))
+  else signOut()
+}
+
 export function markHidden() {
   try { sessionStorage.setItem(HIDDEN_KEY, String(Date.now())) } catch { /* */ }
 }
