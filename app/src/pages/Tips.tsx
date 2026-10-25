@@ -9,7 +9,6 @@ import { allTips } from '../lib/athlete'
 import type { Tip } from '../types'
 import { errorMessage } from '../lib/utils'
 
-const catEmoji = (c: string) => TIP_CATEGORIES.find((x) => x.name === c)?.emoji ?? '💡'
 
 /** Bibliothèque de conseils – vue athlète (favoris) et vue entraîneur (rédaction) */
 export function Tips() {
@@ -22,7 +21,7 @@ export function Tips() {
   const list = allTips(tips)
   const favs = athlete?.favorite_tips ?? []
   const filtered = list.filter((t) =>
-    (!cat || (cat === '★' ? favs.includes(t.id) : cat === 'mine' ? !t.builtin : t.category === cat)) &&
+    (!cat || (cat === 'fav' ? favs.includes(t.id) : cat === 'mine' ? !t.builtin : t.category === cat)) &&
     (t.title + t.summary + t.body).toLowerCase().includes(q.toLowerCase()),
   )
   const cats = TIP_CATEGORIES.filter((c) => list.some((t) => t.category === c.name))
@@ -31,7 +30,7 @@ export function Tips() {
     <div>
       <div className="row between">
         <h1>Conseils</h1>
-        {coach && <button className="btn primary" onClick={() => setEdit({ category: 'Club', emoji: '📣', published: true })}>+ Conseil</button>}
+        {coach && <button className="btn primary" onClick={() => setEdit({ category: 'Club', published: true })}>+ Conseil</button>}
       </div>
       <p className="muted small">
         {coach
@@ -41,24 +40,24 @@ export function Tips() {
       <input className="search" placeholder="Rechercher…" value={q} onChange={(e) => setQ(e.target.value)} />
       <div className="chips">
         <button className={!cat ? 'active' : ''} onClick={() => setCat('')}>Tout</button>
-        {athlete && <button className={cat === '★' ? 'active' : ''} onClick={() => setCat('★')}>⭐ Favoris</button>}
-        {coach && <button className={cat === 'mine' ? 'active' : ''} onClick={() => setCat('mine')}>✍️ Mes conseils</button>}
+        {athlete && <button className={cat === 'fav' ? 'active' : ''} onClick={() => setCat('fav')}>Favoris</button>}
+        {coach && <button className={cat === 'mine' ? 'active' : ''} onClick={() => setCat('mine')}>Mes conseils</button>}
         {cats.map((c) => (
-          <button key={c.name} className={cat === c.name ? 'active' : ''} onClick={() => setCat(c.name)}>{c.emoji} {c.name}</button>
+          <button key={c.name} className={cat === c.name ? 'active' : ''} onClick={() => setCat(c.name)}>{c.name}</button>
         ))}
       </div>
       {filtered.length === 0 ? (
-        <Empty>{cat === '★' ? 'Touche ☆ sur un conseil pour le retrouver ici.' : 'Aucun conseil.'}</Empty>
+        <Empty>{cat === 'fav' ? 'Ajoute un conseil à tes favoris pour le retrouver ici.' : 'Aucun conseil.'}</Empty>
       ) : (
         <div className="list">
           {filtered.map((t) => (
             <Link key={t.id} to={`/conseils/${t.id}`} className="card link-card tip-card">
-              <span className="tip-emoji">{t.emoji}</span>
+              
               <div>
-                <strong>{t.title}</strong> {favs.includes(t.id) && '⭐'}
+                <strong>{t.title}</strong> {favs.includes(t.id) && <span className="pill">Favori</span>}
                 {!t.published && <span className="pill">brouillon</span>}
                 <div className="muted small">{t.summary}</div>
-                <div className="tiny muted">{catEmoji(t.category)} {t.category}{coach && !t.builtin && ' · rédigé par toi'}</div>
+                <div className="tiny muted">{t.category}{coach && !t.builtin && ' · rédigé par toi'}</div>
               </div>
             </Link>
           ))}
@@ -89,14 +88,14 @@ export function TipDetail() {
     <div className="article">
       <BackLink to="/conseils" label="Conseils" />
       <div className="article-head">
-        <span className="article-emoji">{tip.emoji}</span>
-        <div className="tiny muted">{catEmoji(tip.category)} {tip.category}</div>
+        
+        <div className="tiny muted">{tip.category}</div>
         <h1>{tip.title}</h1>
         {tip.summary && <p className="lead">{tip.summary}</p>}
       </div>
       <div className="card"><RichText text={tip.body} /></div>
       <div className="row gap wrap actions">
-        {athlete && <button className={`btn ${fav ? 'primary' : ''}`} onClick={toggleFav}>{fav ? '⭐ Dans mes favoris' : '☆ Ajouter aux favoris'}</button>}
+        {athlete && <button className={`btn ${fav ? 'primary' : ''}`} onClick={toggleFav}>{fav ? 'Dans mes favoris' : 'Ajouter aux favoris'}</button>}
         {me?.role === 'coach' && !tip.builtin && (
           <>
             <button className="btn" onClick={() => setEdit(true)}>Modifier</button>
@@ -117,7 +116,7 @@ function TipForm({ initial, onClose }: { initial: Partial<Tip>; onClose: () => v
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     try {
-      await save('tips', { id: t.id, category: t.category, emoji: t.emoji || '💡', title: t.title, summary: t.summary ?? '', body: t.body ?? '', published: t.published ?? true })
+      await save('tips', { id: t.id, category: t.category, emoji: t.emoji || '', title: t.title, summary: t.summary ?? '', body: t.body ?? '', published: t.published ?? true })
       onClose()
     } catch (err) {
       alert(errorMessage(err))
@@ -128,11 +127,10 @@ function TipForm({ initial, onClose }: { initial: Partial<Tip>; onClose: () => v
       <form className="form" onSubmit={submit}>
         <div className="grid2">
           <Field label="Catégorie">
-            <select value={t.category} onChange={(e) => set({ category: e.target.value, emoji: catEmoji(e.target.value) })}>
+            <select value={t.category} onChange={(e) => set({ category: e.target.value })}>
               {TIP_CATEGORIES.map((c) => <option key={c.name}>{c.name}</option>)}
             </select>
           </Field>
-          <Field label="Emoji"><input value={t.emoji ?? ''} onChange={(e) => set({ emoji: e.target.value })} maxLength={4} /></Field>
         </div>
         <Field label="Titre"><input value={t.title ?? ''} onChange={(e) => set({ title: e.target.value })} required /></Field>
         <Field label="Résumé (une phrase)"><input value={t.summary ?? ''} onChange={(e) => set({ summary: e.target.value })} /></Field>

@@ -4,7 +4,7 @@ import { ChatPanel } from '../components/ChatPanel'
 export function Assistant() {
   return (
     <div>
-      <h1>🤖 Assistant</h1>
+      <h1>Assistant</h1>
       <ChatPanel storageKey="athle-chat-general" />
     </div>
   )

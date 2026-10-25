@@ -1,3 +1,4 @@
+import { Avatar } from '../components/Avatar'
 import { useState, type FormEvent } from 'react'
 import { BackLink } from '../components/BackLink'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -64,7 +65,7 @@ export function AthleteDetail() {
     <div>
       <BackLink to="/athletes" label="Athlètes" />
       <div className="hero">
-        <div className="hero-avatar" style={{ background: a.color }}>{a.avatar}</div>
+        <Avatar a={a} />
         <div>
           <h1>{fullName(a)} {!a.active && <span className="pill">inactif</span>}</h1>
           <div className="hero-sub">
@@ -74,12 +75,12 @@ export function AthleteDetail() {
           </div>
         </div>
       </div>
-      {a.goals && <div className="goal">🎯 <b>Objectif :</b> {a.goals}</div>}
+      {a.goals && <div className="goal"><b>Objectif :</b> {a.goals}</div>}
       <div className="small">
-        {a.user_id ? <span className="pill ok">✓ Inscrit·e dans l’app</span> : <span className="pill wrap">⏳ Pas encore inscrit·e — sa fiche se remplira dès son inscription</span>}
+        {a.user_id ? <span className="pill ok">✓ Inscrit·e dans l’app</span> : <span className="pill wrap">Pas encore inscrit·e — sa fiche se remplira dès son inscription</span>}
       </div>
       <div className="row gap wrap actions">
-        {a.phone && <a className="btn small whatsapp" href={whatsappUrl(`Salut ${a.first_name} !`, a.phone)} target="_blank" rel="noreferrer">📲 WhatsApp</a>}
+        {a.phone && <a className="btn small whatsapp" href={whatsappUrl(`Salut ${a.first_name} !`, a.phone)} target="_blank" rel="noreferrer">WhatsApp</a>}
         <button className="btn small" onClick={() => setEditing(true)}>Modifier / groupe</button>
         <button className="btn small ghost danger" onClick={del}>Retirer du club</button>
       </div>
@@ -88,7 +89,7 @@ export function AthleteDetail() {
         <div className="stat"><b>{done}</b><span>séances faites</span></div>
         <div className="stat"><b>{past.length ? Math.round((fbs.length / past.length) * 100) : 0}%</b><span>retours</span></div>
         <div className="stat"><b>{avg}</b><span>effort moyen</span></div>
-        <div className="stat"><b>🔥 {feedbackStreak(mine, fbs)}</b><span>série</span></div>
+        <div className="stat"><b>{feedbackStreak(mine, fbs)}</b><span>série</span></div>
       </div>
 
       {(() => {
@@ -96,7 +97,7 @@ export function AthleteDetail() {
         if (!mine.length) return null
         return (
           <section>
-            <div className="row between"><h2>🏆 Compétitions</h2><Link to="/competitions" className="small">Toutes →</Link></div>
+            <div className="row between"><h2>Compétitions</h2><Link to="/competitions" className="small">Toutes →</Link></div>
             <ul className="plain rows">
               {mine.map((c) => (
                 <li key={c.id} className="row between">
@@ -110,7 +111,7 @@ export function AthleteDetail() {
       })()}
 
       <section>
-        <h2>🌙 Bien-être</h2>
+        <h2>Bien-être</h2>
         {well.length === 0 ? <Empty>Pas encore de check-in.</Empty> : (
           <>
             <div className="card"><SleepBars wellness={well} /></div>
@@ -120,7 +121,7 @@ export function AthleteDetail() {
                   {lastWell.map((w) => (
                     <tr key={w.id}>
                       <td>{formatShort(w.date)}</td>
-                      <td>😴 {w.sleep_hours ?? '–'} h</td>
+                      <td>{w.sleep_hours ?? '–'} h</td>
                       <td>{w.energy ? ENERGY[w.energy] : '–'}</td>
                       <td className={(w.soreness ?? 0) >= 4 ? 'warn-text' : ''}>{w.soreness ? SORENESS[w.soreness] : '–'}</td>
                       <td className={(w.stress ?? 0) >= 4 ? 'warn-text' : ''}>{w.stress ? STRESS[w.stress] : '–'}</td>
@@ -139,7 +140,7 @@ export function AthleteDetail() {
 
       <section>
         <div className="row between">
-          <h2>📏 Tests physiques</h2>
+          <h2>Tests physiques</h2>
           <button className="btn small primary" onClick={() => setAddResult(true)} disabled={tests.length === 0}>+ Résultat</button>
         </div>
         {tests.length === 0 ? (
@@ -155,7 +156,7 @@ export function AthleteDetail() {
 
       <section>
         <div className="row between">
-          <h2>📝 Bilans de tests <span className="muted small">(visibles par l’athlète)</span></h2>
+          <h2>Bilans de tests <span className="muted small">(visibles par l’athlète)</span></h2>
           <button className="btn small" onClick={() => setAddReport(true)}>+ Bilan</button>
         </div>
         {test_reports.filter((r) => r.athlete_id === a.id).length === 0 ? <p className="muted small">Aucun bilan.</p> : (
@@ -167,7 +168,7 @@ export function AthleteDetail() {
 
       <section>
         <div className="row between">
-          <h2>🏅 Records & résultats</h2>
+          <h2>Records & résultats</h2>
           <button className="btn small primary" onClick={() => setEditRecord({ date: today, event: a.events.split(',')[0]?.trim() ?? '' })}>+ Perf</button>
         </div>
         {recs.length === 0 ? <p className="muted small">Aucune performance saisie (par toi ou l’athlète).</p> : (
@@ -195,7 +196,7 @@ export function AthleteDetail() {
       </section>
 
       <section>
-        <h2>📝 Mes notes de suivi <span className="muted small">(privées)</span></h2>
+        <h2>Mes notes de suivi <span className="muted small">(privées)</span></h2>
         <div className="card form">
           <textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ex. Discussion objectifs, retour de blessure…" />
           <button className="btn small primary" onClick={addNote} disabled={!note.trim()}>Ajouter la note</button>
@@ -218,7 +219,7 @@ export function AthleteDetail() {
               const f = fbFor(x.id)
               const subtitle = <Link to={`/planning/${x.id}`}>{sessions.find((s) => s.id === x.session_id)?.title} · {formatShort(x.date)}</Link>
               return f ? <FeedbackCard key={x.id} fb={f} athlete={a} subtitle={subtitle} /> : (
-                <div key={x.id} className="card muted">{subtitle} — ⏳ pas de retour</div>
+                <div key={x.id} className="card muted">{subtitle} — pas de retour</div>
               )
             })}
           </div>

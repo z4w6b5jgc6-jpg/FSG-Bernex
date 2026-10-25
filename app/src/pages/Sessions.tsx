@@ -45,8 +45,8 @@ export function Sessions() {
       <div className="row between wrap">
         <h1>Séances</h1>
         <div className="row gap wrap">
-          <Link className="btn" to="/exercices">📚 Exercices</Link>
-          <Link className="btn" to="/seances/import">📥 Importer</Link>
+          <Link className="btn" to="/exercices">Exercices</Link>
+          <Link className="btn" to="/seances/import">Importer</Link>
           <button className="btn primary" onClick={create}>+ Séance</button>
         </div>
       </div>
@@ -72,7 +72,7 @@ export function Sessions() {
                 </p>
                 {s.objective && <p className="small">{s.objective}</p>}
                 <div className="row gap wrap">
-                  <Link className="btn small primary" to={`/planning?seance=${s.id}`}>📅 Planifier</Link>
+                  <Link className="btn small primary" to={`/planning?seance=${s.id}`}>Planifier</Link>
                   <Link className="btn small" to={`/seances/${s.id}`}>Modifier</Link>
                   <button className="btn small" onClick={() => duplicate(s.id)}>Dupliquer</button>
                   <button className="btn small ghost danger" onClick={() => del(s.id)}>Supprimer</button>

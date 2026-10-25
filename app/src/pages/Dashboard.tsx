@@ -25,7 +25,7 @@ export function Dashboard() {
     .filter((w) => w.date >= addDays(today, -2) && ((w.sleep_hours ?? 9) < 6.5 || (w.energy ?? 5) <= 1 || (w.soreness ?? 0) >= 4 || (w.stress ?? 0) >= 4))
     .map((w) => ({
       id: w.id, athlete_id: w.athlete_id,
-      text: '🌙 ' + [(w.sleep_hours ?? 9) < 6.5 && `${w.sleep_hours} h de sommeil`, (w.energy ?? 5) <= 1 && 'très peu d’énergie',
+      text: '' + [(w.sleep_hours ?? 9) < 6.5 && `${w.sleep_hours} h de sommeil`, (w.energy ?? 5) <= 1 && 'très peu d’énergie',
         (w.soreness ?? 0) >= 4 && 'fortes courbatures', (w.stress ?? 0) >= 4 && 'stressé·e'].filter(Boolean).join(', '),
     }))
   const alerts = [...wAlerts, ...fbAlerts]
@@ -47,43 +47,43 @@ export function Dashboard() {
 
   return (
     <div>
-      <h1>Bonjour 👋</h1>
+      <h1>Bonjour</h1>
       <p className="muted">{me?.club_name} · {formatDate(today)}</p>
 
       <FirstSteps />
       {athletes.length === 0 && <InviteCard />}
       {pending > 0 && (
         <Link to="/athletes" className="alert warn link-card">
-          🆕 {pending} nouvelle(s) inscription(s) à vérifier →
+          {pending} nouvelle(s) inscription(s) à vérifier →
         </Link>
       )}
       <Tiles items={[
-        { to: '/planning', icon: '📅', label: 'Planning', tone: 'green',
+        { to: '/planning', icon: 'calendar', label: 'Planning', tone: 'green',
           info: (upcoming.length ? `${upcoming.length} séance(s) dans les 7 j` : 'Rien de prévu cette semaine') + (rate !== null ? ` · retours ${rate} %` : '') },
-        { to: '/athletes', icon: '🏃', label: 'Athlètes', tone: 'blue', badge: pending,
+        { to: '/athletes', icon: 'users', label: 'Athlètes', tone: 'blue', badge: pending,
           info: `${athletes.filter((a) => a.active).length} athlètes` + (checkins ? ` · ${checkins} check-in(s) aujourd’hui` : '') },
-        { to: '/messages', icon: '💬', label: 'Messages', tone: 'pink', badge: unread + unanswered,
+        { to: '/messages', icon: 'message', label: 'Messages', tone: 'pink', badge: unread + unanswered,
           info: unread ? `${unread} message(s) non lu(s)` : unanswered ? `${unanswered} retour(s) sans réponse` : 'Retours et discussions des athlètes' },
-        { to: '/seances', icon: '📋', label: 'Séances', tone: 'violet', info: `${sessions.length} séance(s) type` },
-        { to: '/lundi', icon: '⏱️', label: 'Temps cibles', tone: 'orange', info: 'Plan avec temps par athlète, mode piste' },
-        { to: '/assistant', icon: '🤖', label: 'Assistant', tone: 'blue', info: 'Météo, intention, période : demande une séance' },
-        { to: '/competitions', icon: '🏆', label: 'Compétitions', tone: 'yellow', badge: deadlines,
+        { to: '/seances', icon: 'list', label: 'Séances', tone: 'violet', info: `${sessions.length} séance(s) type` },
+        { to: '/lundi', icon: 'timer', label: 'Temps cibles', tone: 'orange', info: 'Plan avec temps par athlète, mode piste' },
+        { to: '/assistant', icon: 'sparkles', label: 'Assistant', tone: 'blue', info: 'Météo, intention, période : demande une séance' },
+        { to: '/competitions', icon: 'trophy', label: 'Compétitions', tone: 'yellow', badge: deadlines,
           info: nextComp ? `${nextComp.name} · ${inDays(nextComp.date) > 0 ? `dans ${inDays(nextComp.date)} j` : 'aujourd’hui'}` : 'Aucune prévue' },
-        { to: '/tests', icon: '📏', label: 'Tests', tone: 'orange', info: `${tests.length} tests · résultats et VMA` },
-        { to: '/conseils', icon: '💡', label: 'Conseils', tone: 'pink', info: 'Nutrition, sommeil, récup' },
-        { to: '/reglages', icon: '⚙️', label: 'Réglages', tone: 'violet', info: 'Lieux, saison, mon groupe' },
+        { to: '/tests', icon: 'ruler', label: 'Tests', tone: 'orange', info: `${tests.length} tests · résultats et VMA` },
+        { to: '/conseils', icon: 'bulb', label: 'Conseils', tone: 'pink', info: 'Nutrition, sommeil, récup' },
+        { to: '/reglages', icon: 'settings', label: 'Réglages', tone: 'violet', info: 'Lieux, saison, mon groupe' },
       ]} />
 
       {alerts.length > 0 && (
         <section>
-          <h2>⚠️ À surveiller</h2>
+          <h2>À surveiller</h2>
           <div className="card">
             <ul className="plain">
               {alerts.map((al) => {
                 const a = athleteOf(al.athlete_id)
                 return (
                   <li key={al.id}>
-                    <Link to={`/athletes/${al.athlete_id}`}><strong>{a ? `${a.avatar} ${a.first_name} ${a.last_name}` : '?'}</strong></Link> — {al.text}
+                    <Link to={`/athletes/${al.athlete_id}`}><strong>{a ? `${a.first_name} ${a.last_name}` : '?'}</strong></Link> — {al.text}
                   </li>
                 )
               })}

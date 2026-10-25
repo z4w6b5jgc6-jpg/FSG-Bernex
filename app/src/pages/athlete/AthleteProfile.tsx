@@ -1,9 +1,10 @@
+import { Avatar } from '../../components/Avatar'
 import { useState } from 'react'
 import { api } from '../../api'
 import { useData, useMyAthlete } from '../../lib/data'
 import { Field } from '../../components/ui'
 import { PushToggle } from '../../components/PushToggle'
-import { ACCENTS, AVATARS, applyAccent, shownColor } from '../../lib/athlete'
+import { ACCENTS, applyAccent, shownColor } from '../../lib/athlete'
 import type { Athlete } from '../../types'
 import { errorMessage } from '../../lib/utils'
 
@@ -34,7 +35,7 @@ export function AthleteProfile() {
   return (
     <div>
       <div className="hero">
-        <div className="hero-avatar">{p.avatar}</div>
+        <Avatar a={{ first_name: p.first_name ?? '', last_name: p.last_name ?? '', color: shownColor(p.color) }} />
         <div>
           <h1>{p.first_name} {p.last_name}</h1>
           <div className="hero-sub"><span>{account?.club_name}</span>{group && <span>{group.name}</span>}</div>
@@ -43,14 +44,6 @@ export function AthleteProfile() {
 
       <PushToggle />
 
-      <section>
-        <h2>Mon avatar</h2>
-        <div className="picker-grid">
-          {AVATARS.map((a) => (
-            <button key={a} className={`avatar-btn ${p.avatar === a ? 'active' : ''}`} onClick={() => set({ avatar: a })}>{a}</button>
-          ))}
-        </div>
-      </section>
       <section>
         <h2>Ma couleur</h2>
         <div className="row gap wrap">
@@ -66,7 +59,7 @@ export function AthleteProfile() {
           <Field label="Nom"><input value={p.last_name ?? ''} onChange={(e) => set({ last_name: e.target.value })} /></Field>
         </div>
         <Field label="Mes disciplines"><input value={p.events ?? ''} onChange={(e) => set({ events: e.target.value })} placeholder="Ex. 100 m, longueur" /></Field>
-        <Field label="🎯 Mon objectif de la saison"><textarea rows={2} value={p.goals ?? ''} onChange={(e) => set({ goals: e.target.value })} placeholder="Ex. Passer sous les 13 secondes au 100 m" /></Field>
+        <Field label="Mon objectif de la saison"><textarea rows={2} value={p.goals ?? ''} onChange={(e) => set({ goals: e.target.value })} placeholder="Ex. Passer sous les 13 secondes au 100 m" /></Field>
         <div className="grid2">
           <Field label="Année de naissance"><input type="number" inputMode="numeric" value={p.birth_year ?? ''} onChange={(e) => set({ birth_year: e.target.value ? Number(e.target.value) : null })} /></Field>
           <Field label="Téléphone"><input type="tel" inputMode="tel" value={p.phone ?? ''} onChange={(e) => set({ phone: e.target.value })} /></Field>

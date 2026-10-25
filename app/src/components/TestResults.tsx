@@ -4,16 +4,16 @@ import { formatValue, summarize, type TestSummary } from '../lib/tests'
 import { formatShort } from '../lib/utils'
 import { Modal } from './ui'
 
-const FAMILIES: { name: string; emoji: string }[] = [
-  { name: 'Vitesse', emoji: '⚡' },
-  { name: 'Bondissement', emoji: '🦘' },
-  { name: 'Endurance', emoji: '🫁' },
-  { name: 'Lancers', emoji: '🎯' },
-  { name: 'Explosivité', emoji: '💥' },
-  { name: 'Force', emoji: '💪' },
-  { name: 'Mobilité', emoji: '🤸' },
-  { name: 'Technique', emoji: '🧩' },
-  { name: 'Autre', emoji: '📏' },
+const FAMILIES: { name: string }[] = [
+  { name: 'Vitesse' },
+  { name: 'Bondissement' },
+  { name: 'Endurance' },
+  { name: 'Lancers' },
+  { name: 'Explosivité' },
+  { name: 'Force' },
+  { name: 'Mobilité' },
+  { name: 'Technique' },
+  { name: 'Autre' },
 ]
 
 /** Valeur seule (sans unité), unité affichée à part en plus petit */
@@ -86,7 +86,7 @@ export function TestResults({ tests, results, onDelete }: { tests: TestDef[]; re
   const [open, setOpen] = useState<string | null>(null)
   const summaries = tests.map((t) => summarize(t, results)).filter((s): s is TestSummary => s != null)
   if (summaries.length === 0) return <p className="muted small">Pas encore de résultat de test.</p>
-  const families = [...FAMILIES, ...[...new Set(summaries.map((s) => s.test.category))].filter((c) => !FAMILIES.some((f) => f.name === c)).map((name) => ({ name, emoji: '📏' }))]
+  const families = [...FAMILIES, ...[...new Set(summaries.map((s) => s.test.category))].filter((c) => !FAMILIES.some((f) => f.name === c)).map((name) => ({ name }))]
   const current = summaries.find((s) => s.test.id === open)
 
   return (
@@ -96,7 +96,7 @@ export function TestResults({ tests, results, onDelete }: { tests: TestDef[]; re
         if (list.length === 0) return null
         return (
           <div key={f.name}>
-            <div className="family-title">{f.emoji} {f.name}</div>
+            <div className="family-title">{f.name}</div>
             <div className="test-tiles">
               {list.map((s) => {
                 const [v, unit] = valueParts(s.last.value, s.test.unit)
@@ -109,7 +109,7 @@ export function TestResults({ tests, results, onDelete }: { tests: TestDef[]; re
                     <span className="tt-meta">
                       {t ? <span className={`tt-trend ${t.good ? 'good' : 'bad'}`}>{t.good ? '▲' : '▼'} {t.text}</span> : <span className="muted">{formatShort(s.last.date)}</span>}
                       {s.results.length === 1 && <span className="muted">· 1er test</span>}
-                      {record && <span className="tt-record">🏅 Record</span>}
+                      {record && <span className="tt-record">Record</span>}
                     </span>
                     <Sparkline s={s} />
                   </button>
@@ -125,7 +125,7 @@ export function TestResults({ tests, results, onDelete }: { tests: TestDef[]; re
           <div className="history">
             <div className="history-head">
               <div><span className="tiny muted">Dernier</span><b>{formatValue(current.last.value, current.test.unit)}</b></div>
-              <div><span className="tiny muted">Meilleur 🏅</span><b>{formatValue(current.best.value, current.test.unit)}</b></div>
+              <div><span className="tiny muted">Meilleur</span><b>{formatValue(current.best.value, current.test.unit)}</b></div>
               <div><span className="tiny muted">Tests</span><b>{current.results.length}</b></div>
             </div>
             <HistoryChart s={current} />
@@ -135,7 +135,7 @@ export function TestResults({ tests, results, onDelete }: { tests: TestDef[]; re
                 <li key={r.id} className="row between">
                   <span>{formatShort(r.date)}{r.notes && <span className="muted small"> · {r.notes}</span>}</span>
                   <span className="row gap">
-                    <b>{formatValue(r.value, current.test.unit)}</b>{r === current.best && ' 🏅'}
+                    <b>{formatValue(r.value, current.test.unit)}</b>{r === current.best && ''}
                     {onDelete && (
                       <button className="btn ghost icon small danger" aria-label="Supprimer" onClick={() => { if (confirm('Supprimer ce résultat ?')) { onDelete(r.id); if (current.results.length === 1) setOpen(null) } }}>✕</button>
                     )}

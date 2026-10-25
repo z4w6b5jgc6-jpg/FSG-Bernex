@@ -22,13 +22,13 @@ export function FirstSteps() {
   return (
     <section className="card form first-steps">
       <div className="row between">
-        <b>🚀 Premiers pas · {steps.length - left}/{steps.length}</b>
+        <b>Premiers pas · {steps.length - left}/{steps.length}</b>
         <button className="btn ghost small" onClick={() => { setHidden(true); try { localStorage.setItem(KEY, '1') } catch { /* ignore */ } }}>Masquer</button>
       </div>
       <ul className="plain">
         {steps.map((s) => (
           <li key={s.label} className={s.done ? 'muted' : ''}>
-            {s.done ? '✅' : '⬜'} {s.done ? s.label : <Link to={s.to}>{s.label}</Link>}
+            <span className={`step-dot ${s.done ? 'done' : ''}`} aria-hidden>{s.done ? '✓' : ''}</span> {s.done ? s.label : <Link to={s.to}>{s.label}</Link>}
           </li>
         ))}
       </ul>

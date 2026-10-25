@@ -36,7 +36,7 @@ export function CoachJoin() {
           savePendingCoach(token)
           const ok = await api.signUp(email, password)
           if (!ok) {
-            setMsg({ kind: 'info', text: '📧 Presque fini ! Ouvre l’email de confirmation qu’on vient de t’envoyer, puis connecte-toi : tu arriveras directement dans le club.' })
+            setMsg({ kind: 'info', text: 'Presque fini ! Ouvre l’email de confirmation qu’on vient de t’envoyer, puis connecte-toi : tu arriveras directement dans le club.' })
             return
           }
         }
@@ -91,7 +91,7 @@ export function CoachJoin() {
           </>
         )}
         {msg && <div className={`alert ${msg.kind}`}>{msg.text}</div>}
-        <button className="btn primary block" disabled={busy}>{busy ? '…' : 'Rejoindre comme entraîneur 📋'}</button>
+        <button className="btn primary block" disabled={busy}>{busy ? '…' : 'Rejoindre comme entraîneur'}</button>
       </form>
     </div>
   )

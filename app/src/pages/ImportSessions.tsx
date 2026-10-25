@@ -228,11 +228,11 @@ export function ImportSessions() {
             <button className="btn small" disabled={!paste.trim()} onClick={() => { setErr(null); fromText(paste.split(/\r?\n/)) }}>Analyser</button>
           </div>
         </details>
-        <a className="small" href="modele-seances.xlsx" download>📄 Télécharger le modèle Excel</a>
+        <a className="small" href="modele-seances.xlsx" download>Télécharger le modèle Excel</a>
         {err && <div className="alert warn">{err}</div>}
         {source && (
           <div className="card form smart-import">
-            <b>🤖 Lecture intelligente</b>
+            <b>Lecture intelligente</b>
             <p className="small">
               Pour un plan dans n’importe quelle forme : l’IA (gratuite, hébergée par Cloudflare) le lit et propose les séances,
               que tu vérifies ci-dessous avant d’importer. <b>Les noms des athlètes sont masqués avant l’envoi</b> et rien n’est conservé.
@@ -278,7 +278,7 @@ export function ImportSessions() {
             )}
             {plan && perRow && (
               <div className="grid2">
-                <p className="small">👥 Une séance par groupe : chacune est planifiée pour les athlètes de son groupe (d’après ton fichier). Tu peux ajuster sous chaque séance.</p>
+                <p className="small">Une séance par groupe : chacune est planifiée pour les athlètes de son groupe (d’après ton fichier). Tu peux ajuster sous chaque séance.</p>
                 <Field label="Heure"><input type="time" value={time} onChange={(e) => setTime(e.target.value)} /></Field>
               </div>
             )}
@@ -320,10 +320,10 @@ export function ImportSessions() {
           <datalist id="venues">{venues().map((v) => <option key={v} value={v} />)}</datalist>
           <h2>{rows.length} séance(s) trouvée(s)</h2>
           {offDays.length > 0 && (
-            <div className="alert warn small">📅 {offDays.length} séance(s) ne tombent pas un {DAYS[usual]} comme les autres : vérifie la date ({offDays.map((r) => formatDate(r.date, { weekday: 'long', day: 'numeric', month: 'long' })).join(', ')}).</div>
+            <div className="alert warn small">{offDays.length} séance(s) ne tombent pas un {DAYS[usual]} comme les autres : vérifie la date ({offDays.map((r) => formatDate(r.date, { weekday: 'long', day: 'numeric', month: 'long' })).join(', ')}).</div>
           )}
           {plan && unknownAll.length > 0 && (
-            <div className="alert warn small">🔎 Pas trouvé(s) dans tes athlètes : <b>{unknownAll.join(", ")}</b> — crée leur fiche puis recharge le fichier, ou coche la bonne personne sous la séance.</div>
+            <div className="alert warn small">Pas trouvé(s) dans tes athlètes : <b>{unknownAll.join(", ")}</b> — crée leur fiche puis recharge le fichier, ou coche la bonne personne sous la séance.</div>
           )}
           {plan && nobody > 0 && <div className="alert warn small">{nobody} séance(s) sans athlète : elles seront importées mais pas planifiées.</div>}
           <div className="import-sessions">
@@ -333,7 +333,7 @@ export function ImportSessions() {
                   <input type="checkbox" checked={r.include} onChange={(e) => set(r.key, { include: e.target.checked })} />
                   <span><b>{r.title}</b>{exists(r) && (
                     <span className="tiny muted"> · {plannedOf(r)
-                      ? changed(r) ? (refresh ? '✏️ modifiée dans le fichier : mise à jour' : 'modifiée dans le fichier (pas mise à jour)') : 'déjà importée, inchangée'
+                      ? changed(r) ? (refresh ? 'modifiée dans le fichier : mise à jour' : 'modifiée dans le fichier (pas mise à jour)') : 'déjà importée, inchangée'
                       : 'déjà dans tes séances'}</span>
                   )}</span>
                 </label>
@@ -344,11 +344,11 @@ export function ImportSessions() {
                   {plan && <Field label="Lieu"><input list="venues" value={r.location} onChange={(e) => set(r.key, { location: e.target.value })} /></Field>}
                 </div>
                 <Field label="Titre"><input value={r.title} onChange={(e) => set(r.key, { title: e.target.value })} /></Field>
-                {r.objective && <div className="tiny muted">🎯 {r.objective}</div>}
-                {!!r.targets?.length && <div className="tiny muted">⏱️ Temps cibles par athlète : {r.targets.map(targetLabel).join(' · ')}</div>}
+                {r.objective && <div className="tiny muted">{r.objective}</div>}
+                {!!r.targets?.length && <div className="tiny muted">Temps cibles par athlète : {r.targets.map(targetLabel).join(' · ')}</div>}
                 {plan && r.who && (
                   <details className="small">
-                    <summary>👥 {r.ids.length ? r.ids.map((id) => active.find((a) => a.id === id)?.first_name).filter(Boolean).join(', ') : 'Personne'}{r.unknown.length > 0 && <span className="muted"> · introuvable(s) : {r.unknown.join(', ')}</span>}</summary>
+                    <summary>{r.ids.length ? r.ids.map((id) => active.find((a) => a.id === id)?.first_name).filter(Boolean).join(', ') : 'Personne'}{r.unknown.length > 0 && <span className="muted"> · introuvable(s) : {r.unknown.join(', ')}</span>}</summary>
                     <div className="pick-list">
                       {active.map((a) => (
                         <label key={a.id} className={`pick ${r.ids.includes(a.id) ? '' : 'off'}`}>

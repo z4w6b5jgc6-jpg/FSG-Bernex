@@ -27,8 +27,8 @@ export function Planning() {
       <div className="row between wrap">
         <h1>Planning</h1>
         <div className="row gap wrap">
-          <Link className="btn" to="/planning/athletes">👥 Qui fait quoi</Link>
-          <Link className="btn" to="/planning/export">📥 Excel</Link>
+          <Link className="btn" to="/planning/athletes">Qui fait quoi</Link>
+          <Link className="btn" to="/planning/export">Excel</Link>
           <button className="btn primary" onClick={() => setForm({ date: today >= week && today <= addDays(week, 6) ? today : week })}>+ Planifier</button>
         </div>
       </div>
@@ -53,7 +53,7 @@ export function Planning() {
               </div>
               {competitions.filter((c) => c.date <= d && (c.end_date || c.date) >= d).map((c) => (
                 <Link key={c.id} to="/competitions" className={`slot comp-slot level-${c.level}`}>
-                  <strong>🏆 {c.name}</strong>
+                  <strong>{c.name}</strong>
                   <div className="small muted">Niveau {c.level}{c.location && ` · ${c.location}`}</div>
                 </Link>
               ))}
@@ -68,7 +68,7 @@ export function Planning() {
                     <div className="row gap small">
                       {g && <GroupBadge name={g.name} color={g.color} />}
                       {a.athlete_ids.length > 0 && <span className="muted">+{a.athlete_ids.length}</span>}
-                      {d <= today && <span className="muted">💬 {got}/{expected}</span>}
+                      {d <= today && <span className="muted">{got}/{expected}</span>}
                     </div>
                   </Link>
                 )

@@ -32,7 +32,7 @@ export function PushToggle({ coach = false }: { coach?: boolean }) {
 
   return (
     <div className="card form push-toggle">
-      <b>🔔 Notifications sur cet appareil</b>
+      <b>Notifications sur cet appareil</b>
       <p className="tiny muted">
         {coach ? 'Tu es prévenu·e quand un athlète t’écrit ou signale une douleur ou une forte fatigue.' : 'Tu es prévenu·e quand ton coach t’écrit.'}
         {' '}La notification ne contient aucun texte : le message se lit dans l’app.
@@ -41,7 +41,7 @@ export function PushToggle({ coach = false }: { coach?: boolean }) {
         coach ? <p className="small">Pas encore configurées sur le serveur. <Link to="/notifications">Configurer (5 min)</Link></p>
           : <p className="small muted">Pas encore disponibles : ton coach doit d’abord les activer.</p>
       ) : state === 'ios-home' ? (
-        <p className="small">Sur iPhone / iPad, ajoute d’abord l’app à l’écran d’accueil (Safari → Partager ⬆️ → « Sur l’écran d’accueil »), puis ouvre-la depuis l’icône et reviens ici.</p>
+        <p className="small">Sur iPhone / iPad, ajoute d’abord l’app à l’écran d’accueil (Safari → Partager → « Sur l’écran d’accueil »), puis ouvre-la depuis l’icône et reviens ici.</p>
       ) : state === 'unsupported' ? (
         <p className="small muted">Ce navigateur ne permet pas les notifications.</p>
       ) : state === 'denied' ? (

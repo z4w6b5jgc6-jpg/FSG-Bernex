@@ -46,17 +46,17 @@ export function AiAdvicePanel({ session, onApply }: { session: Session; onApply:
   return (
     <>
       <div className="row gap wrap">
-        <button type="button" className="btn ai-btn" onClick={run} disabled={!session.blocks.some((b) => b.items.length)}>✨ Améliorer cette séance</button>
-        <button type="button" className="btn ai-btn" onClick={() => setChat(true)}>💬 Discuter de cette séance</button>
+        <button type="button" className="btn ai-btn" onClick={run} disabled={!session.blocks.some((b) => b.items.length)}>Améliorer cette séance</button>
+        <button type="button" className="btn ai-btn" onClick={() => setChat(true)}>Discuter de cette séance</button>
       </div>
       {chat && (
-        <Modal title="💬 Assistant · cette séance" onClose={() => setChat(false)}>
+        <Modal title="Assistant · cette séance" onClose={() => setChat(false)}>
           <ChatPanel session={session} storageKey={`athle-chat-${session.id}`} />
         </Modal>
       )}
       {open && (
-        <Modal title="✨ Suggestions pour la séance" onClose={() => setOpen(false)}>
-          <p className="tiny muted">🔒 Seul le contenu de la séance (exercices, séries, distances, récupérations) est envoyé à l’IA de Cloudflare — aucun nom ni donnée d’athlète. Ce sont des propositions : à toi de juger.</p>
+        <Modal title="Suggestions pour la séance" onClose={() => setOpen(false)}>
+          <p className="tiny muted">Seul le contenu de la séance (exercices, séries, distances, récupérations) est envoyé à l’IA de Cloudflare — aucun nom ni donnée d’athlète. Ce sont des propositions : à toi de juger.</p>
           {busy && <p className="muted">L’IA lit la séance… (quelques secondes)</p>}
           {err && <div className="alert warn">{err}</div>}
           {advice && (

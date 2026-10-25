@@ -4,10 +4,10 @@ import type { Wellness } from '../types'
 import { errorMessage, todayISO } from '../lib/utils'
 import { Scale } from './ui'
 
-export const ENERGY = { 1: '🪫', 2: '😕', 3: '😐', 4: '🙂', 5: '⚡' } as Record<number, string>
-export const SORENESS = { 1: '😌', 2: '🙂', 3: '😐', 4: '😣', 5: '🤕' } as Record<number, string>
-export const STRESS = { 1: '😎', 2: '🙂', 3: '😐', 4: '😟', 5: '😰' } as Record<number, string>
-export const SLEEPQ = { 1: '😩', 2: '😕', 3: '😐', 4: '🙂', 5: '😴' } as Record<number, string>
+export const ENERGY = { 1: 'Vide', 2: 'Faible', 3: 'Moyenne', 4: 'Bonne', 5: 'Pleine' } as Record<number, string>
+export const SORENESS = { 1: 'Aucune', 2: 'Légères', 3: 'Moyennes', 4: 'Fortes', 5: 'Très fortes' } as Record<number, string>
+export const STRESS = { 1: 'Aucun', 2: 'Léger', 3: 'Moyen', 4: 'Élevé', 5: 'Très élevé' } as Record<number, string>
+export const SLEEPQ = { 1: 'Très mauvaise', 2: 'Mauvaise', 3: 'Moyenne', 4: 'Bonne', 5: 'Très bonne' } as Record<number, string>
 
 const SLEEP_OPTIONS = [5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10]
 
@@ -25,14 +25,14 @@ export function WellnessCheckin({ athleteId }: { athleteId: string }) {
     return (
       <div className="card checkin done">
         <div className="row between">
-          <strong>✅ Check-in du jour</strong>
+          <strong>Check-in du jour</strong>
           <button className="btn ghost small" onClick={() => { setW(existing); setEditing(true) }}>Modifier</button>
         </div>
         <div className="scores">
-          {existing.sleep_hours != null && <span className="pill">😴 {existing.sleep_hours} h</span>}
-          {existing.energy != null && <span className="pill">{ENERGY[existing.energy]} énergie</span>}
-          {existing.soreness != null && <span className={`pill ${existing.soreness >= 4 ? 'warn' : ''}`}>{SORENESS[existing.soreness]} courbatures</span>}
-          {existing.stress != null && <span className={`pill ${existing.stress >= 4 ? 'warn' : ''}`}>{STRESS[existing.stress]} stress</span>}
+          {existing.sleep_hours != null && <span className="pill">{existing.sleep_hours} h</span>}
+          {existing.energy != null && <span className="pill">Énergie : {ENERGY[existing.energy].toLowerCase()}</span>}
+          {existing.soreness != null && <span className={`pill ${existing.soreness >= 4 ? 'warn' : ''}`}>Courbatures : {SORENESS[existing.soreness].toLowerCase()}</span>}
+          {existing.stress != null && <span className={`pill ${existing.stress >= 4 ? 'warn' : ''}`}>Stress : {STRESS[existing.stress].toLowerCase()}</span>}
         </div>
       </div>
     )
@@ -53,7 +53,7 @@ export function WellnessCheckin({ athleteId }: { athleteId: string }) {
   return (
     <div className="card checkin form">
       <div>
-        <strong>🌙 Comment tu te sens aujourd’hui ?</strong>
+        <strong>Comment tu te sens aujourd’hui ?</strong>
         <div className="muted small">30 secondes pour aider ton coach à adapter tes entraînements.</div>
       </div>
       <div className="field">
@@ -66,10 +66,10 @@ export function WellnessCheckin({ athleteId }: { athleteId: string }) {
           ))}
         </div>
       </div>
-      <div className="field"><span className="field-label">Qualité du sommeil</span><Scale min={1} max={5} value={w.sleep_quality ?? null} onChange={(v) => set({ sleep_quality: v })} labels={SLEEPQ} /></div>
-      <div className="field"><span className="field-label">Énergie</span><Scale min={1} max={5} value={w.energy ?? null} onChange={(v) => set({ energy: v })} labels={ENERGY} /></div>
-      <div className="field"><span className="field-label">Courbatures / douleurs</span><Scale min={1} max={5} value={w.soreness ?? null} onChange={(v) => set({ soreness: v })} labels={SORENESS} /></div>
-      <div className="field"><span className="field-label">Stress (école, vie perso…)</span><Scale min={1} max={5} value={w.stress ?? null} onChange={(v) => set({ stress: v })} labels={STRESS} /></div>
+      <div className="field"><span className="field-label">Qualité du sommeil (1 = très mauvaise, 5 = très bonne)</span><Scale min={1} max={5} value={w.sleep_quality ?? null} onChange={(v) => set({ sleep_quality: v })} labels={SLEEPQ} /></div>
+      <div className="field"><span className="field-label">Énergie (1 = vide, 5 = pleine)</span><Scale min={1} max={5} value={w.energy ?? null} onChange={(v) => set({ energy: v })} labels={ENERGY} /></div>
+      <div className="field"><span className="field-label">Courbatures / douleurs (1 = aucune, 5 = très fortes)</span><Scale min={1} max={5} value={w.soreness ?? null} onChange={(v) => set({ soreness: v })} labels={SORENESS} /></div>
+      <div className="field"><span className="field-label">Stress, école, vie perso (1 = aucun, 5 = très élevé)</span><Scale min={1} max={5} value={w.stress ?? null} onChange={(v) => set({ stress: v })} labels={STRESS} /></div>
       <div className="row gap">
         <button className="btn primary" onClick={submit} disabled={busy || w.sleep_hours == null || w.energy == null}>Valider</button>
         {existing && <button className="btn ghost" onClick={() => setEditing(false)}>Annuler</button>}

@@ -37,7 +37,7 @@ export function MyTargets({ targets, athleteId }: { targets: Target[]; athleteId
   const p = paces(athleteId)
   return (
     <div className="card my-targets">
-      <h3>⏱️ Mes temps à réaliser</h3>
+      <h3>Mes temps à réaliser</h3>
       <ul className="plain rows">
         {targets.map((t) => {
           const r = computeTarget(t, p)

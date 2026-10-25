@@ -1,9 +1,11 @@
+import { Icon } from '../../components/Icon'
+import { Avatar } from '../../components/Avatar'
 import { Link } from 'react-router-dom'
 import { Tiles } from '../../components/Tiles'
 import { useData, useMyAthlete } from '../../lib/data'
 import { WellnessCheckin } from '../../components/WellnessCheckin'
 import { InstallPrompt } from '../../components/InstallPrompt'
-import { allTips, computeBadges, feedbackStreak, greeting, myAssignments, tipOfTheDay } from '../../lib/athlete'
+import { allTips, computeBadges, feedbackStreak, greeting, myAssignments, shownColor, tipOfTheDay } from '../../lib/athlete'
 import { addDays, formatDate, todayISO } from '../../lib/utils'
 import { unreadByAthlete } from '../../lib/messages'
 
@@ -30,33 +32,33 @@ export function AthleteHome() {
   return (
     <div>
       <div className="hero">
-        <div className="hero-avatar">{me.avatar}</div>
+        <Avatar a={{ ...me, color: shownColor(me.color) }} />
         <div>
           <h1>{greeting()} {me.first_name} !</h1>
           <div className="hero-sub">
             {group && <span>{group.name}</span>}
-            {streak > 0 && <span className="streak">🔥 {streak} séance{streak > 1 ? 's' : ''} d’affilée</span>}
+            {streak > 0 && <span className="streak">{streak} séance{streak > 1 ? 's' : ''} d’affilée</span>}
           </div>
         </div>
       </div>
       {me.goals ? (
-        <div className="goal">🎯 <b>Mon objectif :</b> {me.goals}</div>
+        <div className="goal"><b>Mon objectif :</b> {me.goals}</div>
       ) : (
-        <Link to="/profil" className="goal muted">🎯 Fixe-toi un objectif de saison →</Link>
+        <Link to="/profil" className="goal muted">Fixe-toi un objectif de saison →</Link>
       )}
 
       <InstallPrompt who="athlete" />
       {unreadByAthlete(messages).length > 0 && (
-        <Link to="/messages" className="alert info link-card">💬 {unreadByAthlete(messages).length} nouveau(x) message(s) de ton coach →</Link>
+        <Link to="/messages" className="alert info link-card">{unreadByAthlete(messages).length} nouveau(x) message(s) de ton coach →</Link>
       )}
 
       <Tiles items={[
-        { to: '/seances', icon: '📅', label: 'Mes séances', tone: 'green', badge: todo.length,
+        { to: '/seances', icon: 'calendar', label: 'Mes séances', tone: 'green', badge: todo.length,
           info: todays.length ? 'Séance aujourd’hui !' : next ? `Prochaine : ${formatDate(next.date, { weekday: 'short', day: 'numeric', month: 'short' })}` : 'Rien de prévu' },
-        { to: '/progres', icon: '📈', label: 'Mes progrès', tone: 'blue', info: `${earned.length}/${badges.length} badges · tests et records` },
-        { to: '/competitions', icon: '🏆', label: 'Compétitions', tone: 'yellow',
+        { to: '/progres', icon: 'chart', label: 'Mes progrès', tone: 'blue', info: `${earned.length}/${badges.length} badges · tests et records` },
+        { to: '/competitions', icon: 'trophy', label: 'Compétitions', tone: 'yellow',
           info: nextComp ? `${nextComp.name} · ${inDays(nextComp.date) > 0 ? `dans ${inDays(nextComp.date)} j` : 'aujourd’hui'}` : 'Aucune prévue' },
-        { to: '/conseils', icon: '💡', label: 'Conseils', tone: 'pink', info: tip ? tip.title : 'Nutrition, sommeil, récup' },
+        { to: '/conseils', icon: 'bulb', label: 'Conseils', tone: 'pink', info: tip ? tip.title : 'Nutrition, sommeil, récup' },
       ]} />
 
       {todays.map((a) => (
@@ -70,7 +72,7 @@ export function AthleteHome() {
 
       {todo.filter((a) => a.date < today).length > 0 && (
         <section>
-          <h2>💬 À faire</h2>
+          <h2>À faire</h2>
           <div className="list">
             {todo.filter((a) => a.date < today).slice(0, 3).map((a) => (
               <Link key={a.id} to={`/seances/${a.id}`} className="card link-card row between">
@@ -91,7 +93,6 @@ export function AthleteHome() {
         if (!r || r.date < addDays(today, -21)) return null
         return (
           <Link to="/progres" className="card link-card tip-card">
-            <span className="tip-emoji">📝</span>
             <div><strong>Nouveau : {r.title}</strong><div className="muted small">{r.message.slice(0, 110)}{r.message.length > 110 && '…'}</div></div>
           </Link>
         )
@@ -100,9 +101,9 @@ export function AthleteHome() {
 
       {tip && (
         <section>
-          <h2>💡 Le conseil du jour</h2>
+          <h2>Le conseil du jour</h2>
           <Link to={`/conseils/${tip.id}`} className="card link-card tip-card">
-            <span className="tip-emoji">{tip.emoji}</span>
+            
             <div><strong>{tip.title}</strong><div className="muted small">{tip.summary}</div></div>
           </Link>
         </section>
@@ -115,7 +116,7 @@ export function AthleteHome() {
         </div>
         <div className="badge-row">
           {badges.slice(0, 8).map((b) => (
-            <div key={b.id} className={`badge-mini ${b.earned ? '' : 'locked'}`} title={`${b.title} – ${b.desc}`}>{b.emoji}</div>
+            <div key={b.id} className={`badge-mini ${b.earned ? '' : 'locked'}`} title={`${b.title} – ${b.desc}`}><Icon name="medal" size={20} /></div>
           ))}
         </div>
       </section>

@@ -25,7 +25,7 @@ export function Messages({ coach }: { coach: boolean }) {
     }
     for (const f of feedback.filter((x) => x.comment || x.pain)) {
       const c = get(f.assignment_id, f.athlete_id)
-      if (f.updated_at > c.last) { c.last = f.updated_at; c.preview = f.pain ? `🩹 ${f.pain}` : f.comment }
+      if (f.updated_at > c.last) { c.last = f.updated_at; c.preview = f.pain ? `${f.pain}` : f.comment }
     }
     for (const m of messages) {
       const c = get(m.assignment_id, m.athlete_id)
@@ -42,7 +42,7 @@ export function Messages({ coach }: { coach: boolean }) {
   const todo = convs.filter((c) => c.unread || c.toAnswer).length
   return (
     <div>
-      <h1>💬 Messages {coach && todo > 0 && <span className="pill warn">{todo} à traiter</span>}</h1>
+      <h1>Messages {coach && todo > 0 && <span className="pill warn">{todo} à traiter</span>}</h1>
       <PushToggle coach={coach} />
       {convs.length === 0 ? (
         <Empty>{coach ? 'Pas encore de message. Les retours des athlètes avec un commentaire apparaissent ici.' : 'Pas encore de message. Tu peux écrire à ton coach depuis chaque séance.'}</Empty>
@@ -67,7 +67,7 @@ export function Messages({ coach }: { coach: boolean }) {
                 {isOpen && (
                   <>
                     {coach && fb && <FeedbackScores fb={fb} />}
-                    {coach && fb?.pain && <div className="alert warn small">🩹 Douleur : {fb.pain}</div>}
+                    {coach && fb?.pain && <div className="alert warn small">Douleur : {fb.pain}</div>}
                     <Thread assignmentId={c.assignmentId} athleteId={c.athleteId} fb={fb} coach={coach} athleteName={ath?.first_name} />
                     <Link className="tiny" to={coach ? `/planning/${a.id}` : `/seances/${a.id}`}>Voir la séance →</Link>
                   </>

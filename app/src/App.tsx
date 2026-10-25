@@ -1,3 +1,4 @@
+import { Icon } from './components/Icon'
 import { lazy, Suspense, useEffect, type ReactNode } from 'react'
 import { HashRouter, Navigate, NavLink, Route, Routes } from 'react-router-dom'
 import { api } from './api'
@@ -42,20 +43,20 @@ import { AthleteProfile } from './pages/athlete/AthleteProfile'
 type NavItem = { to: string; label: string; icon: string }
 
 const COACH_NAV: NavItem[] = [
-  { to: '/', label: 'Accueil', icon: '🏠' },
-  { to: '/planning', label: 'Planning', icon: '📅' },
-  { to: '/seances', label: 'Séances', icon: '📋' },
-  { to: '/athletes', label: 'Athlètes', icon: '🏃' },
-  { to: '/competitions', label: 'Compét.', icon: '🏆' },
-  { to: '/messages', label: 'Messages', icon: '💬' },
+  { to: '/', label: 'Accueil', icon: 'home' },
+  { to: '/planning', label: 'Planning', icon: 'calendar' },
+  { to: '/seances', label: 'Séances', icon: 'list' },
+  { to: '/athletes', label: 'Athlètes', icon: 'users' },
+  { to: '/competitions', label: 'Compét.', icon: 'trophy' },
+  { to: '/messages', label: 'Messages', icon: 'message' },
 ]
 
 const ATHLETE_NAV: NavItem[] = [
-  { to: '/', label: 'Accueil', icon: '🏠' },
-  { to: '/seances', label: 'Séances', icon: '📅' },
-  { to: '/conseils', label: 'Conseils', icon: '💡' },
-  { to: '/progres', label: 'Progrès', icon: '📈' },
-  { to: '/profil', label: 'Profil', icon: '👤' },
+  { to: '/', label: 'Accueil', icon: 'home' },
+  { to: '/seances', label: 'Séances', icon: 'calendar' },
+  { to: '/conseils', label: 'Conseils', icon: 'bulb' },
+  { to: '/progres', label: 'Progrès', icon: 'chart' },
+  { to: '/profil', label: 'Profil', icon: 'user' },
 ]
 
 function Shell({ nav, brand, right, children }: { nav: NavItem[]; brand: ReactNode; right?: ReactNode; children: ReactNode }) {
@@ -68,7 +69,7 @@ function Shell({ nav, brand, right, children }: { nav: NavItem[]; brand: ReactNo
       <header className="topbar">
         <span className="brand">{brand}</span>
         <nav className="topnav">
-          {nav.map((n) => <NavLink key={n.to} to={n.to} end={n.to === '/'}><span className="nav-ico" aria-hidden>{n.icon}</span>{n.label}{dot(n.to)}</NavLink>)}
+          {nav.map((n) => <NavLink key={n.to} to={n.to} end={n.to === '/'}><span className="nav-ico" aria-hidden><Icon name={n.icon} /></span>{n.label}{dot(n.to)}</NavLink>)}
         </nav>
         {right}
       </header>
@@ -78,7 +79,7 @@ function Shell({ nav, brand, right, children }: { nav: NavItem[]; brand: ReactNo
       <nav className="bottomnav">
         {nav.map((n) => (
           <NavLink key={n.to} to={n.to} end={n.to === '/'}>
-            <span>{n.icon}{dot(n.to)}</span>
+            <span><Icon name={n.icon} />{dot(n.to)}</span>
             <small>{n.label}</small>
           </NavLink>
         ))}
@@ -136,7 +137,7 @@ function AthleteApp() {
   useEffect(() => applyAccent(athlete?.color ?? null), [athlete?.color])
   if (!athlete) return <div className="login"><p className="muted">{loading ? 'Chargement…' : 'Profil introuvable.'}</p></div>
   return (
-    <Shell nav={ATHLETE_NAV} brand={<><picture><source srcSet="logo-symbol-dark.png" media="(prefers-color-scheme: dark)" /><img src="logo-symbol.png" alt="" className="brand-logo" /></picture>{athlete.avatar} {athlete.first_name}</>}>
+    <Shell nav={ATHLETE_NAV} brand={<><picture><source srcSet="logo-symbol-dark.png" media="(prefers-color-scheme: dark)" /><img src="logo-symbol.png" alt="" className="brand-logo" /></picture><span className="brand-name">{athlete.first_name}</span></>}>
       <Routes>
         <Route path="/" element={<AthleteHome />} />
         <Route path="/seances" element={<AthleteSessions />} />

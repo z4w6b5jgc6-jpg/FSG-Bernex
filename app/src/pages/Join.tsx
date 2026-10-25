@@ -46,7 +46,7 @@ export function Join() {
           savePendingJoin({ code, profile: p })
           const ok = await api.signUp(email, password)
           if (!ok) {
-            setMsg({ kind: 'info', text: '📧 Presque fini ! Ouvre l’email de confirmation qu’on vient de t’envoyer, puis connecte-toi : ton inscription au club se terminera automatiquement.' })
+            setMsg({ kind: 'info', text: 'Presque fini ! Ouvre l’email de confirmation qu’on vient de t’envoyer, puis connecte-toi : ton inscription au club se terminera automatiquement.' })
             return
           }
         }
@@ -133,7 +133,7 @@ export function Join() {
           J’accepte que mes entraînements, mes retours et mes check-ins bien-être soient visibles par mes entraîneurs.
         </label>
         {msg && <div className={`alert ${msg.kind}`}>{msg.text}</div>}
-        <button className="btn primary block" disabled={busy || !consent}>{busy ? '…' : 'Rejoindre le programme 🚀'}</button>
+        <button className="btn primary block" disabled={busy || !consent}>{busy ? '…' : 'Rejoindre le programme'}</button>
       </form>
     </div>
   )

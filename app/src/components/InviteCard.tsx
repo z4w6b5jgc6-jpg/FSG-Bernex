@@ -13,9 +13,9 @@ export function InviteCard() {
   const group = groups.find((g) => g.id === groupId)
   const link = inviteLink(me.invite_code, group?.id)
   const message =
-    `🏃 Rejoins le programme d’entraînement${group ? ` du groupe ${group.name}` : ''} sur Coach Athlé !\n` +
+    `Rejoins le programme d’entraînement${group ? ` du groupe ${group.name}` : ''} sur Coach Athlé !\n` +
     `Tu y trouveras tes séances, tes progrès et plein de conseils (nutrition, sommeil…).\n\n` +
-    `Crée ton compte ici 👉 ${link}\n\nPuis installe l’app sur ton écran d’accueil 📲`
+    `Crée ton compte ici ${link}\n\nPuis installe l’app sur ton écran d’accueil`
 
   const copy = async () => {
     try {
@@ -39,7 +39,7 @@ export function InviteCard() {
   return (
     <div className="card invite">
       <div>
-        <strong>📨 Lien d’inscription</strong>
+        <strong>Lien d’inscription</strong>
         <div className="muted small">Un lien par groupe : l’athlète crée son compte et rejoint directement le programme du groupe. Partage-le dans le groupe WhatsApp.</div>
       </div>
       <select value={groupId} onChange={(e) => setGroupId(e.target.value)} aria-label="Groupe du lien">
@@ -50,9 +50,9 @@ export function InviteCard() {
         <code>{link.replace(/^https?:\/\//, '')}</code>
       </div>
       <div className="row gap wrap">
-        <a className="btn small whatsapp" href={whatsappUrl(message)} target="_blank" rel="noreferrer">📲 WhatsApp</a>
-        {typeof navigator.share === 'function' && <button className="btn small" onClick={() => nativeShare(message)}>📤 Partager</button>}
-        <button className="btn small" onClick={copy}>{copied ? '✓ Copié' : '🔗 Copier'}</button>
+        <a className="btn small whatsapp" href={whatsappUrl(message)} target="_blank" rel="noreferrer">WhatsApp</a>
+        {typeof navigator.share === 'function' && <button className="btn small" onClick={() => nativeShare(message)}>Partager</button>}
+        <button className="btn small" onClick={copy}>{copied ? '✓ Copié' : 'Copier'}</button>
         <button className="btn small ghost" onClick={regenerate}>Nouveaux liens</button>
       </div>
       <div className="tiny muted">Code : <b>{me.invite_code}</b></div>

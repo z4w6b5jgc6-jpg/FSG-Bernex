@@ -98,7 +98,7 @@ export function ImportProfiles() {
       <div className="card form">
         <p className="small">
           Choisis le fichier Excel des réponses (Google Forms ou autre) : une ligne par athlète avec Nom / Prénom, Date de naissance,
-          Disciplines et Objectifs. Les objectifs s’affichent sur l’accueil de l’athlète (« 🎯 Mon objectif »).
+          Disciplines et Objectifs. Les objectifs s’affichent sur l’accueil de l’athlète (« Mon objectif »).
           Les autres réponses (disponibilités, musculation…) vont dans tes <b>notes privées</b>.
         </p>
         <input type="file" accept=".xlsx" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
@@ -130,7 +130,7 @@ export function ImportProfiles() {
                     <b>{r.first} {r.last}{r.birthYear && <span className="muted small"> · {r.birthYear}</span>}</b>
                     <select value={r.target} onChange={(e) => set(r.key, { target: e.target.value, fuzzy: false, setGoals: !byId(e.target.value)?.goals })}>
                       {athletes.map((x) => <option key={x.id} value={x.id}>Fiche : {fullName(x)}</option>)}
-                      <option value="new">➕ Nouvelle fiche</option>
+                      <option value="new">Nouvelle fiche</option>
                       <option value="skip">Ignorer</option>
                     </select>
                   </div>
@@ -142,8 +142,8 @@ export function ImportProfiles() {
                       {r.last && <button type="button" className="btn ghost small" onClick={() => set(r.key, { first: r.last, last: r.first })}>⇄ Inverser prénom / nom</button>}
                     </div>
                   )}
-                  {r.events && <div className="small">🏃 {r.events}</div>}
-                  <Field label="🎯 Objectifs">
+                  {r.events && <div className="small">{r.events}</div>}
+                  <Field label="Objectifs">
                     <textarea rows={2} value={r.goals} onChange={(e) => set(r.key, { goals: e.target.value, setGoals: true })} />
                   </Field>
                   {a?.goals && a.goals !== r.goals && (

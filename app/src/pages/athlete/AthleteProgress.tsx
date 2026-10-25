@@ -1,3 +1,4 @@
+import { Icon } from '../../components/Icon'
 import { useState } from 'react'
 import { useData, useMyAthlete } from '../../lib/data'
 import { EffortBars, SleepBars } from '../../components/Charts'
@@ -32,14 +33,14 @@ export function AthleteProgress() {
       <h1>Mes progrès</h1>
       <div className="stats">
         <div className="stat"><b>{done}</b><span>séances faites</span></div>
-        <div className="stat"><b>🔥 {streak}</b><span>série en cours</span></div>
+        <div className="stat"><b>{streak}</b><span>série en cours</span></div>
         <div className="stat"><b>{past.length ? Math.round((feedback.length / past.length) * 100) : 0}%</b><span>retours donnés</span></div>
-        <div className="stat"><b>🌙 {checkinStreak(wellness)}</b><span>jours de check-in</span></div>
+        <div className="stat"><b>{checkinStreak(wellness)}</b><span>jours de check-in</span></div>
       </div>
 
       <section>
         <div className="row between">
-          <h2>🏅 Mes records</h2>
+          <h2>Mes records</h2>
           <button className="btn primary small" onClick={() => setEdit({ date: today, event: me.events.split(',')[0]?.trim() ?? '' })}>+ Record</button>
         </div>
         {records.length === 0 ? (
@@ -70,7 +71,7 @@ export function AthleteProgress() {
 
       {test_reports.length > 0 && (
         <section>
-          <h2>📝 Le bilan de ton coach</h2>
+          <h2>Le bilan de ton coach</h2>
           <div className="list">
             {[...test_reports].sort((x, y) => y.date.localeCompare(x.date)).slice(0, 2).map((r) => <ReportCard key={r.id} report={r} />)}
           </div>
@@ -78,10 +79,10 @@ export function AthleteProgress() {
       )}
 
       <section>
-        <h2>📏 Mes tests</h2>
+        <h2>Mes tests</h2>
         <VmaPaces tests={tests} results={test_results} />
         <TestResults tests={tests} results={test_results} />
-        <SprintEquivalence tests={tests} results={test_results} records={records} title="⚡ Mes temps probables" />
+        <SprintEquivalence tests={tests} results={test_results} records={records} title="Mes temps probables" />
         {test_results.length > 0 && <p className="tiny muted">Saisis par ton coach · ▲ = progrès par rapport au test précédent</p>}
       </section>
 
@@ -91,7 +92,7 @@ export function AthleteProgress() {
       </section>
 
       <section>
-        <h2>😴 Mon sommeil</h2>
+        <h2>Mon sommeil</h2>
         <div className="card"><SleepBars wellness={wellness} /></div>
       </section>
 
@@ -100,7 +101,7 @@ export function AthleteProgress() {
         <div className="badges">
           {badges.map((b) => (
             <div key={b.id} className={`badge-card ${b.earned ? '' : 'locked'}`}>
-              <span>{b.emoji}</span>
+              <span><Icon name="medal" size={24} /></span>
               <strong>{b.title}</strong>
               <small>{b.desc}</small>
             </div>

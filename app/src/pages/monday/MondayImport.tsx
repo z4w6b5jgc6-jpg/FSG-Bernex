@@ -257,7 +257,7 @@ export function MondayImport() {
                     <b>{r.a.nom} <span className="tiny muted">· {subgroupLabel(r.a.sous_groupe, file)}</span></b>
                     <select value={r.target} onChange={(e) => set(i, { target: e.target.value, fuzzy: false })}>
                       {active.map((x) => <option key={x.id} value={x.id}>Fiche : {fullName(x)}</option>)}
-                      <option value="new">➕ Nouvelle fiche</option>
+                      <option value="new">Nouvelle fiche</option>
                       <option value="skip">Ignorer</option>
                     </select>
                   </div>

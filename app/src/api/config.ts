@@ -25,7 +25,7 @@ export function readConfig(rawUrl: string | undefined, rawKey: string | undefine
     problems.push(`VITE_SUPABASE_URL n’est pas une adresse valide : ${mask(url)}. Elle doit ressembler à https://abcdefgh.supabase.co`)
   if (!key) problems.push('La variable VITE_SUPABASE_ANON_KEY est absente.')
   else if (/^sb_secret_|service_role/.test(key))
-    problems.push('⚠️ VITE_SUPABASE_ANON_KEY contient la clé SECRÈTE. Remplace-la immédiatement par la clé publique (sb_publishable_… ou anon public), puis régénère la clé secrète dans Supabase.')
+    problems.push('VITE_SUPABASE_ANON_KEY contient la clé SECRÈTE. Remplace-la immédiatement par la clé publique (sb_publishable_… ou anon public), puis régénère la clé secrète dans Supabase.')
   else if (!/^(sb_publishable_|eyJ)/.test(key))
     problems.push(`VITE_SUPABASE_ANON_KEY ne ressemble pas à une clé publique Supabase : ${mask(key)}. Elle doit commencer par sb_publishable_ (ou eyJ pour l’ancienne clé « anon »).`)
   else if (key.length < 30 || /…|\.\.\./.test(key))

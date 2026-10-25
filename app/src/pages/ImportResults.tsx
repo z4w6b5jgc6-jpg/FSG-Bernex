@@ -281,10 +281,10 @@ export function ImportResults() {
             <Field label="Date des tests">
               <input type="date" value={date} onChange={(e) => { setDate(e.target.value); setDateFound(true) }} className={dateFound ? '' : 'attention'} />
             </Field>
-            {!dateFound && <div className="alert warn small">📅 Pas de date dans le fichier : indique le jour où le test a été fait (sinon c’est aujourd’hui).</div>}
+            {!dateFound && <div className="alert warn small">Pas de date dans le fichier : indique le jour où le test a été fait (sinon c’est aujourd’hui).</div>}
             {existingSameDay > 0 && (
               <div className="alert info small form">
-                <div>🔁 <b>{existingSameDay} résultat(s)</b> de ces athlètes existent déjà pour le {new Date(date).toLocaleDateString('fr-CH')} (import précédent).</div>
+                <div><b>{existingSameDay} résultat(s)</b> de ces athlètes existent déjà pour le {new Date(date).toLocaleDateString('fr-CH')} (import précédent).</div>
                 <label className="check"><input type="radio" checked={mode === 'replace'} onChange={() => setMode('replace')} /> <span><b>Ce fichier remplace la séance</b> : les anciens résultats de ce jour sont supprimés et remplacés par ceux du fichier</span></label>
                 <label className="check"><input type="radio" checked={mode === 'merge'} onChange={() => setMode('merge')} /> <span><b>Compléter</b> : garder les anciens résultats et ajouter / mettre à jour ceux du fichier</span></label>
               </div>
@@ -328,7 +328,7 @@ export function ImportResults() {
                   <Field label={`Groupe des ${newCount} nouvelle(s) fiche(s)`}>
                     <select value={groupChoice} onChange={(e) => setNewGroup(e.target.value)}>
                       {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
-                      <option value="+">➕ Nouveau groupe…</option>
+                      <option value="+">Nouveau groupe…</option>
                       <option value="">Sans groupe</option>
                     </select>
                   </Field>
@@ -355,7 +355,7 @@ export function ImportResults() {
                           </td>
                           <td>
                             <select value={r} onChange={(e) => setChoice({ ...choice, [p.key]: e.target.value })}>
-                              <option value="new">➕ Nouvelle fiche</option>
+                              <option value="new">Nouvelle fiche</option>
                               <option value="skip">Ignorer</option>
                               {athletes.map((a) => <option key={a.id} value={a.id}>{fullName(a)}{a.birth_year ? ` (${a.birth_year})` : ''}</option>)}
                             </select>

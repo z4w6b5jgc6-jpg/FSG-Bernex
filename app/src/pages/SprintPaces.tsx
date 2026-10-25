@@ -30,8 +30,8 @@ export function SprintPaces() {
     <div className="sprint-paces">
       <BackLink to="/tests" label="Tests" />
       <div className="row between wrap">
-        <h1>⚡ Allures sprint</h1>
-        <button className="btn small no-print" onClick={() => window.print()}>🖨️ Imprimer</button>
+        <h1>Allures sprint</h1>
+        <button className="btn small no-print" onClick={() => window.print()}>Imprimer</button>
       </div>
       <p className="small muted">
         Temps à viser selon le <b>meilleur 40 m départ arrêté</b> de chaque athlète, d’après le tableau d’équivalences « Sprint » (S. Charlet).
@@ -49,7 +49,7 @@ export function SprintPaces() {
       <h2 className="print-only">Allures à {pct} % · {groups.find((g) => g.id === group)?.name ?? 'tous les groupes'}</h2>
 
       {withRef.length === 0 ? (
-        <Empty>Aucun 40 m départ arrêté enregistré pour ce groupe. Saisis-le dans Tests → ✏️ Saisir des résultats.</Empty>
+        <Empty>Aucun 40 m départ arrêté enregistré pour ce groupe. Saisis-le dans Tests → Saisir des résultats.</Empty>
       ) : (
         <div className="card matrix-wrap">
           <table className="matrix">

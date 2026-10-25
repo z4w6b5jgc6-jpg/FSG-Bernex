@@ -90,7 +90,7 @@ export function SessionEditor() {
       <div className="row between sticky-bar">
         <BackLink to="/seances" label="Séances" />
         <div className="row gap">
-          <Link className="btn small" to={`/planning?seance=${draft.id}`}>📅 Planifier</Link>
+          <Link className="btn small" to={`/planning?seance=${draft.id}`}>Planifier</Link>
           <button className="btn primary" onClick={persist} disabled={!dirty || saving}>
             {saving ? 'Enregistrement…' : dirty ? 'Enregistrer' : '✓ Enregistré'}
           </button>
@@ -98,7 +98,7 @@ export function SessionEditor() {
       </div>
       {planOf(draft) && (
         <div className="alert info small">
-          ⏱️ Séance du plan du lundi : modifie plutôt le contenu et les temps cibles dans <Link to={`/lundi/plan/${planOf(draft)!.date}`}>Lundi → Plan</Link>
+          Séance du plan du lundi : modifie plutôt le contenu et les temps cibles dans <Link to={`/lundi/plan/${planOf(draft)!.date}`}>Lundi → Plan</Link>
           (une modification ici serait remplacée à la prochaine édition du plan).
         </div>
       )}
@@ -167,7 +167,7 @@ export function SessionEditor() {
                       if (!hint || it.recovery === hint.value) return null
                       return (
                         <div className="recovery-hint">
-                          <span className="small">💡 Récup conseillée : <b>{hint.value}</b></span>
+                          <span className="small">Récup conseillée : <b>{hint.value}</b></span>
                           <span className="tiny muted">{hint.why}</span>
                           <button type="button" className="btn small" onClick={() => updItem(b.id, it.id, { recovery: hint.value })}>{it.recovery ? 'Remplacer' : 'Appliquer'}</button>
                         </div>
@@ -181,7 +181,7 @@ export function SessionEditor() {
           })}
           <div className="row gap wrap">
             <button className="btn small" onClick={() => addItems(b.id, [''])}>+ Exercice</button>
-            <button className="btn small" onClick={() => setPicker(b.id)}>📚 Depuis la bibliothèque</button>
+            <button className="btn small" onClick={() => setPicker(b.id)}>Depuis la bibliothèque</button>
           </div>
         </div>
       ))}

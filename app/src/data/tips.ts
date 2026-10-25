@@ -5,15 +5,15 @@ import type { Tip } from '../types'
 // ou de régime particulier, on s'adresse à un médecin ou à un·e diététicien·ne.
 
 export const TIP_CATEGORIES: { name: string; emoji: string }[] = [
-  { name: 'Nutrition', emoji: '🥗' },
-  { name: 'Hydratation', emoji: '💧' },
-  { name: 'Sommeil', emoji: '😴' },
-  { name: 'Récupération', emoji: '🧘' },
-  { name: 'Prévention', emoji: '🩹' },
-  { name: 'Mental', emoji: '🧠' },
-  { name: 'Hygiène de vie', emoji: '🌱' },
-  { name: 'Compétition', emoji: '🏅' },
-  { name: 'Club', emoji: '📣' },
+  { name: 'Nutrition', emoji: '' },
+  { name: 'Hydratation', emoji: '' },
+  { name: 'Sommeil', emoji: '' },
+  { name: 'Récupération', emoji: '' },
+  { name: 'Prévention', emoji: '' },
+  { name: 'Mental', emoji: '' },
+  { name: 'Hygiène de vie', emoji: '' },
+  { name: 'Compétition', emoji: '' },
+  { name: 'Club', emoji: '' },
 ]
 
 const t = (id: string, category: string, emoji: string, title: string, summary: string, body: string): Tip => ({
@@ -21,7 +21,7 @@ const t = (id: string, category: string, emoji: string, title: string, summary: 
 })
 
 export const BUILTIN_TIPS: Tip[] = [
-  t('assiette', 'Nutrition', '🍽️', 'L’assiette de l’athlète', 'Construire un repas équilibré sans se prendre la tête.', `
+  t('assiette', 'Nutrition', '', 'L’assiette de l’athlète', 'Construire un repas équilibré sans se prendre la tête.', `
 À ton âge, ton corps grandit **et** s’entraîne : il a besoin de plus d’énergie que celui d’un ado sédentaire. Le but n’est pas de « manger moins » mais de **manger assez et varié**.
 
 ## La méthode de l’assiette
@@ -35,9 +35,9 @@ export const BUILTIN_TIPS: Tip[] = [
 - Pas d’aliment interdit : un dessert ou une pizza de temps en temps, c’est normal
 - Mange à ta faim : la faim est un signal, pas un ennemi
 
-⚠️ Faire un régime ou « sécher » à ton âge peut freiner ta croissance, augmenter le risque de blessure et de fractures de fatigue. Si tu veux changer ton alimentation, parles-en d’abord à ton entraîneur ou à un·e diététicien·ne.
+Faire un régime ou « sécher » à ton âge peut freiner ta croissance, augmenter le risque de blessure et de fractures de fatigue. Si tu veux changer ton alimentation, parles-en d’abord à ton entraîneur ou à un·e diététicien·ne.
 `),
-  t('petitdej', 'Nutrition', '🥣', 'Le petit-déjeuner qui fait la différence', 'Recharger les batteries après la nuit.', `
+  t('petitdej', 'Nutrition', '', 'Le petit-déjeuner qui fait la différence', 'Recharger les batteries après la nuit.', `
 Après une nuit de jeûne, ton corps a besoin de carburant pour l’école **et** l’entraînement du soir.
 
 ## Un bon petit-déj contient
@@ -53,7 +53,7 @@ Après une nuit de jeûne, ton corps a besoin de carburant pour l’école **et*
 
 Pas faim le matin ? Commence petit (un yaourt et une banane) et prends une collation à la récré.
 `),
-  t('avant', 'Nutrition', '⏰', 'Que manger avant l’entraînement ?', 'Avoir de l’énergie sans avoir le ventre lourd.', `
+  t('avant', 'Nutrition', '', 'Que manger avant l’entraînement ?', 'Avoir de l’énergie sans avoir le ventre lourd.', `
 ## 2 à 3 heures avant
 Un vrai repas avec des féculents, peu gras et pas trop riche en fibres : pâtes, riz, pain + une protéine + légumes cuits.
 
@@ -70,7 +70,7 @@ Une petite collation facile à digérer :
 
 Le soir après l’école, l’entraînement arrive souvent loin du repas de midi : **prévois toujours une collation dans ton sac** vers 16 h.
 `),
-  t('apres', 'Nutrition', '🔋', 'Bien récupérer en mangeant', 'La fenêtre après la séance compte autant que la séance.', `
+  t('apres', 'Nutrition', '', 'Bien récupérer en mangeant', 'La fenêtre après la séance compte autant que la séance.', `
 Après l’effort, tes muscles ont besoin de **glucides** (refaire le plein d’énergie) et de **protéines** (se réparer).
 
 ## Dans l’heure qui suit
@@ -81,9 +81,9 @@ Après l’effort, tes muscles ont besoin de **glucides** (refaire le plein d’
 ## Puis le repas du soir
 Un repas complet selon la méthode de l’assiette. Ne le saute pas, même s’il est tard.
 
-💡 Inutile d’acheter des poudres de protéines : une alimentation normale et variée couvre largement tes besoins.
+Inutile d’acheter des poudres de protéines : une alimentation normale et variée couvre largement tes besoins.
 `),
-  t('collations', 'Nutrition', '🍎', 'Collations malines', 'Des idées faciles à glisser dans le sac.', `
+  t('collations', 'Nutrition', '', 'Collations malines', 'Des idées faciles à glisser dans le sac.', `
 Les collations évitent d’arriver « à vide » à l’entraînement et complètent tes repas.
 
 ## À avoir dans le sac
@@ -96,7 +96,7 @@ Les collations évitent d’arriver « à vide » à l’entraînement et compl�
 ## Moins intéressant au quotidien
 Chips, sodas, bonbons : ce n’est pas interdit, mais ça cale peu et n’apporte pas grand-chose à tes muscles.
 `),
-  t('hydratation', 'Hydratation', '💧', 'Bien s’hydrater', 'Boire avant d’avoir soif.', `
+  t('hydratation', 'Hydratation', '', 'Bien s’hydrater', 'Boire avant d’avoir soif.', `
 Une perte d’eau de seulement 2 % de ton poids peut déjà faire baisser tes performances et ta concentration.
 
 ## Au quotidien
@@ -112,7 +112,7 @@ Une perte d’eau de seulement 2 % de ton poids peut déjà faire baisser tes pe
 ## Les boissons énergisantes
 Elles contiennent beaucoup de caféine et de sucre : palpitations, troubles du sommeil, nervosité. **À éviter**, surtout avant ou après le sport.
 `),
-  t('sommeil', 'Sommeil', '😴', 'Le sommeil, ton meilleur coéquipier', 'C’est pendant la nuit que tu progresses.', `
+  t('sommeil', 'Sommeil', '', 'Le sommeil, ton meilleur coéquipier', 'C’est pendant la nuit que tu progresses.', `
 C’est en dormant que ton corps **récupère, grandit et fixe les progrès** de l’entraînement. Entre 15 et 18 ans, il faut en moyenne **8 à 10 heures** par nuit.
 
 ## Les signes d’un manque de sommeil
@@ -128,18 +128,18 @@ C’est en dormant que ton corps **récupère, grandit et fixe les progrès** de
 - Pas de caféine (café, thé noir, cola, boissons énergisantes) après 16 h
 - Une petite sieste de 20 minutes peut aider, mais pas après 17 h
 `),
-  t('ecrans', 'Sommeil', '📱', 'Écrans et sommeil', 'Le téléphone, ennemi n°1 de tes nuits.', `
+  t('ecrans', 'Sommeil', '', 'Écrans et sommeil', 'Le téléphone, ennemi n°1 de tes nuits.', `
 La lumière des écrans et les notifications retardent l’endormissement et rendent le sommeil moins profond.
 
 ## Le défi « 30 minutes sans écran »
 - Pose ton téléphone **30 à 60 minutes avant de dormir**
-- Laisse-le **hors de la chambre** ou loin du lit (achète un petit réveil 😉)
+- Laisse-le **hors de la chambre** ou loin du lit (achète un petit réveil)
 - Active le mode « Ne pas déranger » la nuit
 - Remplace par : lecture, musique calme, douche chaude, étirements doux
 
 Essaie une semaine et note dans ton check-in comment tu dors : tu verras la différence !
 `),
-  t('recup', 'Récupération', '🧘', 'Récupérer entre les séances', 'Progresser, c’est s’entraîner ET récupérer.', `
+  t('recup', 'Récupération', '', 'Récupérer entre les séances', 'Progresser, c’est s’entraîner ET récupérer.', `
 L’entraînement fatigue, c’est la **récupération** qui te rend plus fort·e. Sans repos, tu stagnes et tu te blesses.
 
 ## Les piliers
@@ -151,7 +151,7 @@ L’entraînement fatigue, c’est la **récupération** qui te rend plus fort·
 ## Écoute ton corps
 Si pendant plusieurs jours tu te sens très fatigué·e, sans envie, avec des courbatures qui ne passent pas : dis-le à ton entraîneur (et note-le dans tes retours). On adaptera la charge.
 `),
-  t('prevention', 'Prévention', '🩹', 'Douleurs : quand faut-il s’inquiéter ?', 'Courbature ou blessure ? Apprends à faire la différence.', `
+  t('prevention', 'Prévention', '', 'Douleurs : quand faut-il s’inquiéter ?', 'Courbature ou blessure ? Apprends à faire la différence.', `
 ## Courbatures (normales)
 - Apparaissent 24–48 h après une séance inhabituelle
 - Diffuses, dans les deux jambes
@@ -168,7 +168,7 @@ Si pendant plusieurs jours tu te sens très fatigué·e, sans envie, avec des co
 - En cas de doute, consulte un médecin ou un physio
 - Ta croissance rend certaines zones fragiles (genoux, talons, dos) : une douleur qui traîne n’est jamais « normale »
 `),
-  t('echauffement', 'Prévention', '🔥', 'Pourquoi l’échauffement est obligatoire', '15 minutes qui évitent des semaines d’arrêt.', `
+  t('echauffement', 'Prévention', '', 'Pourquoi l’échauffement est obligatoire', '15 minutes qui évitent des semaines d’arrêt.', `
 L’échauffement prépare tes muscles, tendons, articulations **et ton cerveau** à l’effort.
 
 ## Un bon échauffement
@@ -179,7 +179,7 @@ L’échauffement prépare tes muscles, tendons, articulations **et ton cerveau*
 
 Avant une compétition, garde le même échauffement qu’à l’entraînement : pas de surprise le jour J.
 `),
-  t('stress', 'Mental', '🧠', 'Gérer le stress avant une compétition', 'Le trac, c’est normal — et ça s’apprivoise.', `
+  t('stress', 'Mental', '', 'Gérer le stress avant une compétition', 'Le trac, c’est normal — et ça s’apprivoise.', `
 Le stress avant une course ou un concours est **normal** : c’est ton corps qui se prépare. L’objectif n’est pas de le supprimer mais de le canaliser.
 
 ## La respiration 4-6
@@ -193,7 +193,7 @@ Inspire par le nez pendant 4 secondes, expire lentement par la bouche pendant 6 
 ## Après
 Note ce qui a bien marché et ce que tu veux améliorer. Un résultat ne définit pas ta valeur.
 `),
-  t('ecole', 'Hygiène de vie', '📚', 'Concilier école et sport', 'S’organiser pour tout faire sans s’épuiser.', `
+  t('ecole', 'Hygiène de vie', '', 'Concilier école et sport', 'S’organiser pour tout faire sans s’épuiser.', `
 ## Quelques astuces
 - Utilise un **agenda** (ou ton téléphone) pour voir tes entraînements, examens et devoirs sur la semaine
 - Fais les devoirs **avant** l’entraînement quand c’est possible, ou dans les transports
@@ -202,7 +202,7 @@ Note ce qui a bien marché et ce que tu veux améliorer. Un résultat ne défini
 
 Le sport aide à mieux se concentrer à l’école. Mais si tu te sens débordé·e, parles-en : il y a toujours des solutions.
 `),
-  t('substances', 'Hygiène de vie', '🚭', 'Alcool, tabac, vape et performance', 'Ce qu’ils font vraiment à ton corps.', `
+  t('substances', 'Hygiène de vie', '', 'Alcool, tabac, vape et performance', 'Ce qu’ils font vraiment à ton corps.', `
 ## Tabac et vape
 La nicotine et la fumée réduisent l’oxygène transporté par ton sang : moins d’endurance, récupération plus lente. La nicotine crée une dépendance très rapidement.
 
@@ -214,7 +214,7 @@ Beaucoup de caféine et de sucre : nervosité, palpitations, mauvais sommeil.
 
 Tu as des questions ou tu veux en parler en toute confidentialité ? Tu peux t’adresser à ton médecin ou à des services comme ciao.ch.
 `),
-  t('complements', 'Nutrition', '💊', 'Compléments alimentaires : en as-tu besoin ?', 'Spoiler : très probablement pas.', `
+  t('complements', 'Nutrition', '', 'Compléments alimentaires : en as-tu besoin ?', 'Spoiler : très probablement pas.', `
 Les poudres de protéines, « brûleurs de graisse » et autres compléments sont très présents sur les réseaux sociaux. Pour un·e jeune athlète, **une alimentation variée suffit**.
 
 ## Pourquoi se méfier
@@ -225,7 +225,7 @@ Les poudres de protéines, « brûleurs de graisse » et autres compléments son
 ## Exceptions
 Une carence (fer, vitamine D…) se détecte par une prise de sang **chez le médecin**, qui décidera d’un éventuel traitement. Ne prends jamais rien sans son avis.
 `),
-  t('energie', 'Nutrition', '⚖️', 'Assez d’énergie pour grandir et performer', 'Manger suffisamment, c’est aussi protéger sa santé.', `
+  t('energie', 'Nutrition', '', 'Assez d’énergie pour grandir et performer', 'Manger suffisamment, c’est aussi protéger sa santé.', `
 Quand on dépense beaucoup d’énergie à l’entraînement sans manger assez, le corps se met en « mode économie ». Les médecins du sport appellent ça le **déficit énergétique relatif (RED-S)**. Il touche les filles comme les garçons.
 
 ## Les signes possibles
@@ -239,7 +239,7 @@ Quand on dépense beaucoup d’énergie à l’entraînement sans manger assez, 
 - La performance vient de l’entraînement, du sommeil et d’une alimentation suffisante, pas d’un poids « idéal »
 - Si tu te reconnais dans ces signes, parles-en à ton entraîneur, à un adulte de confiance ou à un médecin
 `),
-  t('jourj', 'Compétition', '🏅', 'Le jour de la compétition', 'Ta check-list pour être prêt·e.', `
+  t('jourj', 'Compétition', '', 'Le jour de la compétition', 'Ta check-list pour être prêt·e.', `
 ## La veille
 - Repas habituel riche en féculents (pas de nouveauté !)
 - Sac prêt : licence, dossard/épingles, pointes et clé, tenue du club, gourde, collations, vêtements chauds
@@ -252,6 +252,6 @@ Quand on dépense beaucoup d’énergie à l’entraînement sans manger assez, 
 - Entre les épreuves : boire, manger un peu, rester au chaud
 
 ## Après
-Récupération (boisson, collation), retour au calme, puis note ta perf dans **Mes records** si c’est un nouveau record 🎉
+Récupération (boisson, collation), retour au calme, puis note ta perf dans **Mes records** si c’est un nouveau record
 `),
 ]

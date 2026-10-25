@@ -35,7 +35,7 @@ export function AthleteSeriesCard({ athlete }: { athlete: Athlete }) {
 
   return (
     <section id="seances" ref={ref}>
-      <h2>📅 Ses séances à venir</h2>
+      <h2>Ses séances à venir</h2>
       <div className="card form">
         {!athlete.active && <div className="alert warn small">Fiche inactive : réactive-la pour qu’il reçoive des séances.</div>}
         {series.length === 0 ? <p className="small muted">Aucune séance planifiée à venir (hors lundi).</p> : (
@@ -57,7 +57,7 @@ export function AthleteSeriesCard({ athlete }: { athlete: Athlete }) {
             })}
           </ul>
         )}
-        <p className="tiny muted">Lundi : choisis son sous-groupe dans « ⏱️ Séances du lundi », il reçoit alors toutes les séances du lundi.</p>
+        <p className="tiny muted">Plan à temps cibles (lundi) : choisis son sous-groupe dans « Allures et temps cibles », il reçoit alors toutes ces séances.</p>
         {err && <div className="alert warn small">{err}</div>}
       </div>
     </section>

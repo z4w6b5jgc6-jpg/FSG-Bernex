@@ -5,7 +5,7 @@ import { formatShort } from '../lib/utils'
 const SHOWN = [30, 40, 50, 60, 80, 100, 120, 150, 200, 300]
 
 /** Temps probables de 30 à 300 m d'après le meilleur résultat avec départ (tableau d'équivalences) */
-export function SprintEquivalence({ tests, results, records, title = '⚡ Équivalences sprint' }: { tests: TestDef[]; results: TestResult[]; records: PersonalRecord[]; title?: string }) {
+export function SprintEquivalence({ tests, results, records, title = 'Équivalences sprint' }: { tests: TestDef[]; results: TestResult[]; records: PersonalRecord[]; title?: string }) {
   const ref = sprintReference(tests, results, records)
   if (!ref) return null
   const lvl = ref.level.toLocaleString('fr-CH', { maximumFractionDigits: 1 })

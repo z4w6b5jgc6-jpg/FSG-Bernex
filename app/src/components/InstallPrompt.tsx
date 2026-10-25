@@ -28,7 +28,7 @@ export function InstallPrompt({ who }: { who: 'coach' | 'athlete' }) {
           <div className="small muted">Accès en un geste depuis l’écran d’accueil, en plein écran.</div>
         ) : isIOS() ? (
           <div className="small">
-            Dans <b>Safari</b>, touche <b>Partager</b> <span aria-hidden>⬆️</span> puis <b>« Sur l’écran d’accueil »</b>.
+            Dans <b>Safari</b>, touche <b>Partager</b> (carré avec une flèche vers le haut) puis <b>« Sur l’écran d’accueil »</b>.
           </div>
         ) : (
           <div className="small">
@@ -36,7 +36,7 @@ export function InstallPrompt({ who }: { who: 'coach' | 'athlete' }) {
           </div>
         )}
         <div className="row gap install-actions">
-          {canPromptInstall() && <button className="btn primary small" onClick={() => promptInstall()}>📲 Installer</button>}
+          {canPromptInstall() && <button className="btn primary small" onClick={() => promptInstall()}>Installer</button>}
           <button className="btn ghost small" onClick={dismiss}>Plus tard</button>
         </div>
       </div>

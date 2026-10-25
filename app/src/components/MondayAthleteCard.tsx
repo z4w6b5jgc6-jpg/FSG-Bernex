@@ -31,10 +31,10 @@ export function MondayAthleteCard({ athlete }: { athlete: Athlete }) {
 
   return (
     <section>
-      <div className="row between"><h2>⏱️ Séances du lundi</h2><Link to="/lundi" className="small">Séance du jour →</Link></div>
+      <div className="row between"><h2>Allures et temps cibles</h2><Link to="/lundi" className="small">Temps cibles →</Link></div>
       <div className="card form">
         <label className="field">
-          <span>Sous-groupe du lundi</span>
+          <span>Sous-groupe du plan à temps cibles</span>
           <select value={sg} onChange={(e) => change(e.target.value)}>
             <option value="">— Aucun —</option>
             {Object.entries(SUBGROUPS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}

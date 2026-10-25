@@ -47,10 +47,10 @@ export function CompetitionCard({ c, onEdit }: { c: Competition; onEdit?: () => 
   const who = athletes.filter((a) => c.athlete_ids.includes(a.id))
   const entries = c.entries ?? {}
   const share =
-    `🏆 ${c.name}\n📅 ${dateRange(c)}${c.location ? `\n📍 ${c.location}` : ''}` +
-    (c.registration_deadline ? `\n✍️ Inscription jusqu’au ${formatDate(c.registration_deadline, { day: 'numeric', month: 'long' })}` : '') +
-    (c.program_url ? `\n📄 Programme : ${c.program_url}` : '') + (c.registration_url ? `\n🔗 Inscriptions : ${c.registration_url}` : '') +
-    (who.length ? `\n\n👥 Participants :\n${who.map((a) => `• ${a.first_name}${entries[a.id] ? ` : ${entries[a.id]}` : ''}`).join('\n')}` : '')
+    `${c.name}\n${dateRange(c)}${c.location ? `\n${c.location}` : ''}` +
+    (c.registration_deadline ? `\nInscription jusqu’au ${formatDate(c.registration_deadline, { day: 'numeric', month: 'long' })}` : '') +
+    (c.program_url ? `\nProgramme : ${c.program_url}` : '') + (c.registration_url ? `\nInscriptions : ${c.registration_url}` : '') +
+    (who.length ? `\n\nParticipants :\n${who.map((a) => `• ${a.first_name}${entries[a.id] ? ` : ${entries[a.id]}` : ''}`).join('\n')}` : '')
   return (
     <div className={`card competition level-${c.level} ${past ? 'past' : ''}`}>
       <div className="row between">
@@ -58,18 +58,18 @@ export function CompetitionCard({ c, onEdit }: { c: Competition; onEdit?: () => 
         {!past && <span className="small muted">{countdown(c)}</span>}
       </div>
       <h3>{c.name}</h3>
-      <div className="small">📅 {dateRange(c)}{c.location && <> · 📍 {c.location}</>}</div>
+      <div className="small">{dateRange(c)}{c.location && <> · {c.location}</>}</div>
       {deadline !== null && !past && (
         <div className={`small ${deadline >= 0 && deadline <= 7 ? 'deadline-soon' : 'muted'}`}>
-          ✍️ Inscription jusqu’au {formatDate(c.registration_deadline!, { day: 'numeric', month: 'long' })}
+          Inscription jusqu’au {formatDate(c.registration_deadline!, { day: 'numeric', month: 'long' })}
           {deadline >= 0 ? (deadline <= 7 ? ` — plus que ${deadline} j !` : '') : ' — clôturée'}
         </div>
       )}
       {(c.program_url || c.registration_url || c.results_url) && (
         <div className="row gap wrap">
-          {c.program_url && <a className="btn small" href={c.program_url} target="_blank" rel="noreferrer">📄 Programme</a>}
-          {c.registration_url && <a className="btn small" href={c.registration_url} target="_blank" rel="noreferrer">✍️ Inscriptions</a>}
-          {c.results_url && <a className="btn small" href={c.results_url} target="_blank" rel="noreferrer">📊 Résultats</a>}
+          {c.program_url && <a className="btn small" href={c.program_url} target="_blank" rel="noreferrer">Programme</a>}
+          {c.registration_url && <a className="btn small" href={c.registration_url} target="_blank" rel="noreferrer">Inscriptions</a>}
+          {c.results_url && <a className="btn small" href={c.results_url} target="_blank" rel="noreferrer">Résultats</a>}
         </div>
       )}
       {c.notes && <p className="small">{c.notes}</p>}
@@ -82,15 +82,15 @@ export function CompetitionCard({ c, onEdit }: { c: Competition; onEdit?: () => 
       )}
       {onEdit ? (
         <div className="row between wrap">
-          <span className="tiny muted">{who.length ? `👥 ${who.length} participant(s)` : '👥 Tout le club'}</span>
+          <span className="tiny muted">{who.length ? `${who.length} participant(s)` : 'Tout le club'}</span>
           <span className="row gap">
-            <a className="btn ghost small" href={whatsappUrl(share)} target="_blank" rel="noreferrer" aria-label="Partager sur WhatsApp">📲</a>
+            <a className="btn ghost small" href={whatsappUrl(share)} target="_blank" rel="noreferrer" aria-label="Partager sur WhatsApp">WhatsApp</a>
             <button className="btn ghost small" onClick={onEdit}>Modifier</button>
           </span>
         </div>
       ) : (
         me && c.athlete_ids.includes(me.id) && (
-          <span className="tiny tt-record">✅ Tu es sélectionné·e{entries[me.id] && <> · <b>{entries[me.id]}</b></>}</span>
+          <span className="tiny tt-record">Tu es sélectionné·e{entries[me.id] && <> · <b>{entries[me.id]}</b></>}</span>
         )
       )}
     </div>
@@ -236,7 +236,7 @@ export function Competitions() {
     <div>
       {!coach && <BackLink to="/" label="Accueil" />}
       <div className="row between">
-        <h1>🏆 Compétitions</h1>
+        <h1>Compétitions</h1>
         {coach && <button className="btn primary" onClick={() => setForm({ date: todayISO() })}>+ Compétition</button>}
       </div>
       {coach && <p className="small muted">A = objectif principal · B = importante · C = préparation. Les compétitions apparaissent aussi dans le planning et chez les athlètes concernés.</p>}

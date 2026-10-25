@@ -39,15 +39,15 @@ export function Tests() {
         <Empty>
           Ta batterie de tests : 20 m lancé, 30 m lancé, 40 m départ arrêté, monobond, triple bond, pentabond, décabond et VMA.<br />
           <button className="btn primary" onClick={() => add(DEFAULT_TESTS)} disabled={busy}>Ajouter ces {DEFAULT_TESTS.length} tests</button>
-          <div className="small" style={{ marginTop: '0.8rem' }}>ou <Link to="/tests/import">📥 importer directement ton classeur Excel</Link></div>
+          <div className="small" style={{ marginTop: '0.8rem' }}>ou <Link to="/tests/import">importer directement ton classeur Excel</Link></div>
         </Empty>
       ) : (
         <>
           <div className="row gap wrap">
-            <Link className="btn primary" to="/tests/saisie">✏️ Saisir des résultats</Link>
-            <Link className="btn" to="/tests/tableau">📊 Tableau du groupe</Link>
-            <Link className="btn" to="/tests/allures-sprint">⚡ Allures sprint</Link>
-            <Link className="btn" to="/tests/import">📥 Importer (Excel)</Link>
+            <Link className="btn primary" to="/tests/saisie">Saisir des résultats</Link>
+            <Link className="btn" to="/tests/tableau">Tableau du groupe</Link>
+            <Link className="btn" to="/tests/allures-sprint">Allures sprint</Link>
+            <Link className="btn" to="/tests/import">Importer (Excel)</Link>
           </div>
           {CATS.map((c) => {
             const list = tests.filter((t) => t.category === c)
@@ -154,7 +154,7 @@ export function TestDetail() {
           <option value="">Tous les groupes</option>
           {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
         </select>
-        <Link className="btn primary" to={`/tests/saisie?test=${test.id}`}>✏️ Saisir</Link>
+        <Link className="btn primary" to={`/tests/saisie?test=${test.id}`}>Saisir</Link>
       </div>
       {rows.length === 0 ? <Empty>Aucun résultat pour ce test.</Empty> : (
         <div className="card">
@@ -275,7 +275,7 @@ export function TestMatrix() {
       <h1>Tableau du groupe</h1>
       {imported && (
         <div className="alert info">
-          ✅ Import terminé : {imported[0]} résultat(s) ajouté(s){imported[4] ? ` (en remplacement de ${imported[4]} ancien(s))` : ''}{imported[3] ? `, ${imported[3]} mis à jour` : ''}, {imported[1]} bilan(s), {imported[2]} nouvelle(s) fiche(s).
+          Import terminé : {imported[0]} résultat(s) ajouté(s){imported[4] ? ` (en remplacement de ${imported[4]} ancien(s))` : ''}{imported[3] ? `, ${imported[3]} mis à jour` : ''}, {imported[1]} bilan(s), {imported[2]} nouvelle(s) fiche(s).
         </div>
       )}
       <div className="row gap filters">

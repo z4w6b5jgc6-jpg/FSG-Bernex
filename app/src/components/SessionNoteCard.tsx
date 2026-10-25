@@ -23,7 +23,7 @@ export function SessionNoteCard({ sessionId }: { sessionId: string }) {
   }
   return (
     <div className="card form">
-      <b className="small">🔒 Remarques (visibles seulement par les coachs)</b>
+      <b className="small">Remarques (visibles seulement par les coachs)</b>
       <textarea rows={2} value={text} onChange={(e) => setText(e.target.value)} placeholder="Tests à faire, athlètes à surveiller, consignes pour Michèle…" />
       {text !== saved && <button className="btn small primary" disabled={busy} onClick={run}>{busy ? '…' : 'Enregistrer la remarque'}</button>}
       {err && <div className="alert warn small">{err}</div>}

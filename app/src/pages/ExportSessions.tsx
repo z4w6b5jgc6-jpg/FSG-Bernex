@@ -62,8 +62,8 @@ export function ExportSessions() {
         </div>
         <p className="small"><b>{list.length}</b> séance(s) planifiée(s) sur <b>{nDays}</b> jour(s).</p>
         {err && <div className="alert warn">{err}</div>}
-        <button className="btn primary block" disabled={list.length === 0} onClick={run}>📥 Télécharger le fichier Excel</button>
-        <p className="tiny muted">Sur iPad : le fichier s’ouvre en aperçu, touche Partager ⬆️ puis « Enregistrer dans Fichiers » ou ouvre-le avec Excel / Numbers.</p>
+        <button className="btn primary block" disabled={list.length === 0} onClick={run}>Télécharger le fichier Excel</button>
+        <p className="tiny muted">Sur iPad : le fichier s’ouvre en aperçu, touche Partager puis « Enregistrer dans Fichiers » ou ouvre-le avec Excel / Numbers.</p>
       </div>
     </div>
   )

@@ -18,7 +18,7 @@ export function RecordForm({ initial, athleteId, onClose }: { initial: Partial<P
     }
   }
   return (
-    <Modal title={r.id ? 'Modifier la performance' : 'Nouvelle performance 🎉'} onClose={onClose}>
+    <Modal title={r.id ? 'Modifier la performance' : 'Nouvelle performance'} onClose={onClose}>
       <form className="form" onSubmit={submit}>
         <Field label="Discipline"><input value={r.event ?? ''} onChange={(e) => setR({ ...r, event: e.target.value })} placeholder="Ex. 100 m, longueur, poids 4 kg" required /></Field>
         <Field label="Performance"><input value={r.mark ?? ''} onChange={(e) => setR({ ...r, mark: e.target.value })} placeholder={'Ex. 12"85 ou 5,40 m'} required /></Field>

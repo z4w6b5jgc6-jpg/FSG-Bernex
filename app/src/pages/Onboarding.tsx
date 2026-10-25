@@ -64,19 +64,19 @@ export function Onboarding() {
   return (
     <div className="login">
       <div className="login-hero">
-        <h1>Bienvenue 👋</h1>
+        <h1>Bienvenue</h1>
         <p className="muted">{me?.email}</p>
       </div>
       {busy && <p className="muted">Un instant…</p>}
       {err && <div className="alert warn login-card">{err}</div>}
       <form className="card login-card form" onSubmit={join}>
-        <h2>🏃 Je suis athlète</h2>
+        <h2>Je suis athlète</h2>
         <p className="small muted">Colle le lien d’inscription ou le code envoyé par ton entraîneur.</p>
         <input value={link} onChange={(e) => { setLink(e.target.value); setErr(null) }} placeholder="Lien ou code (ex. 7F3K9Q2A)" autoCapitalize="characters" />
         <button className="btn primary block" disabled={!link}>Continuer</button>
       </form>
       <form className="card login-card form" onSubmit={create}>
-        <h2>📋 Je suis entraîneur</h2>
+        <h2>Je suis entraîneur</h2>
         <p className="small muted">
           Tu rejoins un club qui utilise déjà l’app ? Ne crée pas d’espace : ouvre le <b>lien d’invitation entraîneur</b>
           reçu sur WhatsApp (ou colle-le dans la case « Lien ou code » ci-dessus).

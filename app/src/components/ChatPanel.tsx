@@ -89,8 +89,8 @@ export function ChatPanel({ session, storageKey }: { session?: Session | null; s
           <option value="">Période de préparation…</option>
           {PERIODS.map((p) => <option key={p}>{p}</option>)}
         </select>
-        {next && <span className="tiny muted">🏆 Prochaine compétition dans {days} j (niveau {next.level})</span>}
-        {messages.length > 0 && <button className="btn ghost small" onClick={() => { setMessages([]); setCreated({}) }}>🗑 Nouvelle discussion</button>}
+        {next && <span className="tiny muted">Prochaine compétition dans {days} j (niveau {next.level})</span>}
+        {messages.length > 0 && <button className="btn ghost small" onClick={() => { setMessages([]); setCreated({}) }}>Nouvelle discussion</button>}
       </div>
 
       <div className="chat-list">
@@ -106,7 +106,7 @@ export function ChatPanel({ session, storageKey }: { session?: Session | null; s
             {m.role === 'assistant' && sessionIn(m.content, 'x') && (
               created[i]
                 ? <button className="btn small" onClick={() => nav(`/seances/${created[i]}`)}>✓ Séance créée — l’ouvrir</button>
-                : <button className="btn small" onClick={() => create(i, m.content)}>➕ Créer cette séance</button>
+                : <button className="btn small" onClick={() => create(i, m.content)}>Créer cette séance</button>
             )}
           </div>
         ))}
@@ -120,7 +120,7 @@ export function ChatPanel({ session, storageKey }: { session?: Session | null; s
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !('ontouchstart' in window)) { e.preventDefault(); send(input) } }} />
         <button className="btn primary" disabled={busy || !input.trim()}>Envoyer</button>
       </form>
-      <p className="tiny muted">🔒 Les noms de tes athlètes sont masqués avant l’envoi{masked ? ` (${masked} masqué${masked > 1 ? 's' : ''})` : ''}. Évite d’écrire des informations de santé. IA de Cloudflare, rien n’est conservé.</p>
+      <p className="tiny muted">Les noms de tes athlètes sont masqués avant l’envoi{masked ? ` (${masked} masqué${masked > 1 ? 's' : ''})` : ''}. Évite d’écrire des informations de santé. IA de Cloudflare, rien n’est conservé.</p>
     </div>
   )
 }

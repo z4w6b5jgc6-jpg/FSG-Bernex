@@ -136,7 +136,7 @@ export function parseSessionText(lines: string[], baseTitle: string, today = new
     const bare = /:\s*$/.test(l) || /^(e|é)chauffement$|^retour au calme$/i.test(l)
     if (WARMUP.test(l)) { const b = block('Échauffement'); if (!bare) { b.items.push(item(l)); closed.add(b.id) } continue }
     if (COOL.test(p)) { const b = block('Retour au calme'); if (!bare) { b.items.push(item(l)); closed.add(b.id) } continue }
-    if (/^pause\b/.test(p)) { (last() ?? block('Exercices')).items.push(emptyItem(`⏸️ ${l}`)); continue }
+    if (/^pause\b/.test(p)) { (last() ?? block('Exercices')).items.push(emptyItem(l)); continue }
     // Titre de bloc : « Titre : » (+ contenu éventuel) ou titre connu seul sur sa ligne
     const colon = l.match(/^([^:]{2,60}?)\s*:\s*(.*)$/)
     const known = HEADERS.find(([re]) => re.test(plain(colon ? colon[1] : l)))

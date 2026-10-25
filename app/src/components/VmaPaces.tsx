@@ -10,7 +10,7 @@ export function VmaPaces({ tests, results, title = 'Tes allures d’entraînemen
   return (
     <div className="card paces">
       <div className="row between">
-        <strong>🏃 {title}</strong>
+        <strong>{title}</strong>
         <span className="tiny muted">VMA {v.toLocaleString('fr-CH')} km/h · {formatShort(vma.date)}</span>
       </div>
       <table className="table small">

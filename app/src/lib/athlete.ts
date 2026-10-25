@@ -2,7 +2,6 @@ import type { Assignment, Athlete, Feedback, PersonalRecord, Tip, Wellness } fro
 import { BUILTIN_TIPS } from '../data/tips'
 import { addDays, athletesFor, todayISO } from './utils'
 
-export const AVATARS = ['🏃', '🏃‍♀️', '⚡', '🔥', '🚀', '🦊', '🐆', '🦅', '🐺', '🦋', '🐬', '💪', '🌟', '🎯', '🏹', '🥇', '👟', '🌈', '🍀', '😎']
 /** Couleur du club (par défaut) puis couleurs au choix de l'athlète */
 export const CLUB_COLOR = '#1a8526'
 /** Ancienne couleur par défaut (orange) : affichée comme la couleur du club */
@@ -63,21 +62,21 @@ export function computeBadges(p: {
   records: PersonalRecord[]
   wellness: Wellness[]
 }): Badge[] {
-  const profileComplete = !!(p.athlete.goals && p.athlete.events && p.athlete.avatar !== '🏃')
+  const profileComplete = !!(p.athlete.goals && p.athlete.events)
   const b = (id: string, emoji: string, title: string, desc: string, earned: boolean) => ({ id, emoji, title, desc, earned })
   return [
-    b('first', '🎉', 'Premier retour', 'Donner ton ressenti après une séance', p.feedbackCount >= 1),
-    b('s5', '🥉', '5 séances', '5 séances réalisées', p.done >= 5),
-    b('s15', '🥈', '15 séances', '15 séances réalisées', p.done >= 15),
-    b('s30', '🥇', '30 séances', '30 séances réalisées', p.done >= 30),
-    b('streak3', '🔥', 'En feu', '3 séances de suite avec retour', p.streak >= 3),
-    b('streak10', '☄️', 'Inarrêtable', '10 séances de suite avec retour', p.streak >= 10),
-    b('record', '🏅', 'Recordman', 'Ajouter un premier record perso', p.records.length >= 1),
-    b('records5', '📈', 'Collectionneur', '5 records enregistrés', p.records.length >= 5),
-    b('checkin', '🌙', 'À l’écoute', 'Faire 7 check-ins bien-être', p.wellness.length >= 7),
-    b('sleep', '😴', 'Gros dormeur', '5 nuits de 8 h ou plus', p.wellness.filter((w) => (w.sleep_hours ?? 0) >= 8).length >= 5),
-    b('profile', '✨', 'Mon style', 'Compléter ton profil (avatar, disciplines, objectif)', profileComplete),
-    b('fav', '📚', 'Curieux', 'Mettre 3 conseils en favoris', p.athlete.favorite_tips.length >= 3),
+    b('first', '', 'Premier retour', 'Donner ton ressenti après une séance', p.feedbackCount >= 1),
+    b('s5', '', '5 séances', '5 séances réalisées', p.done >= 5),
+    b('s15', '', '15 séances', '15 séances réalisées', p.done >= 15),
+    b('s30', '', '30 séances', '30 séances réalisées', p.done >= 30),
+    b('streak3', '', 'En feu', '3 séances de suite avec retour', p.streak >= 3),
+    b('streak10', '', 'Inarrêtable', '10 séances de suite avec retour', p.streak >= 10),
+    b('record', '', 'Recordman', 'Ajouter un premier record perso', p.records.length >= 1),
+    b('records5', '', 'Collectionneur', '5 records enregistrés', p.records.length >= 5),
+    b('checkin', '', 'À l’écoute', 'Faire 7 check-ins bien-être', p.wellness.length >= 7),
+    b('sleep', '', 'Gros dormeur', '5 nuits de 8 h ou plus', p.wellness.filter((w) => (w.sleep_hours ?? 0) >= 8).length >= 5),
+    b('profile', '', 'Mon style', 'Compléter ton profil (disciplines, objectif)', profileComplete),
+    b('fav', '', 'Curieux', 'Mettre 3 conseils en favoris', p.athlete.favorite_tips.length >= 3),
   ]
 }
 

@@ -66,8 +66,8 @@ export function SessionView({ session, vma, sprintLevel }: { session: Omit<Sessi
                   <strong>{it.name || 'Exercice'}</strong>
                   {itemSummary(it) && <span className="item-summary"> {itemSummary(it)}</span>}
                   {it.notes && <div className="muted small">{it.notes}</div>}
-                  {vma && personalPace(it, vma) && <div className="my-pace">🎯 Pour toi : {personalPace(it, vma)}</div>}
-                  {sprintLevel && sprintTarget(it, sprintLevel) && <div className="my-pace">⚡ Pour toi : {sprintTarget(it, sprintLevel)}</div>}
+                  {vma && personalPace(it, vma) && <div className="my-pace">Pour toi : {personalPace(it, vma)}</div>}
+                  {sprintLevel && sprintTarget(it, sprintLevel) && <div className="my-pace">Pour toi : {sprintTarget(it, sprintLevel)}</div>}
                 </li>
               ))}
             </ul>

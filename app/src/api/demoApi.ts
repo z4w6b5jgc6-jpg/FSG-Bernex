@@ -36,14 +36,14 @@ function seed(): Db {
   // Athlètes de la liste de l'entraîneur, pas encore inscrits dans l'app
   const roster = (first: string, last: string, group: string, year: number, events: string, email = '') => ({
     id: uid(), user_id: null as string | null, group_id: group, first_name: first, last_name: last, birth_year: year,
-    events, phone: '', avatar: '🏃', color: '#e85d04', goals: '', favorite_tips: [] as string[], active: true,
+    events, phone: '', avatar: '', color: '#e85d04', goals: '', favorite_tips: [] as string[], active: true,
     email, linked_at: null as string | null, signup_reviewed: true, created_at: addDays(today, -30) + 'T12:00:00.000Z',
   })
   const athletes = [
-    mk('Léa', 'Martin', u18.id, 2010, '100 m, longueur', '⚡', '#7c3aed', 'Passer sous les 13" au 100 m cette saison'),
-    mk('Noah', 'Rossier', u18.id, 2009, '800 m, 1500 m', '🦊', '#ea580c', 'Qualif championnats romands'),
-    mk('Inès', 'Favre', actifs.id, 2007, '100 m haies, hauteur', '🦋', '#db2777', ''),
-    mk('Luca', 'Bianchi', actifs.id, 2006, 'poids, disque', '💪', '#16a34a', ''),
+    mk('Léa', 'Martin', u18.id, 2010, '100 m, longueur', '', '#7c3aed', 'Passer sous les 13" au 100 m cette saison'),
+    mk('Noah', 'Rossier', u18.id, 2009, '800 m, 1500 m', '', '#ea580c', 'Qualif championnats romands'),
+    mk('Inès', 'Favre', actifs.id, 2007, '100 m haies, hauteur', '', '#db2777', ''),
+    mk('Luca', 'Bianchi', actifs.id, 2006, 'poids, disque', '', '#16a34a', ''),
     roster('Emma', 'Rochat', u18.id, 2009, '400 m'),
     roster('Samuel', 'Keller', actifs.id, 2007, 'longueur, triple saut', 'samuel@demo.ch'),
   ]
@@ -105,13 +105,13 @@ function seed(): Db {
     sessions: [vitesse, endurance],
     assignments,
     feedback: [
-      fb(0, 0, 6, 2, 4), fb(1, 0, 8, 3, 4, 'Dur mais j’ai tenu toutes les séries 💪'), fb(2, 0, 7, 2, 5, 'Super séance, les départs au clap c’était cool !'),
+      fb(0, 0, 6, 2, 4), fb(1, 0, 8, 3, 4, 'Dur mais j’ai tenu toutes les séries'), fb(2, 0, 7, 2, 5, 'Super séance, les départs au clap c’était cool !'),
       fb(2, 1, 8, 4, 3, 'Dur à la fin.', 'Un peu mal au mollet droit'),
     ].map((f) => ({ ...f, updated_at: f.updated_at || now })),
     tips: [{
-      id: uid(), category: 'Club', emoji: '📣', title: 'Règles du groupe', published: true,
+      id: uid(), category: 'Club', emoji: '', title: 'Règles du groupe', published: true,
       summary: 'Ce que j’attends de chacun à l’entraînement.',
-      body: '- Arriver 10 minutes avant le début\n- Prévenir sur WhatsApp en cas d’absence\n- Donner son ressenti dans l’app après chaque séance\n\nMerci à tous 🙌',
+      body: '- Arriver 10 minutes avant le début\n- Prévenir sur WhatsApp en cas d’absence\n- Donner son ressenti dans l’app après chaque séance\n\nMerci à tous',
     }],
     records: [
       { id: uid(), athlete_id: athletes[0].id, event: '100 m', mark: '13"21', date: addDays(today, -40), competition: 'Meeting de Genève' },
@@ -496,13 +496,13 @@ export function createDemoApi(): Api {
 function defaults(table: TableName): Record<string, unknown> {
   switch (table) {
     case 'groups': return { color: '#2563eb' }
-    case 'athletes': return { user_id: null, group_id: null, last_name: '', birth_year: null, events: '', phone: '', avatar: '🏃', color: '#e85d04', goals: '', favorite_tips: [], active: true, email: '', linked_at: null, signup_reviewed: true, subgroup: '' }
+    case 'athletes': return { user_id: null, group_id: null, last_name: '', birth_year: null, events: '', phone: '', avatar: '', color: '#e85d04', goals: '', favorite_tips: [], active: true, email: '', linked_at: null, signup_reviewed: true, subgroup: '' }
     case 'athlete_notes': return {}
     case 'exercises': return { category: 'Autre', description: '' }
     case 'sessions': return { objective: '', focus: '', duration_min: null, blocks: [], plan: {}, targets: [] }
     case 'assignments': return { time: '', location: '', group_id: null, athlete_ids: [], note: '' }
     case 'feedback': return { completed: true, rpe: null, fatigue: null, mood: null, recovery_fit: null, pain: '', comment: '', coach_reply: '' }
-    case 'tips': return { category: 'Hygiène de vie', emoji: '💡', summary: '', body: '', published: true }
+    case 'tips': return { category: 'Hygiène de vie', emoji: '', summary: '', body: '', published: true }
     case 'records': return { competition: '', date: todayISO() }
     case 'competitions': return { end_date: null, location: '', level: 'B', program_url: '', registration_url: '', results_url: '', registration_deadline: null, notes: '', athlete_ids: [], entries: {} }
     case 'tests': return { unit: '', higher_is_better: true, category: 'Autre', description: '' }

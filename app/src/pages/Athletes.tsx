@@ -1,3 +1,4 @@
+import { Avatar } from '../components/Avatar'
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useData } from '../lib/data'
@@ -30,22 +31,22 @@ export function Athletes() {
 
   const inviteMessage = (a: Athlete) => {
     const link = me?.invite_code ? inviteLink(me.invite_code, a.group_id) : ''
-    return `Salut ${a.first_name} ! 🏃\nInscris-toi sur l’app d’entraînement pour retrouver tes séances, tes résultats de tests et tes progrès :\n${link}\n\nUtilise ton vrai prénom et nom (${fullName(a)}) pour retrouver ton profil.`
+    return `Salut ${a.first_name} !\nInscris-toi sur l’app d’entraînement pour retrouver tes séances, tes résultats de tests et tes progrès :\n${link}\n\nUtilise ton vrai prénom et nom (${fullName(a)}) pour retrouver ton profil.`
   }
 
   return (
     <div>
       <div className="row between">
         <h1>Athlètes</h1>
-        <Link className="btn" to="/tests">📏 Tests</Link>
+        <Link className="btn" to="/tests">Tests</Link>
       </div>
       <PendingSignups />
       <InviteCard />
       <CoachesCard />
       <div className="row gap wrap actions">
         <button className="btn primary" onClick={() => setEditAthlete({ group_id: groups[0]?.id ?? null })}>+ Athlète</button>
-        <button className="btn" onClick={() => setImporting(true)}>📥 Importer ma liste</button>
-        <Link className="btn" to="/athletes/questionnaire">📝 Questionnaire</Link>
+        <button className="btn" onClick={() => setImporting(true)}>Importer ma liste</button>
+        <Link className="btn" to="/athletes/questionnaire">Questionnaire</Link>
         <button className="btn" onClick={() => setEditGroup({ color: COLORS[groups.length % COLORS.length] })}>+ Groupe</button>
       </div>
       {athletes.length > 0 && (
@@ -74,22 +75,22 @@ export function Athletes() {
                   return (
                     <div key={a.id} className={`card ${a.active ? '' : 'inactive'}`}>
                       <div className="row between">
-                        <Link to={`/athletes/${a.id}`} className="row gap"><span className="avatar-sm">{a.avatar}</span><strong>{fullName(a)}</strong></Link>
-                        <span className="muted small">{a.birth_year}{checkin && ' · 🌙'}</span>
+                        <Link to={`/athletes/${a.id}`} className="row gap"><Avatar a={a} size="sm" /><strong>{fullName(a)}</strong></Link>
+                        <span className="muted small">{a.birth_year}{checkin && ' ·'}</span>
                       </div>
                       {a.events && <div className="muted small">{a.events}</div>}
                       <div className="small">
                         {a.user_id
                           ? <span className="pill ok">✓ Inscrit·e</span>
-                          : <span className="pill">⏳ Pas encore inscrit·e</span>}
+                          : <span className="pill">Pas encore inscrit·e</span>}
                         {a.user_id && <span className="muted"> {fb ? `· retour le ${new Date(fb.updated_at).toLocaleDateString('fr-CH')}` : '· aucun retour'}</span>}
                       </div>
                       <div className="row gap wrap">
                         <Link className="btn small" to={`/athletes/${a.id}`}>Fiche</Link>
                         {!a.user_id && a.phone && (
-                          <a className="btn small whatsapp" href={whatsappUrl(inviteMessage(a), a.phone)} target="_blank" rel="noreferrer">📲 Inviter</a>
+                          <a className="btn small whatsapp" href={whatsappUrl(inviteMessage(a), a.phone)} target="_blank" rel="noreferrer">Inviter</a>
                         )}
-                        {a.user_id && a.phone && <a className="btn small whatsapp" href={whatsappUrl(`Salut ${a.first_name} !`, a.phone)} target="_blank" rel="noreferrer">📲</a>}
+                        {a.user_id && a.phone && <a className="btn small whatsapp" href={whatsappUrl(`Salut ${a.first_name} !`, a.phone)} target="_blank" rel="noreferrer">WhatsApp</a>}
                         <button className="btn small ghost" onClick={() => setEditAthlete(a)}>Modifier</button>
                       </div>
                     </div>
@@ -136,7 +137,7 @@ function PendingSignups() {
 
   return (
     <div className="card pending">
-      <strong>🆕 Nouvelles inscriptions ({pending.length})</strong>
+      <strong>Nouvelles inscriptions ({pending.length})</strong>
       {pending.map((a) => {
         const linked = wasInRoster(a)
         const similar = roster.filter((r) => r.last_name && a.last_name && r.last_name.toLowerCase()[0] === a.last_name.toLowerCase()[0])
@@ -144,7 +145,7 @@ function PendingSignups() {
           <div key={a.id} className="pending-row">
             <div>
               <b>{fullName(a)}</b> <span className="muted small">{a.birth_year} · {gname(a.group_id) ?? 'sans groupe'}{a.email && ` · ${a.email}`}</span>
-              <div className="small">{linked ? '✅ Relié·e automatiquement à sa fiche de ta liste' : '🆕 Profil créé à l’inscription (pas trouvé dans ta liste)'}</div>
+              <div className="small">{linked ? 'Relié·e automatiquement à sa fiche de ta liste' : 'Profil créé à l’inscription (pas trouvé dans ta liste)'}</div>
             </div>
             <div className="row gap wrap">
               {linked ? (
@@ -230,7 +231,7 @@ export function AthleteForm({ initial, onClose }: { initial: Partial<Athlete>; o
                   try { await save('athletes', { id: a.id, user_id: null }); onClose() } catch (err) { alert(errorMessage(err)) }
                 }}>Délier le compte</button>
               </span>
-            ) : <span className="pill">⏳ Pas encore inscrit·e</span>}
+            ) : <span className="pill">Pas encore inscrit·e</span>}
           </div>
         )}
         {a.id && (

@@ -11,13 +11,13 @@ export function ReportCard({ report, editable }: { report: TestReport; editable?
   return (
     <div className="card report">
       <div className="row between">
-        <strong>📝 {report.title}</strong>
+        <strong>{report.title}</strong>
         <span className="tiny muted">{formatDate(report.date, { day: 'numeric', month: 'short', year: 'numeric' })}</span>
       </div>
       {report.message && <p className="report-message">{report.message}</p>}
-      {report.strengths && <div className="report-line"><span>💪 Points forts</span>{report.strengths}</div>}
-      {report.priority && <div className="report-line"><span>🎯 Axe prioritaire</span>{report.priority}</div>}
-      {report.training && <div className="report-line"><span>🏋️ Entraînement</span>{report.training}</div>}
+      {report.strengths && <div className="report-line"><span>Points forts</span>{report.strengths}</div>}
+      {report.priority && <div className="report-line"><span>Axe prioritaire</span>{report.priority}</div>}
+      {report.training && <div className="report-line"><span>Entraînement</span>{report.training}</div>}
       {editable && (
         <div className="row gap">
           <button className="btn small ghost" onClick={() => setEdit(true)}>Modifier</button>

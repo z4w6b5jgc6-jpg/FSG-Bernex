@@ -19,7 +19,7 @@ export function MondayPlan() {
   return (
     <div>
       <BackLink to="/lundi" label="Temps cibles" />
-      <h1>📋 Plan</h1>
+      <h1>Plan</h1>
       {!dates.length && <Empty>Aucun plan importé. <Link to="/lundi/import">Importer le plan</Link></Empty>}
       {cycles.map((c) => (
         <section key={c}>
@@ -112,7 +112,7 @@ function EditDay({ date, day }: { date: string; day: Session[] }) {
         <Field label="Échauffement"><textarea rows={2} value={common.warmup} onChange={(e) => setC({ warmup: e.target.value })} /></Field>
         <Field label="Bloc vitesse (commun)"><textarea rows={2} value={common.speed} onChange={(e) => setC({ speed: e.target.value })} /></Field>
         <Field label="Retour au calme / prévention"><textarea rows={2} value={common.cooldown} onChange={(e) => setC({ cooldown: e.target.value })} /></Field>
-        <Field label="🔒 Remarques (visibles seulement par les coachs)"><textarea rows={2} value={remarks} onChange={(e) => setRemarks(e.target.value)} /></Field>
+        <Field label="Remarques (visibles seulement par les coachs)"><textarea rows={2} value={remarks} onChange={(e) => setRemarks(e.target.value)} /></Field>
       </section>
 
       {day.map((s) => {

@@ -32,7 +32,7 @@ export function NotificationsSetup() {
   return (
     <div>
       <BackLink to="/messages" label="Messages" />
-      <h1>🔔 Notifications</h1>
+      <h1>Notifications</h1>
       {ready ? (
         <div className="alert info">✓ Les notifications sont configurées sur le serveur. Chacun les active sur son appareil (toi, Michèle, les athlètes depuis leur Profil ou Messages).</div>
       ) : (

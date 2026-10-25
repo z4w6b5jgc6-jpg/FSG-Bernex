@@ -11,7 +11,7 @@ import { Thread } from '../../components/Thread'
 import { api } from '../../api'
 import { feedbackWorthNotice } from '../../lib/messages'
 import { FeedbackScores } from '../../components/FeedbackCard'
-import { Empty, FATIGUE_LABELS, FATIGUE_TEXT, MOOD_LABELS, MOOD_TEXT, RECOVERY_ICON, RECOVERY_TEXT, RPE_LABELS, Scale } from '../../components/ui'
+import { Empty, FATIGUE_TEXT, MOOD_TEXT, RECOVERY_TEXT, RPE_LABELS, Scale } from '../../components/ui'
 import type { Assignment, Feedback } from '../../types'
 import { myAssignments } from '../../lib/athlete'
 import { latestVma } from '../../lib/vma'
@@ -32,7 +32,7 @@ export function AthleteSessions() {
       <Link to={`/seances/${a.id}`} className="card link-card">
         <div className="row between">
           <strong>{sessions.find((s) => s.id === a.session_id)?.title ?? 'Séance'}</strong>
-          {f ? <span className="pill ok">✓</span> : a.date <= today ? <span className="pill warn">💬 Retour</span> : null}
+          {f ? <span className="pill ok">✓</span> : a.date <= today ? <span className="pill warn">Retour</span> : null}
         </div>
         <div className="muted small">
           {a.date === today ? "Aujourd'hui" : formatDate(a.date)}{a.time && ` · ${a.time}`}{a.location && ` · ${a.location}`}
@@ -92,7 +92,7 @@ export function AthleteSessionDetail() {
           <div className="card"><SessionView session={{ ...s, blocks: s.blocks.filter((b) => !/^remarques?$/i.test(b.title.trim())) }} vma={latestVma(tests, test_results)?.value} sprintLevel={sprintReference(tests, test_results, records)?.level} /></div>
         </>
       ) : (
-        <div className="card locked">
+        <div className="card content-locked">
           <b>Le contenu de la séance sera visible {at ? releaseText(at) : 'bientôt'}.</b>
           <p className="small muted">Ton coach le dévoile juste avant l’entraînement. En attendant, tu peux lui écrire ci-dessous.</p>
           <button className="btn small" onClick={() => reload()}>Actualiser</button>
@@ -107,7 +107,7 @@ export function AthleteSessionDetail() {
         )}
       </section>
       <section>
-        <h2>💬 Échanger avec ton coach</h2>
+        <h2>Échanger avec ton coach</h2>
         <div className="card"><Thread assignmentId={a.id} athleteId={me.id} fb={fb} coach={false} /></div>
       </section>
     </div>
@@ -152,7 +152,7 @@ function FeedbackForm({ athleteId, assignmentId, fb }: { athleteId: string; assi
       <div className="card">
         <p className="ok-text">✓ Merci, ton retour a bien été envoyé !</p>
         <FeedbackScores fb={fb} />
-        {fb.pain && <p className="small">🩹 {fb.pain}</p>}
+        {fb.pain && <p className="small">{fb.pain}</p>}
         {fb.comment && <p className="comment">« {fb.comment} »</p>}
         <button className="btn small" onClick={() => setEditing(true)}>Modifier mon retour</button>
       </div>
@@ -164,8 +164,8 @@ function FeedbackForm({ athleteId, assignmentId, fb }: { athleteId: string; assi
       <div className="field">
         <span className="field-label">As-tu fait la séance ?</span>
         <div className="scale">
-          <button type="button" className={`scale-btn wide ${f.completed ? 'active' : ''}`} onClick={() => set({ completed: true })}>Oui ✅</button>
-          <button type="button" className={`scale-btn wide ${!f.completed ? 'active' : ''}`} onClick={() => set({ completed: false })}>Non ❌</button>
+          <button type="button" className={`scale-btn wide ${f.completed ? 'active' : ''}`} onClick={() => set({ completed: true })}>Oui</button>
+          <button type="button" className={`scale-btn wide ${!f.completed ? 'active' : ''}`} onClick={() => set({ completed: false })}>Non</button>
         </div>
       </div>
       {f.completed && (
@@ -176,8 +176,8 @@ function FeedbackForm({ athleteId, assignmentId, fb }: { athleteId: string; assi
         </div>
       )}
       <div className="field">
-        <span className="field-label">Ta forme après la séance</span>
-        <Scale min={1} max={5} value={f.fatigue} onChange={(fatigue) => set({ fatigue })} labels={FATIGUE_LABELS} />
+        <span className="field-label">Ta forme après la séance (1 = pleine forme, 5 = épuisé·e)</span>
+        <Scale min={1} max={5} value={f.fatigue} onChange={(fatigue) => set({ fatigue })} labels={FATIGUE_TEXT} />
         {f.fatigue != null && <span className="hint">{FATIGUE_TEXT[f.fatigue]}</span>}
       </div>
       {f.completed && (
@@ -186,15 +186,15 @@ function FeedbackForm({ athleteId, assignmentId, fb }: { athleteId: string; assi
           <div className="scale">
             {[1, 2, 3].map((v) => (
               <button key={v} type="button" className={`scale-btn wide ${f.recovery_fit === v ? 'active' : ''}`} onClick={() => set({ recovery_fit: f.recovery_fit === v ? null : v })}>
-                {RECOVERY_ICON[v]} {RECOVERY_TEXT[v]}
+                {RECOVERY_TEXT[v]}
               </button>
             ))}
           </div>
         </div>
       )}
       <div className="field">
-        <span className="field-label">Ton plaisir</span>
-        <Scale min={1} max={5} value={f.mood} onChange={(mood) => set({ mood })} labels={MOOD_LABELS} />
+        <span className="field-label">Ton plaisir (1 = pas bien, 5 = super)</span>
+        <Scale min={1} max={5} value={f.mood} onChange={(mood) => set({ mood })} labels={MOOD_TEXT} />
         {f.mood != null && <span className="hint">{MOOD_TEXT[f.mood]}</span>}
       </div>
       <label className="field">

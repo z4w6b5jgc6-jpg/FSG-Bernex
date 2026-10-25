@@ -40,11 +40,11 @@ export function AssignmentDetail() {
   const avgRpe = rpes.length ? (rpes.reduce((x, y) => x + y, 0) / rpes.length).toFixed(1) : null
 
   const head = [
-    `🏃 Séance du ${formatDate(a.date)}${a.time ? ` à ${a.time}` : ''}${a.location ? ` – ${a.location}` : ''}`,
-    s && `📋 ${s.title}`,
+    `Séance du ${formatDate(a.date)}${a.time ? ` à ${a.time}` : ''}${a.location ? ` – ${a.location}` : ''}`,
+    s && `${s.title}`,
     a.note && `ℹ️ ${a.note}`,
   ].filter(Boolean).join('\n')
-  const announcement = `${head}\n\nLe détail est dans l’app (ton lien perso). Après la séance, pense à donner ton ressenti 💬`
+  const announcement = `${head}\n\nLe détail est dans l’app (ton lien perso). Après la séance, pense à donner ton ressenti`
 
   const del = async () => {
     if (!confirm('Supprimer cette planification et les retours associés ?')) return
@@ -71,8 +71,8 @@ export function AssignmentDetail() {
       })()}
       {s && <SessionNoteCard key={s.id} sessionId={s.id} />}
       <div className="row gap wrap actions">
-        <a className="btn whatsapp" href={whatsappUrl(announcement)} target="_blank" rel="noreferrer">📲 Annoncer sur WhatsApp</a>
-        {typeof navigator.share === 'function' && <button className="btn" onClick={() => nativeShare(announcement)}>📤 Partager</button>}
+        <a className="btn whatsapp" href={whatsappUrl(announcement)} target="_blank" rel="noreferrer">Annoncer sur WhatsApp</a>
+        {typeof navigator.share === 'function' && <button className="btn" onClick={() => nativeShare(announcement)}>Partager</button>}
         <button className="btn" onClick={() => setEditing(true)}>Modifier</button>
         {s && <Link className="btn" to={`/seances/${s.id}`}>Éditer la séance</Link>}
         <button className="btn danger ghost" onClick={del}>Supprimer</button>
@@ -81,7 +81,7 @@ export function AssignmentDetail() {
       <section>
         <h2>Retours {past && <span className="muted small">({fbs.length}/{targets.length}{avgRpe && ` · effort moyen ${avgRpe}/10`})</span>}</h2>
         {fbs.some((f) => f.recovery_fit != null) && (
-          <p className="small">⏱️ Récupérations : {[1, 2, 3].map((v) => ({ v, n: fbs.filter((f) => f.recovery_fit === v).length })).filter((x) => x.n)
+          <p className="small">Récupérations : {[1, 2, 3].map((v) => ({ v, n: fbs.filter((f) => f.recovery_fit === v).length })).filter((x) => x.n)
             .map((x) => `${x.n} ${RECOVERY_TEXT[x.v].toLowerCase()}`).join(' · ')}</p>
         )}
         {!past && fbs.length === 0 ? (
@@ -96,7 +96,7 @@ export function AssignmentDetail() {
                     return (
                       <tr key={t.id}>
                         <td><Link to={`/athletes/${t.id}`}>{fullName(t)}</Link></td>
-                        <td>{f ? <FeedbackScores fb={f} /> : <span className="muted small">⏳ En attente</span>}</td>
+                        <td>{f ? <FeedbackScores fb={f} /> : <span className="muted small">En attente</span>}</td>
                       </tr>
                     )
                   })}
@@ -119,7 +119,7 @@ export function AssignmentDetail() {
         ))}
         {targets.length > 0 && (
           <select value="" onChange={(e) => setWriteTo(e.target.value)} aria-label="Écrire à un athlète">
-            <option value="">✉️ Écrire à un athlète de la séance…</option>
+            <option value="">Écrire à un athlète de la séance…</option>
             {targets.map((t) => <option key={t.id} value={t.id}>{fullName(t)}</option>)}
           </select>
         )}
@@ -127,7 +127,7 @@ export function AssignmentDetail() {
 
       {!!s?.targets?.length && (
         <section>
-          <h2>⏱️ Temps à réaliser</h2>
+          <h2>Temps à réaliser</h2>
           <TargetTable targets={s.targets} athletes={targets} />
         </section>
       )}

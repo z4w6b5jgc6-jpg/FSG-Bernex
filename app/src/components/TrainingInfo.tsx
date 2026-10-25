@@ -47,7 +47,7 @@ export function TrainingInfo() {
 
   return (
     <details className="card training-info" open={open || draft !== null} onToggle={(e) => toggle((e.target as HTMLDetailsElement).open)}>
-      <summary><b>📌 Organisation des entraînements</b></summary>
+      <summary><b>Organisation des entraînements</b></summary>
       {draft !== null ? (
         <div className="form">
           <textarea rows={12} value={draft} onChange={(e) => setDraft(e.target.value)} />
@@ -61,12 +61,12 @@ export function TrainingInfo() {
       ) : text ? (
         <>
           <RichText text={text} />
-          {coach && <button className="btn ghost small" onClick={() => setDraft(text)}>✏️ Modifier</button>}
+          {coach && <button className="btn ghost small" onClick={() => setDraft(text)}>Modifier</button>}
         </>
       ) : (
         <div className="form">
           <p className="small muted">Horaires, lieux selon la saison, matériel, absences… Ce cadre s’affiche aussi chez les athlètes, dans « Mes séances ».</p>
-          <button className="btn primary" onClick={() => setDraft(TEMPLATE)}>✏️ Remplir (modèle proposé)</button>
+          <button className="btn primary" onClick={() => setDraft(TEMPLATE)}>Remplir (modèle proposé)</button>
         </div>
       )}
     </details>

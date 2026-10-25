@@ -49,7 +49,7 @@ export function Settings() {
   return (
     <div>
       <BackLink to="/" label="Accueil" />
-      <h1>⚙️ Réglages de mon espace</h1>
+      <h1>Réglages de mon espace</h1>
       <p className="small muted">Propres à ton groupe : les autres groupes du club ont leurs propres réglages et ne voient rien du tien.</p>
 
       <section className="card form">

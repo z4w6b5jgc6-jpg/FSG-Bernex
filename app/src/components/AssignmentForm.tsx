@@ -70,7 +70,7 @@ export function AssignmentForm({
         </Field>
         {a.group_id && (
           <p className="small muted">
-            ✅ Tout le groupe <b>{groups.find((g) => g.id === a.group_id)?.name}</b> reçoit la séance
+            Tout le groupe <b>{groups.find((g) => g.id === a.group_id)?.name}</b> reçoit la séance
             ({athletes.filter((x) => x.active && x.group_id === a.group_id).length} athlètes, et les futurs inscrits du groupe).
           </p>
         )}

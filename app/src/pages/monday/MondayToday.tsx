@@ -28,7 +28,7 @@ export function MondayToday() {
   if (!dates.length) {
     return (
       <div>
-        <h1>⏱️ Temps cibles</h1>
+        <h1>Temps cibles</h1>
         <Empty>
           Aucun plan à temps cibles. Un plan avec une colonne par partie de séance et un onglet de cibles (distance, base VMA / RVA / record, %)
           donne à chaque athlète son temps à réaliser. <Link to="/lundi/import">Importer un plan (Excel ou JSON)</Link>
@@ -47,10 +47,10 @@ export function MondayToday() {
     <div className={track ? 'track' : ''}>
       {!track && (
         <div className="row between wrap">
-          <h1>⏱️ {p0.name || 'Temps cibles'}</h1>
+          <h1>{p0.name || 'Temps cibles'}</h1>
           <div className="row gap">
-            <Link className="btn" to="/lundi/plan">📋 Plan</Link>
-            <Link className="btn ghost" to="/lundi/import">📥 Importer</Link>
+            <Link className="btn" to="/lundi/plan">Plan</Link>
+            <Link className="btn ghost" to="/lundi/import">Importer</Link>
           </div>
         </div>
       )}
@@ -60,7 +60,7 @@ export function MondayToday() {
           {dates.map((d, k) => <option key={d} value={d}>S{String(k + 1).padStart(2, '0')} · {formatDate(d, { weekday: 'short', day: 'numeric', month: 'short' })}</option>)}
         </select>
         <button className="btn small" disabled={i >= dates.length - 1} onClick={() => go(i + 1)} aria-label="Lundi suivant">→</button>
-        <button className={`btn small ${track ? 'primary' : ''}`} onClick={() => setTrack(!track)}>{track ? '✕ Quitter le mode piste' : '🏟️ Mode piste'}</button>
+        <button className={`btn small ${track ? 'primary' : ''}`} onClick={() => setTrack(!track)}>{track ? '✕ Quitter le mode piste' : 'Mode piste'}</button>
       </div>
       <p className="small">
         <b>{p0.cycle}</b> · {p0.objective}{p0.light && <span className="pill">semaine allégée</span>}
@@ -80,7 +80,7 @@ export function MondayToday() {
             {p0.speed && <p><b>Bloc vitesse :</b> {p0.speed}</p>}
             {shown.map((s) => <p key={s.id}><b>{subgroupLabel(planOf(s)!.subgroup)} :</b> {planOf(s)!.content}</p>)}
             {p0.cooldown && <p><b>Retour au calme :</b> {p0.cooldown}</p>}
-            {(() => { const n = noteOf(session_notes, today[0].id)?.text || p0.remarks; return n && <p className="muted"><b>🔒 Remarques (coachs) :</b> {n}</p> })()}
+            {(() => { const n = noteOf(session_notes, today[0].id)?.text || p0.remarks; return n && <p className="muted"><b>Remarques (coachs) :</b> {n}</p> })()}
           </div>
         </details>
       )}

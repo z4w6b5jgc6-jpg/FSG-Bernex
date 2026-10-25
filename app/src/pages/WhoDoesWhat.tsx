@@ -41,7 +41,7 @@ export function WhoDoesWhat() {
   return (
     <div>
       <BackLink to="/planning" label="Planning" />
-      <h1>👥 Qui fait quoi</h1>
+      <h1>Qui fait quoi</h1>
       <p className="small muted">Les séances à venir, regroupées par série et par jour. Retirer ou ajouter un athlète s’applique à toutes les prochaines séances de la série (les séances passées ne changent pas).</p>
       <div className="row gap day-filter">
         <button className={`chip ${tab === 'series' ? 'on' : ''}`} onClick={() => setTab('series')}>Par séance</button>
