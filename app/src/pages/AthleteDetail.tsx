@@ -1,21 +1,15 @@
 import { Avatar } from '../components/Avatar'
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { BackLink } from '../components/BackLink'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useData } from '../lib/data'
 import { FeedbackCard } from '../components/FeedbackCard'
 import { EffortBars, SleepBars } from '../components/Charts'
 import { ENERGY, SORENESS, STRESS } from '../components/WellnessCheckin'
-import { Empty, Field, GroupBadge, Modal } from '../components/ui'
-import { RecordForm } from '../components/RecordForm'
-import { TestResults } from '../components/TestResults'
-import { VmaPaces } from '../components/VmaPaces'
-import { SprintEquivalence } from '../components/SprintEquivalence'
-import { MondayAthleteCard } from '../components/MondayAthleteCard'
+import { Empty, GroupBadge } from '../components/ui'
+import { ProfileTiles } from '../components/ProfileTiles'
 import { AthleteSeriesCard } from '../components/AthleteSeriesCard'
 import { ReportCard, ReportForm } from '../components/TestInsights'
-import { parseValue } from '../lib/tests'
-import type { PersonalRecord } from '../types'
 import { AthleteForm } from './Athletes'
 import { feedbackStreak } from '../lib/athlete'
 import { athletesFor, errorMessage, formatShort, fullName, todayISO, whatsappUrl } from '../lib/utils'
@@ -23,11 +17,9 @@ import { athletesFor, errorMessage, formatShort, fullName, todayISO, whatsappUrl
 export function AthleteDetail() {
   const { id } = useParams()
   const nav = useNavigate()
-  const { athletes, groups, assignments, sessions, feedback, wellness, records, athlete_notes, tests, test_results, test_reports, competitions, save, remove, loading } = useData()
+  const { athletes, groups, assignments, sessions, feedback, wellness, athlete_notes, test_reports, competitions, save, remove, loading } = useData()
   const [editing, setEditing] = useState(false)
   const [note, setNote] = useState('')
-  const [editRecord, setEditRecord] = useState<Partial<PersonalRecord> | null>(null)
-  const [addResult, setAddResult] = useState(false)
   const [addReport, setAddReport] = useState(false)
   const a = athletes.find((x) => x.id === id)
   if (!a) return loading ? <p className="muted">Chargement…</p> : <Empty>Athlète introuvable. <Link to="/athletes">Retour</Link></Empty>
@@ -43,7 +35,8 @@ export function AthleteDetail() {
   const avg = rpes.length ? (rpes.reduce((s, v) => s + v, 0) / rpes.length).toFixed(1) : '–'
   const well = wellness.filter((w) => w.athlete_id === a.id)
   const lastWell = [...well].sort((x, y) => y.date.localeCompare(x.date)).slice(0, 7)
-  const recs = records.filter((r) => r.athlete_id === a.id).sort((x, y) => y.date.localeCompare(x.date))
+  const upcoming = competitions.filter((c) => c.athlete_ids.includes(a.id) && (c.end_date || c.date) >= today).sort((x, y) => x.date.localeCompare(y.date))
+  const reports = test_reports.filter((r) => r.athlete_id === a.id).sort((x, y) => y.date.localeCompare(x.date))
   const notes = athlete_notes.filter((n) => n.athlete_id === a.id).sort((x, y) => y.created_at.localeCompare(x.created_at))
 
   const addNote = async () => {
@@ -76,43 +69,41 @@ export function AthleteDetail() {
         </div>
       </div>
       {a.goals && <div className="goal"><b>Objectif :</b> {a.goals}</div>}
-      <div className="small">
-        {a.user_id ? <span className="pill ok">✓ Inscrit·e dans l’app</span> : <span className="pill wrap">Pas encore inscrit·e — sa fiche se remplira dès son inscription</span>}
-      </div>
+      {!a.user_id && <div className="small"><span className="pill wrap">Pas encore inscrit·e dans l’app</span></div>}
       <div className="row gap wrap actions">
         {a.phone && <a className="btn small whatsapp" href={whatsappUrl(`Salut ${a.first_name} !`, a.phone)} target="_blank" rel="noreferrer">WhatsApp</a>}
         <button className="btn small" onClick={() => setEditing(true)}>Modifier / groupe</button>
-        <button className="btn small ghost danger" onClick={del}>Retirer du club</button>
       </div>
 
-      <div className="stats">
-        <div className="stat"><b>{done}</b><span>séances faites</span></div>
-        <div className="stat"><b>{past.length ? Math.round((fbs.length / past.length) * 100) : 0}%</b><span>retours</span></div>
-        <div className="stat"><b>{avg}</b><span>effort moyen</span></div>
-        <div className="stat"><b>{feedbackStreak(mine, fbs)}</b><span>série</span></div>
-      </div>
+      <ProfileTiles athlete={a} coach />
 
-      {(() => {
-        const mine = competitions.filter((c) => c.athlete_ids.includes(a.id) && (c.end_date || c.date) >= todayISO()).sort((x, y) => x.date.localeCompare(y.date))
-        if (!mine.length) return null
-        return (
-          <section>
-            <div className="row between"><h2>Compétitions</h2><Link to="/competitions" className="small">Toutes →</Link></div>
-            <ul className="plain rows">
-              {mine.map((c) => (
-                <li key={c.id} className="row between">
-                  <span><span className={`level-badge level-${c.level} sm`}>{c.level}</span> <b>{c.name}</b>{c.entries?.[a.id] && <span className="muted small"> · {c.entries[a.id]}</span>}</span>
-                  <span className="small muted">{formatShort(c.date)}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )
-      })()}
+      <AthleteSeriesCard athlete={a} />
 
-      <section>
-        <h2>Bien-être</h2>
-        {well.length === 0 ? <Empty>Pas encore de check-in.</Empty> : (
+      {upcoming.length > 0 && (
+        <details className="section-fold">
+          <summary>Compétitions <span className="muted small">({upcoming.length})</span></summary>
+          <ul className="plain rows">
+            {upcoming.map((c) => (
+              <li key={c.id} className="row between">
+                <span><span className={`level-badge level-${c.level} sm`}>{c.level}</span> <b>{c.name}</b>{c.entries?.[a.id] && <span className="muted small"> · {c.entries[a.id]}</span>}</span>
+                <span className="small muted">{formatShort(c.date)}</span>
+              </li>
+            ))}
+          </ul>
+          <Link to="/competitions" className="small">Toutes les compétitions →</Link>
+        </details>
+      )}
+
+      <details className="section-fold">
+        <summary>Suivi</summary>
+        <div className="stats">
+          <div className="stat"><b>{done}</b><span>séances faites</span></div>
+          <div className="stat"><b>{past.length ? Math.round((fbs.length / past.length) * 100) : 0}%</b><span>retours</span></div>
+          <div className="stat"><b>{avg}</b><span>effort moyen</span></div>
+          <div className="stat"><b>{feedbackStreak(mine, fbs)}</b><span>série</span></div>
+        </div>
+        <div className="card"><b className="small">Effort ressenti</b><EffortBars assignments={mine} feedback={fbs} /></div>
+        {well.length === 0 ? <p className="muted small">Pas encore de check-in bien-être.</p> : (
           <>
             <div className="card"><SleepBars wellness={well} /></div>
             <div className="card">
@@ -133,70 +124,16 @@ export function AthleteDetail() {
             </div>
           </>
         )}
-      </section>
+      </details>
 
-      <AthleteSeriesCard athlete={a} />
-      <MondayAthleteCard athlete={a} />
+      <details className="section-fold">
+        <summary>Bilans de tests <span className="muted small">({reports.length}, visibles par l’athlète)</span></summary>
+        <button className="btn small" onClick={() => setAddReport(true)}>+ Bilan</button>
+        {reports.length > 0 && <div className="list">{reports.map((r) => <ReportCard key={r.id} report={r} editable />)}</div>}
+      </details>
 
-      <section>
-        <div className="row between">
-          <h2>Tests physiques</h2>
-          <button className="btn small primary" onClick={() => setAddResult(true)} disabled={tests.length === 0}>+ Résultat</button>
-        </div>
-        {tests.length === 0 ? (
-          <Empty>Définis d’abord tes tests dans <Link to="/tests">Tests physiques</Link>.</Empty>
-        ) : (
-          <>
-            <VmaPaces tests={tests} results={test_results.filter((r) => r.athlete_id === a.id)} title="Allures d’entraînement" />
-            <TestResults tests={tests} results={test_results.filter((r) => r.athlete_id === a.id)} onDelete={(rid) => remove('test_results', rid)} />
-            <SprintEquivalence tests={tests} results={test_results.filter((r) => r.athlete_id === a.id)} records={records.filter((r) => r.athlete_id === a.id)} />
-          </>
-        )}
-      </section>
-
-      <section>
-        <div className="row between">
-          <h2>Bilans de tests <span className="muted small">(visibles par l’athlète)</span></h2>
-          <button className="btn small" onClick={() => setAddReport(true)}>+ Bilan</button>
-        </div>
-        {test_reports.filter((r) => r.athlete_id === a.id).length === 0 ? <p className="muted small">Aucun bilan.</p> : (
-          <div className="list">
-            {test_reports.filter((r) => r.athlete_id === a.id).sort((x, y) => y.date.localeCompare(x.date)).map((r) => <ReportCard key={r.id} report={r} editable />)}
-          </div>
-        )}
-      </section>
-
-      <section>
-        <div className="row between">
-          <h2>Records & résultats</h2>
-          <button className="btn small primary" onClick={() => setEditRecord({ date: today, event: a.events.split(',')[0]?.trim() ?? '' })}>+ Perf</button>
-        </div>
-        {recs.length === 0 ? <p className="muted small">Aucune performance saisie (par toi ou l’athlète).</p> : (
-          <div className="card">
-            <ul className="plain rows">
-              {recs.map((r) => (
-                <li key={r.id} className="row between">
-                  <button className="link left" onClick={() => setEditRecord(r)}>
-                    <b>{r.event}</b> <span className="muted small">{formatShort(r.date)}{r.competition && ` · ${r.competition}`}</span>
-                  </button>
-                  <span className="row gap">
-                    <span className="record-mark">{r.mark}</span>
-                    <button className="btn ghost icon small danger" onClick={() => confirm('Supprimer cette performance ?') && remove('records', r.id)}>✕</button>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </section>
-
-      <section>
-        <h2>Effort ressenti</h2>
-        <div className="card"><EffortBars assignments={mine} feedback={fbs} /></div>
-      </section>
-
-      <section>
-        <h2>Mes notes de suivi <span className="muted small">(privées)</span></h2>
+      <details className="section-fold">
+        <summary>Notes privées <span className="muted small">({notes.length})</span></summary>
         <div className="card form">
           <textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ex. Discussion objectifs, retour de blessure…" />
           <button className="btn small primary" onClick={addNote} disabled={!note.trim()}>Ajouter la note</button>
@@ -209,11 +146,11 @@ export function AthleteDetail() {
             </div>
           ))}
         </div>
-      </section>
+      </details>
 
-      <section>
-        <h2>Historique des séances</h2>
-        {past.length === 0 ? <Empty>Aucune séance passée.</Empty> : (
+      <details className="section-fold">
+        <summary>Historique des séances <span className="muted small">({past.length})</span></summary>
+        {past.length === 0 ? <p className="muted small">Aucune séance passée.</p> : (
           <div className="list">
             {past.map((x) => {
               const f = fbFor(x.id)
@@ -224,48 +161,12 @@ export function AthleteDetail() {
             })}
           </div>
         )}
-      </section>
+      </details>
+
+      <div className="row end actions"><button className="btn small ghost danger" onClick={del}>Retirer du club</button></div>
 
       {editing && <AthleteForm initial={a} onClose={() => setEditing(false)} />}
-      {editRecord && <RecordForm initial={editRecord} athleteId={a.id} onClose={() => setEditRecord(null)} />}
-      {addResult && <ResultForm athleteId={a.id} onClose={() => setAddResult(false)} />}
       {addReport && <ReportForm initial={{}} athleteId={a.id} onClose={() => setAddReport(false)} />}
     </div>
-  )
-}
-
-function ResultForm({ athleteId, onClose }: { athleteId: string; onClose: () => void }) {
-  const { tests, save } = useData()
-  const [testId, setTestId] = useState(tests[0]?.id ?? '')
-  const [date, setDate] = useState(todayISO())
-  const [value, setValue] = useState('')
-  const [notes, setNotes] = useState('')
-  const test = tests.find((t) => t.id === testId)
-  const submit = async (e: FormEvent) => {
-    e.preventDefault()
-    const v = parseValue(value)
-    if (v == null) return alert('Résultat invalide')
-    try {
-      await save('test_results', { athlete_id: athleteId, test_id: testId, date, value: v, notes })
-      onClose()
-    } catch (err) {
-      alert(errorMessage(err))
-    }
-  }
-  return (
-    <Modal title="Nouveau résultat de test" onClose={onClose}>
-      <form className="form" onSubmit={submit}>
-        <Field label="Test"><select value={testId} onChange={(e) => setTestId(e.target.value)}>{tests.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></Field>
-        <div className="grid2">
-          <Field label={`Résultat${test?.unit ? ` (${test.unit})` : ''}`}><input inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} required autoFocus /></Field>
-          <Field label="Date"><input type="date" value={date} onChange={(e) => setDate(e.target.value)} required /></Field>
-        </div>
-        <Field label="Note (facultatif)"><input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ex. vent de face, chrono manuel" /></Field>
-        <div className="row gap end">
-          <button type="button" className="btn ghost" onClick={onClose}>Annuler</button>
-          <button className="btn primary">Enregistrer</button>
-        </div>
-      </form>
-    </Modal>
   )
 }

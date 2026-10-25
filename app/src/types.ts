@@ -92,6 +92,8 @@ export interface PersonalRecord {
   mark: string
   date: string
   competition: string
+  /** 'perf' (défaut) : record / résultat ; 'muscu' : charge max, event = exercice, mark = « 80 kg » ou « 80 kg × 3 » */
+  kind?: string
 }
 
 export interface Wellness {

@@ -34,7 +34,7 @@ function latest(athleteId: string, tests: TestDef[], results: TestResult[], pick
 export function recordsByDistance(athleteId: string, records: PersonalRecord[]): Record<number, number> {
   const out: Record<number, number> = {}
   for (const r of records) {
-    if (r.athlete_id !== athleteId) continue
+    if (r.athlete_id !== athleteId || r.kind === 'muscu') continue
     const m = r.event.match(/^\s*(\d+)\s*m\b/i)
     if (!m || /haie|relais|marche|steeple|lance/.test(normText(r.event))) continue
     const sec = parseMark(r.mark)

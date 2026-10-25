@@ -736,3 +736,22 @@ h2 { font-size: 1.1rem; }
 .step-dot.done { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
 /* Contenu pas encore dévoilé */
 .content-locked { border-style: dashed; background: var(--bg); }
+
+/* ---------- Profil athlète : tuiles Tests / Records / Musculation ---------- */
+.ptiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin: 0.9rem 0 0.6rem; }
+.ptile { font: inherit; color: var(--text); text-align: left; display: flex; flex-direction: column; gap: 0.15rem; min-width: 0;
+  padding: 0.7rem; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; }
+.ptile b { font-size: 0.95rem; }
+.ptile span { font-size: 0.75rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+.ptile.on { border-color: var(--primary); box-shadow: inset 0 -3px 0 var(--primary); }
+.ppanel { border: 1px solid var(--border); border-radius: 14px; background: var(--surface); padding: 0.8rem; }
+.ppanel h2 { margin: 0; }
+.ppanel > .row.between { margin-bottom: 0.5rem; }
+.lift-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.5rem; }
+.lift { font: inherit; color: var(--text); text-align: left; display: flex; flex-direction: column; gap: 0.1rem; padding: 0.6rem;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--bg); cursor: pointer; }
+.lift b { font-size: 1.1rem; }
+details.fold { margin-top: 0.7rem; }
+details.fold > summary { cursor: pointer; color: var(--muted); padding: 0.3rem 0; }
+details.section-fold { border-top: 1px solid var(--border); padding: 0.4rem 0; }
+details.section-fold > summary { cursor: pointer; font-weight: 700; padding: 0.5rem 0; list-style-position: inside; }

@@ -176,6 +176,8 @@ create table if not exists records (
   competition  text not null default '',
   created_at   timestamptz not null default now()
 );
+-- 'perf' = record ou résultat de compétition ; 'muscu' = charge maximale (event = exercice, mark = « 80 kg »)
+alter table records add column if not exists kind text not null default 'perf';
 
 -- Check-in bien-être quotidien
 create table if not exists wellness (
@@ -420,6 +422,15 @@ drop policy if exists athlete_read on tests;
 create policy athlete_read on tests for select to authenticated using (coach_id = my_coach_id());
 drop policy if exists athlete_read on test_results;
 create policy athlete_read on test_results for select to authenticated using (athlete_id = my_athlete_id());
+-- L'athlète peut aussi saisir ses propres résultats, sur les tests de son club
+drop policy if exists athlete_write on test_results;
+create policy athlete_write on test_results for insert to authenticated
+  with check (athlete_id = my_athlete_id() and exists (select 1 from tests t where t.id = test_id and t.coach_id = my_coach_id()));
+drop policy if exists athlete_edit on test_results;
+create policy athlete_edit on test_results for update to authenticated
+  using (athlete_id = my_athlete_id()) with check (athlete_id = my_athlete_id() and exists (select 1 from tests t where t.id = test_id and t.coach_id = my_coach_id()));
+drop policy if exists athlete_delete on test_results;
+create policy athlete_delete on test_results for delete to authenticated using (athlete_id = my_athlete_id());
 drop policy if exists athlete_read on test_reports;
 create policy athlete_read on test_reports for select to authenticated using (athlete_id = my_athlete_id());
 
