@@ -193,6 +193,21 @@ create table if not exists wellness (
 );
 
 create index if not exists assignments_date_idx on assignments (coach_id, date);
+-- Contenu montré aux athlètes plus tôt que la règle du groupe (« montrer maintenant ») : null = la règle
+alter table assignments add column if not exists visible_from timestamptz;
+
+-- Le contenu d'une séance est-il visible pour les athlètes ? Règle du groupe (Réglages, settings.release) :
+-- 'plan' dès la planification, 'day' le jour même, 'start' à l'heure, 'hour' 1 h avant (par défaut). Heure de Genève.
+create or replace function assignment_released(p_coach uuid, p_date date, p_time text, p_visible timestamptz) returns boolean
+language sql stable security definer set search_path = public as $$
+  select (p_visible is not null and p_visible <= now()) or now() >= (
+    select case coalesce((select settings->>'release' from clubs where coach_id = p_coach), 'hour')
+      when 'plan' then '-infinity'::timestamptz
+      when 'day' then p_date::timestamp at time zone 'Europe/Zurich'
+      when 'start' then (case when p_time ~ '^\d{1,2}:\d{2}$' then p_date + p_time::time else p_date::timestamp end) at time zone 'Europe/Zurich'
+      else ((case when p_time ~ '^\d{1,2}:\d{2}$' then p_date + p_time::time else p_date::timestamp end) at time zone 'Europe/Zurich') - interval '1 hour'
+    end)
+$$;
 create index if not exists athletes_group_idx on athletes (group_id);
 create index if not exists feedback_assignment_idx on feedback (assignment_id);
 -- Tests physiques définis par l'entraîneur (30 m, VMA, détente…)
@@ -365,7 +380,8 @@ create policy athlete_read on assignments for select to authenticated
 
 drop policy if exists athlete_read on sessions;
 create policy athlete_read on sessions for select to authenticated
-  using (exists (select 1 from assignments a where a.session_id = sessions.id and targets_me(a.coach_id, a.group_id, a.athlete_ids)));
+  using (exists (select 1 from assignments a where a.session_id = sessions.id and targets_me(a.coach_id, a.group_id, a.athlete_ids)
+                 and assignment_released(a.coach_id, a.date, a.time, a.visible_from)));
 
 drop policy if exists athlete_read on tips;
 create policy athlete_read on tips for select to authenticated using (coach_id = my_coach_id() and published);
@@ -479,7 +495,8 @@ begin
       'role', case when v_ath.active then 'athlete' else 'inactive' end,
       'athlete_id', v_ath.id,
       'club_name', (select name from clubs where coach_id = v_ath.coach_id),
-      'training_info', (select training_info from clubs where coach_id = v_ath.coach_id));
+      'training_info', (select training_info from clubs where coach_id = v_ath.coach_id),
+      'settings', (select json_build_object('release', settings->'release') from clubs where coach_id = v_ath.coach_id));
   end if;
   return json_build_object('role', 'new');
 end $$;

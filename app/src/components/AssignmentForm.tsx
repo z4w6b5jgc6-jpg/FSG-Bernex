@@ -1,3 +1,4 @@
+import { RELEASE_LABELS, releaseRule } from '../lib/release'
 import { useState, type FormEvent } from 'react'
 import { useData } from '../lib/data'
 import type { Assignment } from '../types'
@@ -14,6 +15,8 @@ export function AssignmentForm({
 }) {
   const { sessions, groups, athletes, save } = useData()
   const [a, setA] = useState<Partial<Assignment>>({ time: '', location: '', note: '', athlete_ids: [], group_id: null, ...initial })
+  // contenu montré tout de suite aux athlètes, sans attendre la règle du groupe (Réglages)
+  const [showNow, setShowNow] = useState(!!initial?.visible_from)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const set = (patch: Partial<Assignment>) => setA((x) => ({ ...x, ...patch }))
@@ -29,6 +32,7 @@ export function AssignmentForm({
       const saved = await save('assignments', {
         id: a.id, session_id: a.session_id, date: a.date, time: a.time, location: a.location,
         group_id: a.group_id || null, athlete_ids: ids, note: a.note,
+        ...(showNow || initial?.visible_from ? { visible_from: showNow ? a.visible_from ?? new Date().toISOString() : null } : {}),
       })
       onSaved?.(saved)
       onClose()
@@ -91,6 +95,12 @@ export function AssignmentForm({
           </Field>
         )}
         <Field label="Message pour les athlètes"><textarea rows={2} value={a.note ?? ''} onChange={(e) => set({ note: e.target.value })} placeholder="Ex. Prendre les pointes" /></Field>
+        {releaseRule() !== 'plan' && (
+          <label className="check small">
+            <input type="checkbox" checked={showNow} onChange={(e) => setShowNow(e.target.checked)} />
+            <span>Montrer le contenu aux athlètes dès maintenant <span className="muted">(sinon : {RELEASE_LABELS[releaseRule()]})</span></span>
+          </label>
+        )}
         {err && <div className="alert warn">{err}</div>}
         <div className="row gap end">
           <button type="button" className="btn ghost" onClick={onClose}>Annuler</button>

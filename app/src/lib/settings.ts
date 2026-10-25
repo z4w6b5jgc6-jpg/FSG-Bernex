@@ -11,6 +11,8 @@ export interface ClubSettings {
   summerTo?: number
   /** description du groupe pour l'assistant (âges, disciplines, habitudes) — sans noms d'athlètes */
   group?: string
+  /** quand les athlètes voient le contenu des séances : 'hour' (défaut), 'start', 'day', 'plan' */
+  release?: 'plan' | 'day' | 'hour' | 'start'
 }
 
 // Valeurs du groupe d'origine (U16/U18) quand un espace n'a encore rien réglé

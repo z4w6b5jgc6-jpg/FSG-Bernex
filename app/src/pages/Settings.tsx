@@ -5,6 +5,7 @@ import { api } from '../api'
 import { useData } from '../lib/data'
 import { MONTHS, seasonRule, settings, venues } from '../lib/settings'
 import { errorMessage } from '../lib/utils'
+import { RELEASE_LABELS, releaseRule, type ReleaseRule } from '../lib/release'
 
 /** Réglages de l'espace : lieux, règle été / hiver, description du groupe pour l'assistant */
 export function Settings() {
@@ -16,6 +17,7 @@ export function Settings() {
   const [from, setFrom] = useState(r.from)
   const [to, setTo] = useState(r.to)
   const [group, setGroup] = useState(settings().group ?? '')
+  const [release, setRelease] = useState<ReleaseRule>(releaseRule())
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
   const list = places.split('\n').map((p) => p.trim()).filter(Boolean)
@@ -26,7 +28,7 @@ export function Settings() {
     try {
       await api.saveSettings({
         venues: list, summerVenue: list.includes(summer) ? summer : list[0], winterVenue: list.includes(winter) ? winter : list[1] ?? list[0],
-        summerFrom: from, summerTo: to, group: group.trim(),
+        summerFrom: from, summerTo: to, group: group.trim(), release,
       })
       await refreshMe()
       setMsg('✓ Réglages enregistrés.')
@@ -66,6 +68,16 @@ export function Settings() {
             <p className="tiny muted">Le lieu est proposé automatiquement quand tu planifies ou importes des séances (modifiable à chaque fois).</p>
           </>
         )}
+      </section>
+
+      <section className="card form">
+        <h2>Contenu des séances pour les athlètes</h2>
+        <Field label="Les athlètes voient le contenu (exercices, temps cibles)">
+          <select value={release} onChange={(e) => setRelease(e.target.value as ReleaseRule)}>
+            {(Object.keys(RELEASE_LABELS) as ReleaseRule[]).map((k) => <option key={k} value={k}>{RELEASE_LABELS[k]}</option>)}
+          </select>
+        </Field>
+        <p className="tiny muted">Avant, ils voient seulement le jour, l’heure et le lieu. Une séance peut être montrée plus tôt : Planning, la séance, Modifier.</p>
       </section>
 
       <section className="card form">

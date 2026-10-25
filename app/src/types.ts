@@ -172,6 +172,8 @@ export interface Assignment {
   group_id: string | null
   athlete_ids: string[]
   note: string
+  /** contenu montré aux athlètes à partir de ce moment, plus tôt que la règle du groupe */
+  visible_from?: string | null
 }
 
 export interface Feedback {

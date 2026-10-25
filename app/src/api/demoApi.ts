@@ -1,5 +1,6 @@
 // Mode démo : toutes les données restent dans le navigateur (localStorage).
 // Simule les comptes (entraîneur / athlètes) et les règles d'accès de la base.
+import { isReleased, releaseRule } from '../lib/release'
 import { DEFAULT_EXERCISES, DEFAULT_TESTS } from '../data/defaults'
 import type { Me, TableName, Tables } from '../types'
 import { addDays, athletesFor, emptyItem, todayISO, uid } from '../lib/utils'
@@ -211,7 +212,7 @@ export function createDemoApi(): Api {
       athletes: (a) => a.id === me.id,
       athlete_notes: () => false,
       exercises: () => false,
-      sessions: (s) => mine.some((a) => a.session_id === s.id),
+      sessions: (s) => mine.some((a) => a.session_id === s.id && isReleased(a, releaseRule(db.club.settings?.release ?? 'hour'))),
       assignments: (a) => mine.includes(a),
       feedback: (f) => f.athlete_id === me.id,
       tips: (t) => t.published,

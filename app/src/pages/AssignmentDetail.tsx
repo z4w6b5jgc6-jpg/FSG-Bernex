@@ -9,6 +9,7 @@ import { SessionView } from '../components/SessionView'
 import { TargetTable } from '../components/TargetTable'
 import { Thread } from '../components/Thread'
 import { SessionNoteCard } from '../components/SessionNoteCard'
+import { isReleased, releaseAt, releaseText } from '../lib/release'
 import { Empty, GroupBadge, RECOVERY_TEXT } from '../components/ui'
 import { athletesFor, formatDate, fullName, nativeShare, todayISO, whatsappUrl } from '../lib/utils'
 
@@ -64,6 +65,10 @@ export function AssignmentDetail() {
         <span className="muted small">{targets.length} athlète(s)</span>
       </div>
       {a.note && <div className="alert info">{a.note}</div>}
+      {(() => {
+        const at = releaseAt(a)!
+        return <p className="small muted">{isReleased(a) ? 'Contenu visible par les athlètes.' : `Contenu visible par les athlètes ${releaseText(at)} (pour le montrer avant : Modifier).`}</p>
+      })()}
       {s && <SessionNoteCard key={s.id} sessionId={s.id} />}
       <div className="row gap wrap actions">
         <a className="btn whatsapp" href={whatsappUrl(announcement)} target="_blank" rel="noreferrer">📲 Annoncer sur WhatsApp</a>

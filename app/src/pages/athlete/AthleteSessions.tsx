@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from 'react'
+import { releaseAt, releaseText } from '../../lib/release'
+import { useEffect, useState, type FormEvent } from 'react'
 import { BackLink } from '../../components/BackLink'
 import { sprintReference } from '../../lib/sprint'
 import { TrainingInfo } from '../../components/TrainingInfo'
@@ -56,24 +57,47 @@ export function AthleteSessions() {
   )
 }
 
+const nowMs = () => Date.now()
+
 export function AthleteSessionDetail() {
   const { id } = useParams()
   const me = useMyAthlete()
   const { assignments, sessions, feedback, tests, test_results, records, loading } = useData()
   const a = assignments.find((x) => x.id === id)
   const s = a && sessions.find((x) => x.id === a.session_id)
-  if (!me || !a || !s) return loading ? <p className="muted">Chargement…</p> : <Empty>Séance introuvable. <Link to="/seances">Retour</Link></Empty>
+  const { reload } = useData()
+  // contenu pas encore visible (règle du groupe) : on recharge tout seul à l'heure prévue
+  const at = a && !s ? releaseAt(a) : null
+  const atMs = at ? at.getTime() : 0
+  useEffect(() => {
+    if (!atMs) return
+    const ms = atMs - nowMs()
+    if (ms > 6 * 3600e3) return
+    const t = setTimeout(() => reload(), Math.max(ms, 0) + 3000)
+    return () => clearTimeout(t)
+  }, [atMs, reload])
+  if (!me || !a) return loading ? <p className="muted">Chargement…</p> : <Empty>Séance introuvable. <Link to="/seances">Retour</Link></Empty>
   const fb = feedback.find((f) => f.assignment_id === a.id)
   // Les « Remarques » du plan sont des notes de coach (elles citent parfois d'autres athlètes) : pas affichées ici
 
   return (
     <div>
       <BackLink to="/seances" label="Mes séances" />
-      <h1>{s.title}</h1>
+      <h1>{s?.title ?? 'Séance'}</h1>
       <p className="muted">{formatDate(a.date)}{a.time && ` · ${a.time}`}{a.location && ` · ${a.location}`}</p>
       {a.note && <div className="alert info">{a.note}</div>}
-      {!!s.targets?.length && <MyTargets targets={s.targets} athleteId={me.id} />}
-      <div className="card"><SessionView session={{ ...s, blocks: s.blocks.filter((b) => !/^remarques?$/i.test(b.title.trim())) }} vma={latestVma(tests, test_results)?.value} sprintLevel={sprintReference(tests, test_results, records)?.level} /></div>
+      {s ? (
+        <>
+          {!!s.targets?.length && <MyTargets targets={s.targets} athleteId={me.id} />}
+          <div className="card"><SessionView session={{ ...s, blocks: s.blocks.filter((b) => !/^remarques?$/i.test(b.title.trim())) }} vma={latestVma(tests, test_results)?.value} sprintLevel={sprintReference(tests, test_results, records)?.level} /></div>
+        </>
+      ) : (
+        <div className="card locked">
+          <b>Le contenu de la séance sera visible {at ? releaseText(at) : 'bientôt'}.</b>
+          <p className="small muted">Ton coach le dévoile juste avant l’entraînement. En attendant, tu peux lui écrire ci-dessous.</p>
+          <button className="btn small" onClick={() => reload()}>Actualiser</button>
+        </div>
+      )}
       <section>
         <h2>Mon retour</h2>
         {a.date <= todayISO() ? (
