@@ -2,7 +2,7 @@
 // - fichiers de l'app (JS/CSS/icônes) : cache d'abord, mis à jour en arrière-plan
 // - page HTML : réseau d'abord, cache si hors-ligne
 // - données (Supabase) : jamais mises en cache ici
-const CACHE = 'coach-athle-v5'
+const CACHE = 'coach-athle-v6'
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html', './manifest.webmanifest', './icon-192.png'])))

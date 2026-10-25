@@ -704,7 +704,7 @@ button.link.left { min-height: 40px; display: inline-flex; align-items: center; 
 
 /* ===== Design sobre (sans emoji) ===== */
 :root { --primary-soft: #e8f3e9; --radius: 12px; --shadow: 0 1px 2px rgb(15 23 42 / 5%); --bg: #f6f7f9; }
-@media (prefers-color-scheme: dark) { :root { --primary-soft: #14301a; } }
+@media (prefers-color-scheme: dark) { :root { --primary-soft: #14301a; --bg: #0b1120; } }
 .icon { display: block; flex-shrink: 0; }
 /* Tuiles : fond blanc, bord fin, icône verte sur pastille claire, une seule couleur pour toutes */
 .tile, .tile[class*="tone-"] {
