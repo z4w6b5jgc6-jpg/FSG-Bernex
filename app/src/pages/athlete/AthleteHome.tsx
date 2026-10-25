@@ -52,7 +52,7 @@ export function AthleteHome() {
         <Link to="/messages" className="alert info link-card">{unreadByAthlete(messages).length} nouveau(x) message(s) de ton coach →</Link>
       )}
 
-      <Tiles items={[
+      <Tiles who="athlete" items={[
         { to: '/seances', icon: 'calendar', label: 'Mes séances', tone: 'green', badge: todo.length,
           info: todays.length ? 'Séance aujourd’hui !' : next ? `Prochaine : ${formatDate(next.date, { weekday: 'short', day: 'numeric', month: 'short' })}` : 'Rien de prévu' },
         { to: '/progres', icon: 'chart', label: 'Mes progrès', tone: 'blue', info: `${earned.length}/${badges.length} badges · tests et records` },

@@ -57,7 +57,7 @@ export function Dashboard() {
           {pending} nouvelle(s) inscription(s) à vérifier →
         </Link>
       )}
-      <Tiles items={[
+      <Tiles who="coach" items={[
         { to: '/planning', icon: 'calendar', label: 'Planning', tone: 'green',
           info: (upcoming.length ? `${upcoming.length} séance(s) dans les 7 j` : 'Rien de prévu cette semaine') + (rate !== null ? ` · retours ${rate} %` : '') },
         { to: '/athletes', icon: 'users', label: 'Athlètes', tone: 'blue', badge: pending,

@@ -5,8 +5,10 @@ import App from './App.tsx'
 import { configProblems } from './api'
 import { ConfigError } from './components/ConfigError'
 import { initTheme } from './lib/theme'
+import { applyPrefs } from './lib/prefs'
 
 initTheme()
+applyPrefs()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

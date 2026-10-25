@@ -756,3 +756,25 @@ details.section-fold > summary { cursor: pointer; font-weight: 700; padding: 0.5
 
 .lock-screen { display: flex; flex-direction: column; gap: 0.8rem; align-items: center; justify-content: center; min-height: 80vh; max-width: 360px; margin: 0 auto; padding: 1rem; text-align: center; }
 .lock-screen .club-logo { width: min(220px, 60vw); height: auto; border-radius: 12px; }
+
+/* ---------- Personnalisation (par appareil) ---------- */
+:root[data-tiles='couleur'] .tile.tone-green { --tone: #22a02f; }
+:root[data-tiles='couleur'] .tile.tone-yellow { --tone: #c99700; }
+:root[data-tiles='couleur'] .tile.tone-blue { --tone: #2f80ed; }
+:root[data-tiles='couleur'] .tile.tone-pink { --tone: #e5487f; }
+:root[data-tiles='couleur'] .tile.tone-violet { --tone: #7c5cdb; }
+:root[data-tiles='couleur'] .tile.tone-orange { --tone: #ef7d22; }
+:root[data-tiles='couleur'] .tile { border-top: 3px solid var(--tone); }
+:root[data-tiles='couleur'] .tile-icon { background: color-mix(in srgb, var(--tone) 15%, var(--surface)); color: var(--tone); }
+:root[data-density='compacte'] .tiles { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+:root[data-density='compacte'] .tile { min-height: 0; padding: 0.65rem 0.55rem; align-items: center; text-align: center; }
+:root[data-density='compacte'] .tile-icon { margin: 0 auto; }
+:root[data-density='compacte'] .tile-label { font-size: 0.85rem; }
+:root[data-density='compacte'] .tile-info { display: none; }
+.tiles-custom { margin: -0.6rem 0 0.8rem; color: var(--muted); }
+.tiles-edit { margin: 0.9rem 0 1.2rem; }
+.tiles-edit .check { display: flex; align-items: center; gap: 0.5rem; }
+.icon-choices { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.icon-choice { font: inherit; color: var(--text); background: none; border: 2px solid transparent; border-radius: 16px; padding: 0.25rem; display: flex; flex-direction: column; align-items: center; gap: 0.2rem; cursor: pointer; font-size: 0.75rem; }
+.icon-choice img { width: 56px; height: 56px; border-radius: 13px; border: 1px solid var(--border); }
+.icon-choice.on { border-color: var(--primary); }
