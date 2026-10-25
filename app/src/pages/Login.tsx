@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { Logo } from '../components/Logo'
 import { api } from '../api'
 import { errorMessage } from '../lib/utils'
 
@@ -33,10 +34,7 @@ export function Login() {
   return (
     <div className="login">
       <div className="login-hero">
-        <picture>
-          <source srcSet="logo-club-dark.png" media="(prefers-color-scheme: dark)" />
-          <img src="logo-club.png" alt="FSG Bernex-Confignon" className="club-logo" />
-        </picture>
+        <Logo kind="club" className="club-logo" alt="FSG Bernex-Confignon" />
         <div className="stripes" />
         <h1>Coach Athlé</h1>
         <p className="club-name">Athlétisme</p>

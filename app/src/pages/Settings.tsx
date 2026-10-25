@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { BackLink } from '../components/BackLink'
+import { DevicePrefs } from '../components/DevicePrefs'
 import { Field } from '../components/ui'
 import { api } from '../api'
 import { useData } from '../lib/data'
@@ -9,7 +10,7 @@ import { RELEASE_LABELS, releaseRule, type ReleaseRule } from '../lib/release'
 
 /** Réglages de l'espace : lieux, règle été / hiver, description du groupe pour l'assistant */
 export function Settings() {
-  const { refreshMe } = useData()
+  const { me, refreshMe } = useData()
   const r = seasonRule()
   const [places, setPlaces] = useState(venues().join('\n'))
   const [summer, setSummer] = useState(r.summer)
@@ -50,6 +51,8 @@ export function Settings() {
     <div>
       <BackLink to="/" label="Accueil" />
       <h1>Réglages de mon espace</h1>
+      {me && <DevicePrefs email={me.email} />}
+
       <p className="small muted">Propres à ton groupe : les autres groupes du club ont leurs propres réglages et ne voient rien du tien.</p>
 
       <section className="card form">

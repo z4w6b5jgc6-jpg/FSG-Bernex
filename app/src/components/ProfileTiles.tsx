@@ -32,7 +32,7 @@ export function ProfileTiles({ athlete, coach }: { athlete: Athlete; coach: bool
   const tiles: { id: Tab; icon: string; label: string; info: string }[] = [
     { id: 'tests', icon: 'chart', label: 'Tests', info: summaries.length ? `${summaries.length} test${summaries.length > 1 ? 's' : ''}` : 'Aucun' },
     { id: 'records', icon: 'trophy', label: 'Records', info: events.length ? `${events.length} épreuve${events.length > 1 ? 's' : ''}` : 'Aucun' },
-    { id: 'muscu', icon: 'medal', label: 'Muscu', info: topLift ? `${lifts.length} exercice${lifts.length > 1 ? 's' : ''}` : 'Aucune' },
+    { id: 'muscu', icon: 'medal', label: 'Max muscu', info: topLift ? `${lifts.length} exercice${lifts.length > 1 ? 's' : ''}` : 'Aucune' },
   ]
 
   return (
@@ -84,7 +84,7 @@ export function ProfileTiles({ athlete, coach }: { athlete: Athlete; coach: bool
 
       {tab === 'muscu' && (
         <div className="ppanel">
-          <div className="row between"><h2>Musculation</h2><button className="btn small primary" onClick={() => setEditLift({})}>+ Charge</button></div>
+          <div className="row between"><h2>Max muscu</h2><button className="btn small primary" onClick={() => setEditLift({})}>+ Charge</button></div>
           {lifts.length === 0 ? <p className="muted small">Ajoute les charges maximales (squat, développé couché…).</p> : (
             <>
               <div className="lift-grid">

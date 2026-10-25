@@ -28,26 +28,24 @@
   background: var(--bg);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0b1120;
-    --surface: #151d2e;
-    --text: #e2e8f0;
-    --muted: #94a3b8;
-    --border: #273449;
-    --primary: #3fbf4d;
-    --primary-ink: #0b1120;
-    --primary-soft: #3a2410;
-    --ok: #4ade80;
-    --ok-soft: #12301f;
-    --warn: #fbbf24;
-    --warn-soft: #3a2c0a;
-    --danger: #f87171;
-    --danger-soft: #3b1414;
-    --info-soft: #0c2a3d;
-    --whatsapp: #25d366;
-    color-scheme: dark;
-  }
+:root[data-theme='dark'] {
+  --bg: #0b1120;
+  --surface: #151d2e;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --border: #273449;
+  --primary: #3fbf4d;
+  --primary-ink: #0b1120;
+  --primary-soft: #3a2410;
+  --ok: #4ade80;
+  --ok-soft: #12301f;
+  --warn: #fbbf24;
+  --warn-soft: #3a2c0a;
+  --danger: #f87171;
+  --danger-soft: #3b1414;
+  --info-soft: #0c2a3d;
+  --whatsapp: #25d366;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -423,7 +421,7 @@ input.attention { border-color: var(--warn); box-shadow: 0 0 0 2px var(--warn-so
 .stripes { height: 8px; background: repeating-linear-gradient(135deg, var(--club-green) 0 14px, var(--surface) 14px 28px); border-radius: 4px; margin: 0.6rem auto 0; max-width: 260px; }
 .login-hero .club-logo-symbol { width: 96px; height: auto; display: block; margin: 0 auto; border-radius: 0; }
 .club-name { margin: 0.1rem 0 0; font-weight: 700; color: var(--club-green); letter-spacing: 0.02em; }
-@media (prefers-color-scheme: dark) { .club-name { color: var(--primary); } }
+:root[data-theme='dark'] .club-name { color: var(--primary); }
 .login-hero .club-logo { width: min(240px, 68vw); height: auto; display: block; margin: 0 auto; border-radius: 12px; }
 .login-hero .stripes { margin: 0.5rem auto 0.8rem; max-width: min(240px, 68vw); }
 
@@ -704,7 +702,7 @@ button.link.left { min-height: 40px; display: inline-flex; align-items: center; 
 
 /* ===== Design sobre (sans emoji) ===== */
 :root { --primary-soft: #e8f3e9; --radius: 12px; --shadow: 0 1px 2px rgb(15 23 42 / 5%); --bg: #f6f7f9; }
-@media (prefers-color-scheme: dark) { :root { --primary-soft: #14301a; --bg: #0b1120; } }
+:root[data-theme='dark'] { --primary-soft: #14301a; --bg: #0b1120; }
 .icon { display: block; flex-shrink: 0; }
 /* Tuiles : fond blanc, bord fin, icône verte sur pastille claire, une seule couleur pour toutes */
 .tile, .tile[class*="tone-"] {
@@ -755,3 +753,6 @@ details.fold { margin-top: 0.7rem; }
 details.fold > summary { cursor: pointer; color: var(--muted); padding: 0.3rem 0; }
 details.section-fold { border-top: 1px solid var(--border); padding: 0.4rem 0; }
 details.section-fold > summary { cursor: pointer; font-weight: 700; padding: 0.5rem 0; list-style-position: inside; }
+
+.lock-screen { display: flex; flex-direction: column; gap: 0.8rem; align-items: center; justify-content: center; min-height: 80vh; max-width: 360px; margin: 0 auto; padding: 1rem; text-align: center; }
+.lock-screen .club-logo { width: min(220px, 60vw); height: auto; border-radius: 12px; }

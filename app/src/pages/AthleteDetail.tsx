@@ -1,7 +1,7 @@
 import { Avatar } from '../components/Avatar'
 import { useState } from 'react'
 import { BackLink } from '../components/BackLink'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useData } from '../lib/data'
 import { FeedbackCard } from '../components/FeedbackCard'
 import { EffortBars, SleepBars } from '../components/Charts'
@@ -17,6 +17,7 @@ import { athletesFor, errorMessage, formatShort, fullName, todayISO, whatsappUrl
 export function AthleteDetail() {
   const { id } = useParams()
   const nav = useNavigate()
+  const { hash } = useLocation()
   const { athletes, groups, assignments, sessions, feedback, wellness, athlete_notes, test_reports, competitions, save, remove, loading } = useData()
   const [editing, setEditing] = useState(false)
   const [note, setNote] = useState('')
@@ -77,25 +78,10 @@ export function AthleteDetail() {
 
       <ProfileTiles athlete={a} coach />
 
-      <AthleteSeriesCard athlete={a} />
+      {hash === '#seances' && <AthleteSeriesCard athlete={a} />}
 
-      {upcoming.length > 0 && (
-        <details className="section-fold">
-          <summary>Compétitions <span className="muted small">({upcoming.length})</span></summary>
-          <ul className="plain rows">
-            {upcoming.map((c) => (
-              <li key={c.id} className="row between">
-                <span><span className={`level-badge level-${c.level} sm`}>{c.level}</span> <b>{c.name}</b>{c.entries?.[a.id] && <span className="muted small"> · {c.entries[a.id]}</span>}</span>
-                <span className="small muted">{formatShort(c.date)}</span>
-              </li>
-            ))}
-          </ul>
-          <Link to="/competitions" className="small">Toutes les compétitions →</Link>
-        </details>
-      )}
-
-      <details className="section-fold">
-        <summary>Suivi</summary>
+      <section>
+        <h2>Suivi</h2>
         <div className="stats">
           <div className="stat"><b>{done}</b><span>séances faites</span></div>
           <div className="stat"><b>{past.length ? Math.round((fbs.length / past.length) * 100) : 0}%</b><span>retours</span></div>
@@ -124,7 +110,22 @@ export function AthleteDetail() {
             </div>
           </>
         )}
-      </details>
+      </section>
+
+      {upcoming.length > 0 && (
+        <details className="section-fold">
+          <summary>Compétitions <span className="muted small">({upcoming.length})</span></summary>
+          <ul className="plain rows">
+            {upcoming.map((c) => (
+              <li key={c.id} className="row between">
+                <span><span className={`level-badge level-${c.level} sm`}>{c.level}</span> <b>{c.name}</b>{c.entries?.[a.id] && <span className="muted small"> · {c.entries[a.id]}</span>}</span>
+                <span className="small muted">{formatShort(c.date)}</span>
+              </li>
+            ))}
+          </ul>
+          <Link to="/competitions" className="small">Toutes les compétitions →</Link>
+        </details>
+      )}
 
       <details className="section-fold">
         <summary>Bilans de tests <span className="muted small">({reports.length}, visibles par l’athlète)</span></summary>

@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { Logo } from '../components/Logo'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { api } from '../api'
 import { useData } from '../lib/data'
@@ -67,10 +68,7 @@ export function CoachJoin() {
   return (
     <div className="login">
       <div className="login-hero">
-        <picture>
-          <source srcSet="logo-club-dark.png" media="(prefers-color-scheme: dark)" />
-          <img src="logo-club.png" alt="FSG Bernex-Confignon" className="club-logo" />
-        </picture>
+        <Logo kind="club" className="club-logo" alt="FSG Bernex-Confignon" />
         <h1>Deviens entraîneur de <span className="nowrap">{club.name}</span></h1>
         <p className="muted">Tu auras accès aux séances, au planning, aux athlètes et à leurs retours.</p>
       </div>

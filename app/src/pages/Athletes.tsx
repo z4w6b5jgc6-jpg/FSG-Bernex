@@ -9,6 +9,7 @@ import { api } from '../api'
 import { errorMessage, fullName, inviteLink, todayISO, whatsappUrl } from '../lib/utils'
 import { ImportRoster } from '../components/ImportRoster'
 import { CoachesCard } from '../components/CoachesCard'
+import { SubgroupSelect } from '../components/SubgroupSelect'
 
 const COLORS = ['#2563eb', '#db2777', '#16a34a', '#ea580c', '#7c3aed', '#0891b2', '#ca8a04', '#64748b']
 
@@ -179,7 +180,7 @@ function PendingSignups() {
 }
 
 export function AthleteForm({ initial, onClose }: { initial: Partial<Athlete>; onClose: () => void }) {
-  const { groups, save } = useData()
+  const { groups, athletes, save } = useData()
   const [a, setA] = useState(initial)
   const set = (p: Partial<Athlete>) => setA({ ...a, ...p })
   const submit = async (e: FormEvent) => {
@@ -234,6 +235,7 @@ export function AthleteForm({ initial, onClose }: { initial: Partial<Athlete>; o
             ) : <span className="pill">Pas encore inscrit·e</span>}
           </div>
         )}
+        {initial.id && athletes.find((x) => x.id === initial.id) && <SubgroupSelect athlete={athletes.find((x) => x.id === initial.id)!} />}
         {a.id && (
           <label className="check"><input type="checkbox" checked={a.active ?? true} onChange={(e) => set({ active: e.target.checked })} /> Actif (décocher bloque l’accès de l’athlète à l’app)</label>
         )}

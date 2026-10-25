@@ -5,6 +5,8 @@ import { api } from './api'
 import { DataProvider, useData, useMyAthlete } from './lib/data'
 import { applyAccent } from './lib/athlete'
 import { InstallPrompt } from './components/InstallPrompt'
+import { Logo } from './components/Logo'
+import { AppLock } from './components/AppLock'
 import { Login } from './pages/Login'
 import { Join } from './pages/Join'
 import { CoachJoin } from './pages/CoachJoin'
@@ -92,7 +94,7 @@ function CoachApp() {
   const { me } = useData()
   useEffect(() => applyAccent(null), [])
   return (
-    <Shell nav={COACH_NAV} brand={<><picture><source srcSet="logo-symbol-dark.png" media="(prefers-color-scheme: dark)" /><img src="logo-symbol.png" alt="" className="brand-logo" /></picture><span className="brand-name">{me?.club_name ?? 'Coach Athlé'}</span></>}
+    <Shell nav={COACH_NAV} brand={<><Logo kind="symbol" className="brand-logo" /><span className="brand-name">{me?.club_name ?? 'Coach Athlé'}</span></>}
       right={<button className="btn ghost small" onClick={() => api.signOut()}>Déconnexion</button>}>
       <InstallPrompt who="coach" />
       <Routes>
@@ -137,7 +139,7 @@ function AthleteApp() {
   useEffect(() => applyAccent(athlete?.color ?? null), [athlete?.color])
   if (!athlete) return <div className="login"><p className="muted">{loading ? 'Chargement…' : 'Profil introuvable.'}</p></div>
   return (
-    <Shell nav={ATHLETE_NAV} brand={<><picture><source srcSet="logo-symbol-dark.png" media="(prefers-color-scheme: dark)" /><img src="logo-symbol.png" alt="" className="brand-logo" /></picture><span className="brand-name">{athlete.first_name}</span></>}>
+    <Shell nav={ATHLETE_NAV} brand={<><Logo kind="symbol" className="brand-logo" /><span className="brand-name">{athlete.first_name}</span></>}>
       <Routes>
         <Route path="/" element={<AthleteHome />} />
         <Route path="/seances" element={<AthleteSessions />} />
@@ -157,9 +159,11 @@ function AthleteApp() {
 function RoleGate() {
   const { me } = useData()
   if (!me) return <Login />
-  if (me.role === 'coach') return <CoachApp />
-  if (me.role === 'athlete') return <AthleteApp />
-  return <Onboarding />
+  return (
+    <AppLock key={me.email} email={me.email}>
+      {me.role === 'coach' ? <CoachApp /> : me.role === 'athlete' ? <AthleteApp /> : <Onboarding />}
+    </AppLock>
+  )
 }
 
 export default function App() {

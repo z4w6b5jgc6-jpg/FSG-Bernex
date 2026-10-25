@@ -4,7 +4,6 @@ import { useData } from '../lib/data'
 import { buildSeries, countIn, DAYS, seriesChanges, seriesLabel, type Series } from '../lib/series'
 import { planOf } from '../lib/targets'
 import type { Athlete } from '../types'
-import { SubgroupSelect } from './SubgroupSelect'
 import { errorMessage, formatDate, fullName, todayISO } from '../lib/utils'
 
 /** Fiche athlète : ses séries de séances à venir, à cocher pour l'ajouter ou le retirer d'un coup */
@@ -14,7 +13,7 @@ export function AthleteSeriesCard({ athlete }: { athlete: Athlete }) {
   const [err, setErr] = useState<string | null>(null)
   // arrivée depuis « Confirmer et choisir ses séances » : on descend jusqu'ici
   const { hash } = useLocation()
-  const ref = useRef<HTMLDetailsElement>(null)
+  const ref = useRef<HTMLElement>(null)
   useEffect(() => { if (hash === '#seances') ref.current?.scrollIntoView({ block: 'start' }) }, [hash])
   // séries hors plan du lundi (celui-ci suit le sous-groupe, choisi plus bas)
   const series = useMemo(() => buildSeries(assignments, sessions, todayISO())
@@ -35,10 +34,9 @@ export function AthleteSeriesCard({ athlete }: { athlete: Athlete }) {
   }
 
   return (
-    <details className="section-fold" id="seances" ref={ref} open={hash === '#seances' || undefined}>
-      <summary>Séances</summary>
+    <section id="seances" ref={ref}>
+      <h2>Ses séances</h2>
       <div className="card form">
-        <SubgroupSelect athlete={athlete} />
         {!athlete.active && <div className="alert warn small">Fiche inactive : réactive-la pour qu’il reçoive des séances.</div>}
         {series.length === 0 ? <p className="small muted">Aucune autre série de séances à venir.</p> : (
           <ul className="plain rows">
@@ -61,6 +59,6 @@ export function AthleteSeriesCard({ athlete }: { athlete: Athlete }) {
         )}
         {err && <div className="alert warn small">{err}</div>}
       </div>
-    </details>
+    </section>
   )
 }

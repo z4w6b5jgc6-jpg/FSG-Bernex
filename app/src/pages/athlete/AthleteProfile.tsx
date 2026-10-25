@@ -4,6 +4,7 @@ import { api } from '../../api'
 import { useData, useMyAthlete } from '../../lib/data'
 import { Field } from '../../components/ui'
 import { PushToggle } from '../../components/PushToggle'
+import { DevicePrefs } from '../../components/DevicePrefs'
 import { ACCENTS, applyAccent, shownColor } from '../../lib/athlete'
 import type { Athlete } from '../../types'
 import { errorMessage } from '../../lib/utils'
@@ -43,6 +44,7 @@ export function AthleteProfile() {
       </div>
 
       <PushToggle />
+      {account && <DevicePrefs email={account.email} />}
 
       <section>
         <h2>Ma couleur</h2>
