@@ -18,6 +18,11 @@ export function Duplicates() {
   const key = (g: { date: string; items: Assignment[] }) => g.date + g.items[0].id
   const kept = (g: (typeof groups)[number]) => choice[key(g)] ?? g.keep
   const title = (a: Assignment) => sessions.find((s) => s.id === a.session_id)?.title ?? 'Séance supprimée'
+  // date et heure d'ajout de la planification (enregistrées par la base)
+  const added = (a: Assignment) => {
+    const c = (a as Assignment & { created_at?: string }).created_at
+    return c ? new Date(c).toLocaleString('fr-CH', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''
+  }
   const fbCount = (a: Assignment) => feedback.filter((f) => f.assignment_id === a.id).length
   const toDelete = groups.flatMap((g) => kept(g) === 'all' ? [] : g.items.filter((a) => a.id !== kept(g)))
   const lostFeedback = toDelete.reduce((n, a) => n + fbCount(a), 0)
@@ -75,6 +80,7 @@ export function Duplicates() {
                     <input type="radio" name={key(g)} checked={kept(g) === a.id} onChange={() => setChoice({ ...choice, [key(g)]: a.id })} />
                     <span className="row-main">{title(a)}
                       <small>{[a.time, a.location, `${athletesFor(a, athletes).length} athlètes`].filter(Boolean).join(' · ')}</small>
+                      {added(a) && <small>Ajoutée le {added(a)}</small>}
                       <span className="row-tags">
                         {s && planOf(s) && <span className="status green">Temps cibles</span>}
                         {n > 0 && <span className="status blue">{n} retour(s)</span>}
