@@ -47,8 +47,12 @@ function PendingSignups() {
     setBusy(true)
     try { await fn() } catch (e) { alert(errorMessage(e)) } finally { setBusy(false) }
   }
-  const merge = (a: Athlete) => run(async () => {
-    const into = roster.find((r) => r.id === target[a.id])
+  const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '')
+  // même prénom + nom (et même année si renseignée des deux côtés) : simple proposition, le coach confirme
+  const sameName = (a: Athlete) => roster.filter((r) => norm(r.first_name) === norm(a.first_name) && norm(r.last_name) === norm(a.last_name)
+    && (!r.birth_year || !a.birth_year || r.birth_year === a.birth_year))
+  const merge = (a: Athlete, intoId = target[a.id]) => run(async () => {
+    const into = roster.find((r) => r.id === intoId)
     if (!into || !confirm(`Relier le compte de ${fullName(a)} au profil « ${fullName(into)} » ? Ses données seront regroupées dans ce profil.`)) return
     await api.mergeAthletes(a.id, into.id)
     await reload()
@@ -60,15 +64,18 @@ function PendingSignups() {
       {pending.map((a) => {
         const linked = wasInRoster(a)
         const similar = roster.filter((r) => r.last_name && a.last_name && r.last_name.toLowerCase()[0] === a.last_name.toLowerCase()[0])
+        const match = linked ? [] : sameName(a)
         return (
           <div key={a.id} className="pending-row">
             <div>
               <b>{fullName(a)}</b> <span className="muted small">{a.birth_year} · {gname(a.group_id) ?? 'sans groupe'}{a.email && ` · ${a.email}`}</span>
-              <div className="small">{linked ? 'Relié·e automatiquement à sa fiche de ta liste' : 'Profil créé à l’inscription (pas trouvé dans ta liste)'}</div>
+              <div className="small">{linked ? 'Relié·e automatiquement à sa fiche de ta liste (même email)' : match.length === 1 ? `Même nom que la fiche « ${fullName(match[0])} » de ta liste : vérifie que c’est bien la même personne.` : 'Profil créé à l’inscription (pas trouvé dans ta liste)'}</div>
             </div>
             <div className="row gap wrap">
               {linked ? (
                 <button className="btn small primary" disabled={busy} onClick={() => run(() => save('athletes', { id: a.id, signup_reviewed: true }))}>✓ C’est bon</button>
+              ) : match.length === 1 ? (
+                <button className="btn small primary" disabled={busy} onClick={() => merge(a, match[0].id)}>✓ Relier à sa fiche</button>
               ) : (
                 // nouvel athlète : on confirme puis on choisit ses séances sur sa fiche
                 <button className="btn small primary" disabled={busy} onClick={() => run(async () => { await save('athletes', { id: a.id, signup_reviewed: true }); nav(`/athletes/${a.id}#seances`) })}>✓ Confirmer et choisir ses séances</button>

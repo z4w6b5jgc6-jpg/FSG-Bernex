@@ -1,4 +1,5 @@
 import {AvailabilityPanel,LoadChart,ExerciseResults,PerformanceHighlights} from '../components/AthleteMonitoring'
+import { healthConsent } from '../lib/confidentiality'
 import { Avatar } from '../components/Avatar'
 import { useState } from 'react'
 import { BackLink } from '../components/BackLink'
@@ -19,7 +20,7 @@ export function AthleteDetail() {
   const { id } = useParams()
   const nav = useNavigate()
   const { hash } = useLocation()
-  const { athletes, groups, assignments, sessions, feedback, wellness, athlete_notes, test_reports, competitions, save, remove, loading } = useData()
+  const { athletes, groups, assignments, sessions, feedback, wellness, athlete_notes, test_reports, competitions, save, remove, loading, me, privacy_acceptances } = useData()
   const [editing, setEditing] = useState(false)
   const [note, setNote] = useState('')
   const [addReport, setAddReport] = useState(false)
@@ -71,7 +72,8 @@ export function AthleteDetail() {
         </div>
       </div>
       {a.goals && <div className="goal"><b>Objectif :</b> {a.goals}</div>}
-      {!a.user_id && <div className="small"><span className="pill wrap">Pas encore inscrit·e dans l’app</span></div>}
+      {!a.user_id ? <div className="small"><span className="pill wrap">Pas encore inscrit·e dans l’app</span></div>
+        : me?.settings?.privacy?.published && <div className="small"><span className={`pill wrap ${healthConsent(a.id, privacy_acceptances, me.settings.privacy) ? 'ok' : ''}`}>{healthConsent(a.id, privacy_acceptances, me.settings.privacy) ? 'Suivi de forme accepté' : 'Suivi de forme non activé'}</span></div>}
       <div className="row gap wrap actions">
         {a.phone && <a className="btn small whatsapp" href={whatsappUrl(`Salut ${a.first_name} !`, a.phone)} target="_blank" rel="noreferrer">WhatsApp</a>}
         <button className="btn small" onClick={() => setEditing(true)}>Modifier / groupe</button>

@@ -9,7 +9,7 @@ export const RELEASE_LABELS: Record<ReleaseRule, string> = {
   day: 'le jour de la séance (dès minuit)',
   plan: 'dès la planification',
 }
-export const releaseRule = (rule?: string): ReleaseRule => (rule ?? settings().release ?? 'start') as ReleaseRule
+export const releaseRule = (rule?: string): ReleaseRule => (rule ?? settings().release ?? 'hour') as ReleaseRule
 
 /** Convertit l'heure civile de Genève, même si l'appareil est dans un autre fuseau. */
 export function genevaTime(date: string, time: string): Date {

@@ -23,7 +23,9 @@ export function WellnessCheckin({ athleteId }: { athleteId: string }) {
   const [busy, setBusy] = useState(false)
   const set = (p: Partial<Wellness>) => setW({ ...w, ...p })
 
-  if (!healthConsent(athleteId, privacy_acceptances, me?.settings?.privacy)) return <div className="card"><b>Suivi de forme facultatif</b><p className="small muted">Consulte l’information sur tes données et choisis si tu souhaites activer ce suivi.</p><Link className="btn" to="/confidentialite">Information et choix</Link></div>
+  if (!healthConsent(athleteId, privacy_acceptances, me?.settings?.privacy)) return me?.settings?.privacy?.published
+    ? <div className="card"><b>Suivi de forme facultatif</b><p className="small muted">Sommeil, fatigue, courbatures : si tu l’actives, ton coach peut adapter tes séances. Lis l’information et fais ton choix, tu pourras le changer à tout moment.</p><Link className="btn primary" to="/confidentialite">Lire et activer</Link></div>
+    : <div className="card"><b>Suivi de forme facultatif</b><p className="small muted">Bientôt disponible : ton coach prépare l’information sur tes données.</p></div>
 
   if (existing && !editing) {
     return (

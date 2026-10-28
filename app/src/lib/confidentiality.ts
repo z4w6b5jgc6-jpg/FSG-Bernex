@@ -1,5 +1,7 @@
 import type { PrivacyAcceptance } from '../types'
 import type { PrivacySettings } from './settings'
+/** Texte de départ pour l'hébergement : services réellement utilisés par l'app ; la région Supabase reste à vérifier par le coach */
+export const DEFAULT_HOSTING = 'Données et comptes : Supabase, région du projet à compléter (Supabase → Project Settings → General → Region). Site et fonctions serveur : Cloudflare Pages. Garanties : contrats de traitement des données (DPA) de Supabase et de Cloudflare ; leurs sous-traitants sont listés sur leurs sites.'
 export const DRAFT_PRIVACY: PrivacySettings = { organization: '', contact: '', address: '', version: '2027-1', published: false, retention_months: 12, health_retention_months: 3 }
 export function healthConsent(athleteId: string, rows: PrivacyAcceptance[], policy?: PrivacySettings): boolean {
   if (!policy?.published) return false
@@ -9,6 +11,7 @@ export function healthConsent(athleteId: string, rows: PrivacyAcceptance[], poli
 }
 export function validatePrivacy(p: PrivacySettings): string | null {
   if (p.published && !(p.hosting_details ?? '').trim()) return 'Précise les lieux de traitement et les garanties avant publication.'
+  if (p.published && /à compléter/i.test(p.hosting_details ?? '')) return 'Remplace « à compléter » dans les lieux de traitement (par ex. la région de ton projet Supabase) avant publication.'
   if (!p.organization.trim() || !p.address.trim() || !/^\S+@\S+\.\S+$/.test(p.contact) || !p.version.trim()) return 'Complète le responsable du traitement, son adresse, son contact et la version.'
   if (![p.retention_months,p.health_retention_months].every((n) => Number.isInteger(n) && n > 0 && n <= 120)) return 'Choisis des durées de conservation entre 1 et 120 mois, à justifier et valider.'
   if (p.health_retention_months > p.retention_months) return 'La conservation du suivi de santé ne doit pas dépasser celle du suivi sportif.'

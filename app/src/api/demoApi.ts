@@ -122,7 +122,7 @@ export function createDemoApi(): Api {
       athletes: (a) => a.id === me.id,
       athlete_notes: () => false,
       exercises: () => false,
-      sessions: (s) => mine.some((a) => a.session_id === s.id && isReleased(a, releaseRule(db.club.settings?.release ?? 'start'))),
+      sessions: (s) => mine.some((a) => a.session_id === s.id && isReleased(a, releaseRule(db.club.settings?.release ?? 'hour'))),
       assignments: (a) => mine.includes(a),
       feedback: (f) => f.athlete_id === me.id,
       tips: (t) => t.published,
@@ -140,7 +140,7 @@ export function createDemoApi(): Api {
       attendance: (x) => x.athlete_id === me.id,
       availability: (x) => x.athlete_id === me.id,
       privacy_acceptances: (x) => x.athlete_id === me.id,
-      session_adjustments: (x) => x.athlete_id === me.id && mine.some((a) => a.id === x.assignment_id && isReleased(a, releaseRule(db.club.settings?.release ?? 'start'))),
+      session_adjustments: (x) => x.athlete_id === me.id && mine.some((a) => a.id === x.assignment_id && isReleased(a, releaseRule(db.club.settings?.release ?? 'hour'))),
     }
     return rows.filter(filters[table] as (x: Row<K>) => boolean)
   }

@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
 import { useData } from '../lib/data'
-import { DRAFT_PRIVACY, decryptExport, downloadData, encryptExport, healthConsent, validatePrivacy } from '../lib/confidentiality'
+import { DEFAULT_HOSTING, DRAFT_PRIVACY, decryptExport, downloadData, encryptExport, healthConsent, validatePrivacy } from '../lib/confidentiality'
 import { errorMessage, todayISO } from '../lib/utils'
 import { Field } from '../components/ui'
 import type { PrivacySettings } from '../lib/settings'
@@ -10,7 +10,7 @@ import type { PrivacySettings } from '../lib/settings'
 export function Privacy() {
  const data=useData(); const {me,privacy_acceptances,save,refreshMe}=data
  const coach=me?.role==='coach';const policy=me?.settings?.privacy ?? DRAFT_PRIVACY
- const [draft,setDraft]=useState<PrivacySettings>(policy)
+ const [draft,setDraft]=useState<PrivacySettings>(()=>({...policy,organization:policy.organization||me?.club_name||'',hosting_details:policy.hosting_details||DEFAULT_HOSTING}))
  const [message,setMessage]=useState('');const [busy,setBusy]=useState(false)
  const [agree,setAgree]=useState(false);const [representative,setRepresentative]=useState('')
  const [retention,setRetention]=useState<Record<string,number>|null>(null)

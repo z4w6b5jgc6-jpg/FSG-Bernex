@@ -203,7 +203,7 @@ alter table assignments add column if not exists visible_from timestamptz;
 create or replace function assignment_released(p_coach uuid, p_date date, p_time text, p_visible timestamptz) returns boolean
 language sql stable security definer set search_path = public as $$
   select (p_visible is not null and p_visible <= now()) or now() >= (
-    select case coalesce((select settings->>'release' from clubs where coach_id = p_coach), 'start')
+    select case coalesce((select settings->>'release' from clubs where coach_id = p_coach), 'hour')
       when 'plan' then '-infinity'::timestamptz
       when 'day' then p_date::timestamp at time zone 'Europe/Zurich'
       when 'start' then (case when p_time ~ '^\d{1,2}:\d{2}$' then p_date + p_time::time else p_date::timestamp end) at time zone 'Europe/Zurich'
