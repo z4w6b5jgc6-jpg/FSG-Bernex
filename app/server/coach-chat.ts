@@ -1,6 +1,7 @@
 // Discussion libre avec l'assistant entraîneur (page Assistant) : sans séance jointe.
 // L'app masque les noms d'athlètes avant l'envoi ; aucune fiche ni donnée de santé n'est transmise.
 import { cut, isCoach, json, type Env } from './ai'
+import { parseLibrary, type LibraryRef } from '../src/lib/aiLibrary'
 
 const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
 
@@ -72,17 +73,20 @@ Réponds en français, de façon concrète et structurée (listes courtes, dista
 Tu ne fais pas de diagnostic médical : en cas de douleur ou de blessure, conseille d'adapter et d'orienter vers un professionnel de santé.
 Si une question sort de l'entraînement sportif, recentre poliment. N'invente pas de références.`
 
+/** Publications retenues par le coach : l'IA s'appuie dessus en priorité et les cite par leur titre */
+const libraryText = (lib: LibraryRef[]) => lib.length ? `\nPublications retenues par l'entraîneur (références prioritaires ; cite le titre quand tu t'en sers, n'invente rien au-delà de leur contenu) :\n${lib.map((l) => `- « ${l.title} » (${l.journal} ${l.year}). Note du coach : ${l.note || '—'}. Résumé : ${l.summary}`).join('\n')}` : ''
+
 export async function coachChat({ request, env }: { request: Request; env: Env }) {
   try {
     if (!(await isCoach(request, env))) return json({ error: 'Réservé aux entraîneurs connectés.' }, 401)
     if (!env.AI) return json({ error: 'L’IA n’est pas activée sur ce site (liaison « AI » manquante dans Cloudflare).' }, 503)
-    const body = (await request.json()) as { messages?: { role: string; content: string }[]; groupe?: string }
+    const body = (await request.json()) as { messages?: { role: string; content: string }[]; groupe?: string; library?: unknown }
     const history = (body.messages ?? [])
       .filter((m) => (m.role === 'user' || m.role === 'assistant') && m.content)
       .slice(-12)
       .map((m) => ({ role: m.role, content: cut(m.content, 2000) }))
     if (!history.length || history[history.length - 1].role !== 'user') return json({ error: 'Pose une question.' }, 400)
-    const out = await env.AI.run(MODEL, { messages: [{ role: 'system', content: SYSTEM(body.groupe) }, ...history], max_tokens: 900, temperature: 0.5 })
+    const out = await env.AI.run(MODEL, { messages: [{ role: 'system', content: SYSTEM(body.groupe) + libraryText(parseLibrary(body.library)) }, ...history], max_tokens: 900, temperature: 0.5 })
     const reply = typeof out.response === 'string' ? out.response : JSON.stringify(out.response ?? '')
     return json({ reply: cut(reply, 6000) })
   } catch (e) {

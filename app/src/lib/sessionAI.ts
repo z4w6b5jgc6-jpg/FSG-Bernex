@@ -8,7 +8,7 @@ export type AISession = Pick<Session,'title'|'objective'|'focus'|'duration_min'|
 export function sessionForAI(s:AISession):AISession {
  return {title:s.title,objective:s.objective,focus:s.focus,duration_min:s.duration_min,blocks:s.blocks.map(b=>({id:b.id,title:b.title,items:b.items.map(i=>({id:i.id,load_kind:i.load_kind,...Object.fromEntries(AI_FIELDS.map(f=>[f,i[f]??'']))} as SessionItem))}))}
 }
-export function validateSessionAdvice(raw:unknown,session:AISession):AiAdvice {
+export function validateSessionAdvice(raw:unknown,session:AISession,extraSources:string[]=[]):AiAdvice {
  if(!raw||typeof raw!=='object')throw new Error('Réponse IA illisible. Aucune modification appliquée.')
  const x=raw as Record<string,unknown>
  if(typeof x.resume!=='string'||x.resume.length>12000||!Array.isArray(x.suggestions)||x.suggestions.length>10)throw new Error('Réponse IA incomplète ou trop longue.')
@@ -17,7 +17,7 @@ export function validateSessionAdvice(raw:unknown,session:AISession):AiAdvice {
   if(!v||typeof v!=='object')throw new Error('Proposition IA invalide.')
   const s=v as Record<string,unknown>
   for(const f of ['bloc','exercice','champ','valeur','proposition','pourquoi'])if(typeof s[f]!=='string'||(s[f] as string).length>3000)throw new Error('Proposition IA incomplète.')
-  if(!Array.isArray(s.source_ids)||!s.source_ids.length||s.source_ids.some(id=>typeof id!=='string'||!TRAINING_KNOWLEDGE.some(k=>k.id===id)))throw new Error('Référence IA inconnue : proposition rejetée.')
+  if(!Array.isArray(s.source_ids)||!s.source_ids.length||s.source_ids.some(id=>typeof id!=='string'||!(TRAINING_KNOWLEDGE.some(k=>k.id===id)||extraSources.includes(id))))throw new Error('Référence IA inconnue : proposition rejetée.')
   if(s.champ!==''){
    if(!AI_FIELDS.includes(s.champ as AIField)||typeof s.block_id!=='string'||typeof s.item_id!=='string')throw new Error('Modification IA non reconnue.')
    const b=session.blocks.find(b=>b.id===s.block_id),i=b?.items.find(i=>i.id===s.item_id)

@@ -131,7 +131,8 @@ function CoachApp() {
         <Route path="/conseils/:id" element={<TipDetail />} />
         <Route path="/competitions" element={<Competitions />} />
         <Route path="/assistant" element={<Assistant />} />
-        <Route path="/methodes" element={<Research />} />
+        <Route path="/sources" element={<Research />} />
+        <Route path="/methodes" element={<Navigate to="/sources" replace />} />
         <Route path="/tests" element={<Tests />} />
         <Route path="/tests/saisie" element={<TestEntry />} />
         <Route path="/tests/tableau" element={<TestMatrix />} />

@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build && node scripts/build-connected.mjs",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "node tests/season.test.mjs && node tests/features.test.mjs && node tests/cycles.test.mjs && node tests/import.test.mjs && node tests/weekly.test.mjs && node tests/planning.test.mjs && node tests/cockpit.test.mjs && node tests/history.test.mjs && node tests/programs.test.mjs && node tests/database.test.mjs && node tests/database-upgrade.test.mjs && node tests/worker.test.mjs && node tests/library.test.mjs && node tests/dynamics.test.mjs && node tests/content-periodization.test.mjs && node tests/overview-periodization.test.mjs && node tests/weekly-dynamics.test.mjs && node tests/import-format.test.mjs && node tests/session-ai.test.mjs",
+    "test": "node tests/season.test.mjs && node tests/features.test.mjs && node tests/cycles.test.mjs && node tests/import.test.mjs && node tests/weekly.test.mjs && node tests/planning.test.mjs && node tests/cockpit.test.mjs && node tests/history.test.mjs && node tests/programs.test.mjs && node tests/database.test.mjs && node tests/database-upgrade.test.mjs && node tests/worker.test.mjs && node tests/library.test.mjs && node tests/dynamics.test.mjs && node tests/content-periodization.test.mjs && node tests/overview-periodization.test.mjs && node tests/weekly-dynamics.test.mjs && node tests/import-format.test.mjs && node tests/session-ai.test.mjs && node tests/ai-library.test.mjs",
     "build:connected": "npm run build"
   },
   "dependencies": {

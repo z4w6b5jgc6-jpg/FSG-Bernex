@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useData } from '../lib/data'
 import { redactNames, redactSession } from '../lib/redact'
+import { libraryForAI } from '../lib/aiLibrary'
 import { parseSessionText } from '../lib/sessionText'
 import type { ChatMessage, Session } from '../types'
 import { errorMessage, todayISO } from '../lib/utils'
@@ -23,7 +24,7 @@ function sessionIn(text: string, title: string) {
 
 /** Conversation avec l'assistant entraîneur (IA de Cloudflare), noms d'athlètes masqués avant l'envoi */
 export function ChatPanel({ session, storageKey }: { session?: Session | null; storageKey: string }) {
-  const { athletes, competitions, save } = useData()
+  const { athletes, competitions, evidence_library, save } = useData()
   const nav = useNavigate()
   const [messages, setMessages] = useState<ChatMessage[]>(() => { try { return JSON.parse(sessionStorage.getItem(storageKey) ?? '[]') } catch { return [] } })
   const [input, setInput] = useState('')
@@ -55,7 +56,7 @@ export function ChatPanel({ session, storageKey }: { session?: Session | null; s
     const nextMsgs: ChatMessage[] = [...messages, { role: 'user', content }]
     setMessages(nextMsgs); setInput(''); setErr(null); setBusy(true)
     try {
-      const reply = await api.chat(nextMsgs, session ? redactSession(session, athletes) : null)
+      const reply = await api.chat(nextMsgs, session ? redactSession(session, athletes) : null, libraryForAI(evidence_library))
       setMessages([...nextMsgs, { role: 'assistant', content: reply }])
     } catch (e) {
       setErr(errorMessage(e))

@@ -106,9 +106,9 @@ export function createSupabaseApi(url: string, key: string): Api {
       const res=await fetch('/api/research',{method:'POST',headers:{'content-type':'application/json',authorization:`Bearer ${data.session?.access_token??''}`},body:JSON.stringify(options)})
       const out=await res.json();if(!res.ok)throw new Error(out.error??'Recherche indisponible');return out
     },
-    async chat(messages, session) { return (await assistantRequest('chat',{messages,session,groupe:settings().group})).reply },
+    async chat(messages, session, library = []) { return (await assistantRequest('chat',{messages,session,library,groupe:settings().group})).reply },
     async readPlan(_texte) { return blockExternalAI() },
-    async improveSession(session) { return assistantRequest('ameliorer',{session}) },
+    async improveSession(session, library = []) { return assistantRequest('ameliorer',{session,library}) },
     async saveSettings(settings) {
       check(await sb.rpc('set_club_settings', { p_settings: settings }))
     },

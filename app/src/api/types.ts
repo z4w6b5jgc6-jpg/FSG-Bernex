@@ -24,11 +24,11 @@ export interface Api {
   saveTrainingInfo(text: string): Promise<void>
   saveSettings(settings: import('../lib/settings').ClubSettings): Promise<void>
   /** Suggestions de l'IA (contenu de la séance seulement, aucune donnée d'athlète) */
-  improveSession(session: Pick<Session, 'title' | 'objective' | 'focus' | 'duration_min' | 'blocks'>): Promise<AiAdvice>
+  improveSession(session: Pick<Session, 'title' | 'objective' | 'focus' | 'duration_min' | 'blocks'>, library?: import('../lib/aiLibrary').LibraryRef[]): Promise<AiAdvice>
   /** Lecture intelligente d'un morceau de plan (noms déjà masqués) */
   readPlan(texte: string): Promise<import('../lib/smartImport').RawSeance[]>
   /** Conversation avec l'assistant (noms déjà masqués), éventuellement à propos d'une séance */
-  chat(messages: ChatMessage[], session?: Pick<Session, 'title' | 'objective' | 'focus' | 'duration_min' | 'blocks'> | null): Promise<string>
+  chat(messages: ChatMessage[], session?: Pick<Session, 'title' | 'objective' | 'focus' | 'duration_min' | 'blocks'> | null, library?: import('../lib/aiLibrary').LibraryRef[]): Promise<string>
   /** Relie une inscription (from) au profil créé par l'entraîneur (into) et supprime le doublon */
   mergeAthletes(fromId: string, intoId: string): Promise<void>
 

@@ -4,6 +4,7 @@ import {useData} from '../lib/data'
 import {redactNames,redactSession} from '../lib/redact'
 import {sessionForAI,validateSessionAdvice,type AIField} from '../lib/sessionAI'
 import {TRAINING_KNOWLEDGE} from '../data/trainingKnowledge'
+import {libraryForAI} from '../lib/aiLibrary'
 import {SOURCES} from '../lib/season'
 import {errorMessage} from '../lib/utils'
 import {RichText} from './RichText'
@@ -13,7 +14,8 @@ const FIELD_LABELS:Record<AIField,string>={name:'Exercice',sets:'Séries',reps:'
 
 /** Deux entrées, un même moteur : propositions sourcées et discussion, puis choix du coach. */
 export function AiAdvicePanel({session,onApplyBlocks}:{session:Session;onApplyBlocks:(blocks:Block[])=>void}){
- const {athletes,assignments}=useData()
+ const {athletes,assignments,evidence_library}=useData()
+ const library=libraryForAI(evidence_library)
  const [input,setInput]=useState(''),[messages,setMessages]=useState<ChatMessage[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState('')
  const [result,setResult]=useState<{advice:AiAdvice;snapshot:string}|null>(null),[selected,setSelected]=useState<number[]>([]),[applied,setApplied]=useState(false)
  const current=useRef(session);useEffect(()=>{current.current=session},[session])
@@ -26,8 +28,8 @@ export function AiAdvicePanel({session,onApplyBlocks}:{session:Session;onApplyBl
   const history=mode==='direct'?[]:[...messages,{role:'user' as const,content:question}]
   try{
    if(history.length>12)throw new Error('Cette discussion atteint douze messages. Ouvre une nouvelle discussion pour continuer ; aucun message n’a été supprimé silencieusement.')
-   const answer=mode==='direct'?await api.improveSession(safeSession):JSON.parse(await api.chat(history,safeSession))
-   const advice=validateSessionAdvice(answer,safeSession)
+   const answer=mode==='direct'?await api.improveSession(safeSession,library):JSON.parse(await api.chat(history,safeSession,library))
+   const advice=validateSessionAdvice(answer,safeSession,library.map(l=>l.id))
    if(snapshot!==JSON.stringify(sessionForAI(current.current))){setError('La séance a changé pendant la réponse. Relance l’analyse sur le contenu actuel.');return}
    setResult({advice,snapshot});setSelected(advice.suggestions.flatMap((s,i)=>s.champ?[i]:[]))
    setMessages(mode==='direct'?[{role:'assistant',content:JSON.stringify(advice)}]:[...history,{role:'assistant',content:JSON.stringify(advice)}]);if(mode==='discussion')setInput('')
@@ -46,7 +48,7 @@ export function AiAdvicePanel({session,onApplyBlocks}:{session:Session;onApplyBl
   {messages.length>0&&<div className="chat-list" aria-label="Discussion de la séance">{messages.map((m,i)=><div className={`bubble ${m.role}`} key={i}><RichText text={m.role==='assistant'?JSON.parse(m.content).resume:m.content}/></div>)}</div>}
   {result&&<div className="form"><h3>Ajustements proposés</h3>{stale&&<p role="status" className="alert warn">Le contenu a changé. Relance l’analyse avant d’appliquer ces propositions.</p>}{!result.advice.suggestions.length&&<p className="small">Aucun changement de champ proposé pour le moment. Tu peux préciser ta demande ci-dessous.</p>}{result.advice.suggestions.map((s,i)=>{
    const before=session.blocks.find(b=>b.id===s.block_id)?.items.find(it=>it.id===s.item_id)
-   return <article className="card form" key={i}><div className="row gap">{s.champ&&<input aria-label={`Retenir la proposition ${i+1}`} type="checkbox" checked={selected.includes(i)} disabled={stale||busy} onChange={()=>setSelected(x=>x.includes(i)?x.filter(v=>v!==i):[...x,i])}/>}<b>{s.proposition}</b></div>{s.champ&&<><p className="small">{s.bloc} · {s.exercice} · {FIELD_LABELS[s.champ as AIField]}</p><div className="grid2"><div className="small"><b>Actuel</b><p>{before?.[s.champ as AIField]||'Non renseigné'}</p></div><div className="small"><b>Proposé</b><p>{s.valeur||'Champ vide'}</p></div></div></>}<RichText text={s.pourquoi}/><div className="small">{s.source_ids?.map(id=>{const k=TRAINING_KNOWLEDGE.find(k=>k.id===id)!,ref=SOURCES.find(r=>r.id===k.sourceId);return <details key={id}><summary>{k.title}</summary><p>{k.principle}</p><p>Limite : {k.limit}</p>{ref&&<a href={ref.url} target="_blank" rel="noreferrer">{ref.title} — {k.locator}</a>}</details>})}</div></article>
+   return <article className="card form" key={i}><div className="row gap">{s.champ&&<input aria-label={`Retenir la proposition ${i+1}`} type="checkbox" checked={selected.includes(i)} disabled={stale||busy} onChange={()=>setSelected(x=>x.includes(i)?x.filter(v=>v!==i):[...x,i])}/>}<b>{s.proposition}</b></div>{s.champ&&<><p className="small">{s.bloc} · {s.exercice} · {FIELD_LABELS[s.champ as AIField]}</p><div className="grid2"><div className="small"><b>Actuel</b><p>{before?.[s.champ as AIField]||'Non renseigné'}</p></div><div className="small"><b>Proposé</b><p>{s.valeur||'Champ vide'}</p></div></div></>}<RichText text={s.pourquoi}/><div className="small">{s.source_ids?.map(id=>{const pub=library.find(l=>l.id===id);if(pub)return <p key={id} className="tiny muted">Ta bibliothèque : {pub.title} ({pub.year})</p>;const k=TRAINING_KNOWLEDGE.find(k=>k.id===id)!,ref=SOURCES.find(r=>r.id===k.sourceId);return <details key={id}><summary>{k.title}</summary><p>{k.principle}</p><p>Limite : {k.limit}</p>{ref&&<a href={ref.url} target="_blank" rel="noreferrer">{ref.title} — {k.locator}</a>}</details>})}</div></article>
   })}{selected.length>0&&<><button type="button" className="btn primary" disabled={stale||busy} onClick={apply}>Appliquer les {selected.length} modifications retenues au brouillon</button><p className="tiny muted">La séance n’est pas encore enregistrée.{uses>0?` Ce modèle est utilisé à ${uses} date(s) : son enregistrement modifiera le contenu commun à ces dates. Pour une seule occurrence, utilise « Adapter cette séance » depuis Saison.`:''}</p></>}</div>}
   {applied&&<p role="status" className="alert info">Modifications ajoutées au brouillon. Vérifie-les puis utilise Enregistrer en haut de la séance.</p>}
   {error&&<p role="alert" className="alert warn">{error}</p>}

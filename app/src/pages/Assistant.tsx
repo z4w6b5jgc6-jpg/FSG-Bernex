@@ -8,7 +8,7 @@ export function Assistant() {
       <h1>Assistant</h1>
       <p className="small muted">Pose une question ou demande une séance (période, météo, intention). Pour améliorer une séance existante : ouvre-la dans Séances, puis « Améliorer et ajuster avec l’IA » ou « Discuter et ajuster cette séance ».</p>
       <ChatPanel storageKey="athle-chat-general" />
-      <p className="small"><Link to="/methodes">Méthodes et publications scientifiques →</Link></p>
+      <p className="small"><Link to="/sources">Sources de l’IA (publications utilisées) →</Link></p>
     </div>
   )
 }

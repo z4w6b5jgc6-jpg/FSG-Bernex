@@ -1,26 +1,98 @@
-import {TRAINING_KNOWLEDGE} from '../data/trainingKnowledge'
-import {useState,type FormEvent} from 'react'
-import {api} from '../api'
-import {useData} from '../lib/data'
-import {RESEARCH_TOPICS,type ResearchTopic,type ResearchPaper,type ResearchResult} from '../lib/research'
-import {SOURCES} from '../lib/season'
-import {errorMessage} from '../lib/utils'
-import {Field,Modal} from '../components/ui'
-export function Research(){
- const [currentYear]=useState(()=>new Date().getFullYear())
- const {evidence_library,save,remove}=useData()
- const [topic,setTopic]=useState<ResearchTopic>('periodization'),[fromYear,setFromYear]=useState(2020),[ai,setAi]=useState(false)
- const [result,setResult]=useState<ResearchResult|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState('')
- const [review,setReview]=useState<ResearchPaper|null>(null),[note,setNote]=useState(''),[checked,setChecked]=useState(false)
- const search=async(e:FormEvent)=>{e.preventDefault();setBusy(true);setError('');try{setResult(await api.research({topic,fromYear,ai}))}catch(e){setError(errorMessage(e))}finally{setBusy(false)}}
- const store=async(e:FormEvent)=>{e.preventDefault();if(!review||!checked||!note.trim())return;setBusy(true);try{await save('evidence_library',{id:evidence_library.find(r=>r.paper.id===review.id)?.id,paper:review,review_note:note.trim(),reviewed:true});setReview(null)}catch(e){setError(errorMessage(e))}finally{setBusy(false)}}
- return <div><p className="eyebrow">RECHERCHE ET PRATIQUES DOCUMENTÉES</p><h1>Méthodes d’entraînement</h1><p className="muted">Rechercher, lire, vérifier puis relier les références aux décisions de préparation.</p>
-  <form className="card research-search form" onSubmit={search}><div className="grid2"><Field label="Thème général"><select value={topic} onChange={e=>setTopic(e.target.value as ResearchTopic)}>{Object.entries(RESEARCH_TOPICS).map(([k,v])=><option value={k} key={k}>{v}</option>)}</select></Field><Field label="Publications depuis"><input type="number" min="2000" max={currentYear} value={fromYear} onChange={e=>setFromYear(Number(e.target.value))}/></Field></div><label className="check"><input type="checkbox" checked={ai} onChange={e=>setAi(e.target.checked)}/>Demander à l’IA de classer les publications publiques par pertinence</label><p className="small muted">La requête contient uniquement le thème, l’année et ce choix. Aucun profil, programme individuel, résultat ou questionnaire n’est envoyé. Le classement éventuel ne produit ni dose d’entraînement ni référence supplémentaire.</p><button className="btn primary" disabled={busy}>{busy?'Recherche…':'Rechercher les synthèses et revues'}</button></form>
-  {error&&<p role="alert" className="alert warn">{error}</p>}
-  {result&&<section><h2>{result.papers.length} publication(s) trouvée(s)</h2><p className="small muted">Résultats bibliographiques Europe PMC / PubMed · {result.ai_ranked?'classés par IA, métadonnées originales conservées':'tri bibliographique'} · à évaluer pour les U16–U18.</p>{result.message&&<p className="small">{result.message}</p>}{!result.papers.length&&<p>Aucun résultat pour ce filtre. Essaie une période plus large.</p>}{result.papers.map(p=><article className="card evidence-paper" key={p.id}><div className="row between"><span className="pill">{p.year}</span><span className="tiny muted">PMID {p.id} · consulté le {p.retrieved_at}</span></div><h3><a href={p.url} target="_blank" rel="noreferrer">{p.title}</a></h3><p className="small muted">{p.authors} · {p.journal}</p><details><summary>Résumé de la publication</summary><p className="small abstract-text">{p.abstract||'Résumé non disponible. Consulter la publication.'}</p></details><button className="btn small" onClick={()=>{setReview(p);setNote('');setChecked(false)}}>Évaluer pour ma bibliothèque</button></article>)}</section>}
-  <section><h2>Bibliothèque vérifiée par le coach · {evidence_library.length}</h2>{!evidence_library.length&&<p className="muted">Les publications que tu auras lues et évaluées seront conservées ici pour être jointes aux adaptations.</p>}{evidence_library.map(r=><article className="card" key={r.id}><span className="pill ok">{r.reviewed?'Évaluée par le coach':'À examiner'}</span><h3><a href={r.paper.url} target="_blank" rel="noreferrer">{r.paper.title}</a></h3><p className="small">{r.review_note}</p><p className="tiny muted">Publication {r.paper.year} · recherche du {r.paper.retrieved_at}</p><button className="btn ghost small" onClick={()=>{if(confirm('Retirer cette référence de la bibliothèque ?'))remove('evidence_library',r.id).catch(e=>setError(errorMessage(e)))}}>Retirer de ma bibliothèque</button></article>)}</section>
-  <section className="card"><h2>Fiches de référence pour l’analyse locale</h2><p className="small muted">Base éditoriale vérifiée le 26 octobre 2026. Ces fiches alimentent la revue des cycles ; elles distinguent les principes, leur usage et leurs limites. Les nouvelles publications exigent une évaluation avant utilisation.</p>{TRAINING_KNOWLEDGE.map(k=><details key={k.id}><summary><b>{k.title}</b></summary><p className="small">{k.principle}</p><p className="small">Usage : {k.application}</p><p className="tiny muted">{k.limit}</p><a className="small" href={SOURCES.find(s=>s.id===k.sourceId)?.url} target="_blank" rel="noreferrer">{k.locator}</a></details>)}</section>
-  <details className="card" open><summary><b>Références de départ et limites</b></summary>{SOURCES.map(s=><p className="small" key={s.id}><a href={s.url} target="_blank" rel="noreferrer">{s.title}</a><br/>{s.scope}</p>)}<p className="tiny muted">La méthode d’Egger est une référence de planification, pas une preuve que le même découpage ou les mêmes charges conviennent à tous. Une publication récente n’est pas automatiquement plus fiable.</p></details>
-  {review&&<Modal title="Évaluer une publication" onClose={()=>setReview(null)}><form className="form" onSubmit={store}><h3>{review.title}</h3><p className="small muted">Vérifie la population, l’âge, les disciplines, le protocole, les résultats et les limites. Une revue chez des adultes ou en sport collectif ne valide pas directement une prescription pour ce groupe.</p><Field label="Applicabilité, limites et usage envisagé"><textarea required rows={5} value={note} onChange={e=>setNote(e.target.value)}/></Field><label className="check"><input required type="checkbox" checked={checked} onChange={e=>setChecked(e.target.checked)}/>J’ai examiné la source et j’assume cette évaluation de son applicabilité.</label><button className="btn primary" disabled={busy||!checked||!note.trim()}>Enregistrer ma revue</button></form></Modal>}
- </div>
+import { useState, type FormEvent } from 'react'
+import { api } from '../api'
+import { TRAINING_KNOWLEDGE } from '../data/trainingKnowledge'
+import { useData } from '../lib/data'
+import { MAX_LIBRARY } from '../lib/aiLibrary'
+import { RESEARCH_TOPICS, type ResearchPaper, type ResearchResult, type ResearchTopic } from '../lib/research'
+import { SOURCES } from '../lib/season'
+import { errorMessage } from '../lib/utils'
+import { Field, Modal } from '../components/ui'
+
+/** Sources de l'IA : les publications que le coach retient servent de références à l'Assistant et à « Améliorer » */
+export function Research() {
+  const [currentYear] = useState(() => new Date().getFullYear())
+  const { evidence_library, save, remove } = useData()
+  const [topic, setTopic] = useState<ResearchTopic>('periodization'), [fromYear, setFromYear] = useState(2020)
+  const [result, setResult] = useState<ResearchResult | null>(null), [busy, setBusy] = useState(false), [error, setError] = useState('')
+  const [adding, setAdding] = useState<ResearchPaper | null>(null), [note, setNote] = useState('')
+  const lib = [...evidence_library].sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
+  const inLib = (p: ResearchPaper) => evidence_library.some((r) => r.paper.id === p.id)
+
+  const search = async (e: FormEvent) => {
+    e.preventDefault(); setBusy(true); setError('')
+    try { setResult(await api.research({ topic, fromYear, ai: false })) } catch (err) { setError(errorMessage(err)) } finally { setBusy(false) }
+  }
+  const store = async (e: FormEvent) => {
+    e.preventDefault(); if (!adding) return
+    setBusy(true)
+    try { await save('evidence_library', { paper: adding, review_note: note.trim(), reviewed: true }); setAdding(null) } catch (err) { setError(errorMessage(err)) } finally { setBusy(false) }
+  }
+
+  return (
+    <div>
+      <h1>Sources de l’IA</h1>
+      <p className="small muted">L’Assistant et « Améliorer une séance » s’appuient sur ces références (les {MAX_LIBRARY} plus récentes de ta bibliothèque, plus les fiches de base).</p>
+
+      <h2 className="section-title">Ma bibliothèque <span className="count">{lib.length}</span></h2>
+      <div className="rows">
+        {!lib.length && <div className="row-item muted">Aucune publication pour l’instant. Ajoute-en ci-dessous.</div>}
+        {lib.map((r, i) => (
+          <div key={r.id} className="row-item">
+            <a className="row-main" href={r.paper.url} target="_blank" rel="noreferrer">{r.paper.title}<small>{[r.paper.journal, r.paper.year, r.review_note].filter(Boolean).join(' · ')}</small></a>
+            <span className={`status ${i < MAX_LIBRARY ? 'green' : 'grey'}`}>{i < MAX_LIBRARY ? 'Utilisée' : 'En réserve'}</span>
+            <button className="btn ghost small icon" aria-label="Retirer" onClick={() => confirm('Retirer cette publication ?') && remove('evidence_library', r.id).catch((err) => setError(errorMessage(err)))}>✕</button>
+          </div>
+        ))}
+      </div>
+
+      <h2 className="section-title">Ajouter des publications</h2>
+      <form className="card form" onSubmit={search}>
+        <div className="grid2">
+          <Field label="Thème"><select value={topic} onChange={(e) => setTopic(e.target.value as ResearchTopic)}>{Object.entries(RESEARCH_TOPICS).map(([k, v]) => <option value={k} key={k}>{v}</option>)}</select></Field>
+          <Field label="Depuis"><input type="number" min="2000" max={currentYear} value={fromYear} onChange={(e) => setFromYear(Number(e.target.value))} /></Field>
+        </div>
+        <button className="btn primary" disabled={busy}>{busy ? 'Recherche…' : 'Chercher des revues scientifiques'}</button>
+        <p className="tiny muted">Recherche publique sur PubMed (Europe PMC) : seuls le thème et l’année sont envoyés.</p>
+      </form>
+      {error && <p role="alert" className="alert warn">{error}</p>}
+      {result && (
+        <div className="rows">
+          {!result.papers.length && <div className="row-item muted">Aucun résultat : essaie une période plus large.</div>}
+          {result.papers.map((p) => (
+            <div key={p.id} className="row-item">
+              <a className="row-main" href={p.url} target="_blank" rel="noreferrer">{p.title}<small>{[p.journal, p.year].filter(Boolean).join(' · ')}</small></a>
+              {inLib(p) ? <span className="status green">Ajoutée</span> : <button className="btn small" onClick={() => { setAdding(p); setNote('') }}>+ Ajouter</button>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <details className="section-fold">
+        <summary>Fiches de base <span className="muted small">({TRAINING_KNOWLEDGE.length}, toujours utilisées)</span></summary>
+        <div className="rows">
+          {TRAINING_KNOWLEDGE.map((k) => (
+            <a key={k.id} className="row-item" href={SOURCES.find((s) => s.id === k.sourceId)?.url} target="_blank" rel="noreferrer">
+              <span className="row-main">{k.title}<small>{k.locator}</small></span>
+            </a>
+          ))}
+        </div>
+      </details>
+
+      {adding && (
+        <Modal title="Ajouter à ma bibliothèque" onClose={() => setAdding(null)}>
+          <form className="form" onSubmit={store}>
+            <b>{adding.title}</b>
+            <p className="small muted">{[adding.journal, adding.year].filter(Boolean).join(' · ')}</p>
+            <Field label="Pourquoi c’est utile pour ton groupe (facultatif, transmis à l’IA)">
+              <textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ex. adolescents 14-18 ans, sprint, utile pour doser les récupérations" />
+            </Field>
+            <div className="row gap end">
+              <button type="button" className="btn ghost" onClick={() => setAdding(null)}>Annuler</button>
+              <button className="btn primary" disabled={busy}>Ajouter</button>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </div>
+  )
 }
