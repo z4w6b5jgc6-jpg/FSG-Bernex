@@ -24,7 +24,7 @@ export function TrainingInfo() {
   const { me, refreshMe } = useData()
   const coach = me?.role === 'coach'
   const text = me?.training_info ?? ''
-  const [open, setOpen] = useState(() => { try { return localStorage.getItem(OPEN_KEY) !== '0' } catch { return true } })
+  const [open, setOpen] = useState(() => { try { return localStorage.getItem(OPEN_KEY) === '1' } catch { return true } })
   const [draft, setDraft] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)

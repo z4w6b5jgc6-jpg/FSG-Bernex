@@ -1,3 +1,4 @@
+import {SessionIllustrations} from './SessionIllustrations'
 import type { Session, SessionItem } from '../types'
 import { itemSummary } from '../lib/utils'
 import { distanceIn, formatTime, paceSeconds, parseEffortSeconds, parseMeters, vmaPercent } from '../lib/vma'
@@ -9,10 +10,6 @@ const plain = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\
 function vmaPct(it: SessionItem): number | null {
   const explicit = vmaPercent(`${it.intensity} ${it.notes}`)
   if (explicit) return explicit
-  const t = plain(`${it.name} ${it.intensity} ${it.notes}`)
-  if (/seuil/.test(t)) return 85
-  if (/capacite aerobie|endurance active/.test(t)) return 77
-  if (/regeneration|footing de recup|recuperation active/.test(t)) return 70
   return null
 }
 
@@ -56,7 +53,7 @@ export function SessionView({ session, vma, sprintLevel }: { session: Omit<Sessi
       )}
       {session.blocks.map((b) => (
         <section key={b.id} className="block-view">
-          <h3>{b.title}</h3>
+          <h3>{b.title}</h3><SessionIllustrations images={b.images}/>
           {b.items.length === 0 ? (
             <p className="muted small">—</p>
           ) : (

@@ -1,14 +1,16 @@
-import { settings } from '../lib/settings'
+import { blockExternalAI } from '../lib/privacy'
 import { createClient } from '@supabase/supabase-js'
 import type { ClubInfo, Me, TableName } from '../types'
 import type { Api, Draft, Row } from './types'
 
-const ORDER: Partial<Record<TableName, string>> = { assignments: 'date', wellness: 'date', records: 'date', test_results: 'date', test_reports: 'date', competitions: 'date', session_notes: 'updated_at' }
+const ORDER: Partial<Record<TableName, string>> = { attendance:'updated_at',session_adjustments:'updated_at',exercise_logs:'updated_at',availability:'start_date', assignments: 'date', wellness: 'date', records: 'date', test_results: 'date', test_reports: 'date', competitions: 'date', session_notes: 'updated_at' }
 
 const ERRORS: Record<string, string> = {
   'Invalid login credentials': 'Email ou mot de passe incorrect.',
   'User already registered': 'Un compte existe déjà avec cet email. Connecte-toi.',
   'Email not confirmed': 'Confirme d’abord ton adresse via l’email reçu.',
+  privacy_not_ready: 'Le coach doit publier l’information sur les données avant l’inscription.',
+  health_consent_required: 'Le suivi de santé facultatif nécessite une information publiée et un accord actif.',
   invalid_code: 'Ce code d’invitation n’existe pas.',
   already_member: 'Ce compte est déjà inscrit dans un club.',
   is_coach: 'Ce compte est un compte entraîneur.',
@@ -33,6 +35,17 @@ export function createSupabaseApi(url: string, key: string): Api {
     return res.data
   }
 
+  const assistantRequest=async(path:string,payload:unknown)=>{
+    const {data}=await sb.auth.getSession()
+    if(!data.session)throw new Error('Reconnecte-toi pour utiliser l’assistant.')
+    const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),90000)
+    try{
+      const res=await fetch('/api/'+path,{method:'POST',headers:{'content-type':'application/json',authorization:`Bearer ${data.session.access_token}`},body:JSON.stringify(payload),signal:controller.signal})
+      if(!res.headers.get('content-type')?.includes('application/json'))throw new Error('Le service IA n’est pas déployé sur cette adresse. Publie l’archive connectée sur bernexdemo.')
+      const out=await res.json();if(!res.ok)throw new Error(out.error??'Assistant indisponible.');return out
+    }catch(e){if(e instanceof DOMException&&e.name==='AbortError')throw new Error('L’IA ne répond pas dans le délai prévu. Aucune modification appliquée.');if(e instanceof TypeError)throw new Error('Connexion au service IA impossible. Vérifie le réseau et le déploiement Cloudflare.');throw e}finally{clearTimeout(timeout)}
+  }
+
   return {
     mode: 'supabase',
 
@@ -41,7 +54,8 @@ export function createSupabaseApi(url: string, key: string): Api {
       const email = data.session?.user.email
       if (!email) return null
       const who = check(await sb.rpc('whoami')) as Omit<Me, 'email'>
-      return { email, ...who }
+      const { data: privacy } = await sb.rpc('my_privacy_policy')
+      return { email, ...who, settings: { ...who.settings, privacy: privacy ?? undefined } }
     },
     onAuthChange(cb) {
       const { data } = sb.auth.onAuthStateChange((event) => {
@@ -86,47 +100,14 @@ export function createSupabaseApi(url: string, key: string): Api {
     async regenerateInviteCode() {
       return check(await sb.rpc('regenerate_invite_code')) as string
     },
-    async chat(messages, s) {
-      const { data } = await sb.auth.getSession()
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', authorization: `Bearer ${data.session?.access_token ?? ''}` },
-        body: JSON.stringify({
-          messages, groupe: settings().group ?? '',
-          session: s ? { title: s.title, objective: s.objective, focus: s.focus, duration_min: s.duration_min,
-            blocks: s.blocks.map((b) => ({ title: b.title, items: b.items.map(({ id: _id, ...it }) => (void _id, it)) })) } : null,
-        }),
-      })
-      const out = await res.json().catch(() => null)
-      if (!res.ok || !out) throw new Error(out?.error ?? (res.status === 404 ? 'Le service IA n’est pas encore en ligne.' : `Erreur ${res.status}`))
-      return out.reply as string
+    async research(options) {
+      const {data}=await sb.auth.getSession()
+      const res=await fetch('/api/research',{method:'POST',headers:{'content-type':'application/json',authorization:`Bearer ${data.session?.access_token??''}`},body:JSON.stringify(options)})
+      const out=await res.json();if(!res.ok)throw new Error(out.error??'Recherche indisponible');return out
     },
-    async readPlan(texte) {
-      const { data } = await sb.auth.getSession()
-      const res = await fetch('/api/lire-plan', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', authorization: `Bearer ${data.session?.access_token ?? ''}` },
-        body: JSON.stringify({ texte, groupe: settings().group ?? '', aujourdhui: new Date().toISOString().slice(0, 10) }),
-      })
-      const out = await res.json().catch(() => null)
-      if (!res.ok || !out) throw new Error(out?.error ?? (res.status === 404 ? 'Le service IA n’est pas encore en ligne.' : `Erreur ${res.status}`))
-      return out.seances
-    },
-    async improveSession(s) {
-      const { data } = await sb.auth.getSession()
-      const res = await fetch('/api/ameliorer', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', authorization: `Bearer ${data.session?.access_token ?? ''}` },
-        // Contenu d'entraînement uniquement : pas d'identifiants, pas d'athlètes
-        body: JSON.stringify({
-          title: s.title, objective: s.objective, focus: s.focus, duration_min: s.duration_min, groupe: settings().group ?? '',
-          blocks: s.blocks.map((b) => ({ title: b.title, items: b.items.map(({ id: _id, ...it }) => (void _id, it)) })),
-        }),
-      })
-      const out = await res.json().catch(() => null)
-      if (!res.ok || !out) throw new Error(out?.error ?? (res.status === 404 ? 'Le service IA n’est pas encore en ligne.' : `Erreur ${res.status}`))
-      return out
-    },
+    async chat(messages, session) { return (await assistantRequest('chat',{messages,session})).reply },
+    async readPlan(_texte) { return blockExternalAI() },
+    async improveSession(session) { return assistantRequest('ameliorer',{session}) },
     async saveSettings(settings) {
       check(await sb.rpc('set_club_settings', { p_settings: settings }))
     },
@@ -154,6 +135,8 @@ export function createSupabaseApi(url: string, key: string): Api {
     },
 
     async list<K extends TableName>(table: K) {
+      if(table==='assignments')return check(await sb.rpc('visible_assignments')) as Row<K>[]
+      if(table==='competitions')return check(await sb.rpc('visible_competitions')) as Row<K>[]
       return check(await sb.from(table).select('*').order(ORDER[table] ?? 'created_at', { ascending: true })) as Row<K>[]
     },
     async save<K extends TableName>(table: K, row: Draft<K>) {
@@ -170,6 +153,8 @@ export function createSupabaseApi(url: string, key: string): Api {
     async remove(table, id) {
       check(await sb.from(table).delete().eq('id', id))
     },
+    async retentionPreview(){return check(await sb.rpc('retention_preview')) as Record<string,number>},
+    async purgeRetention(expected){return check(await sb.rpc('purge_expired_followup',{p_expected:expected})) as Record<string,number>},
     async pushKey() {
       const res = await fetch('/api/push-key').catch(() => null)
       const out = res?.ok ? await res.json().catch(() => null) : null

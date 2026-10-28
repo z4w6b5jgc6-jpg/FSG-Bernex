@@ -1,3 +1,5 @@
+import {Link} from 'react-router-dom'
+import {AvailabilityPanel} from '../../components/AthleteMonitoring'
 import { Avatar } from '../../components/Avatar'
 import { useState } from 'react'
 import { api } from '../../api'
@@ -44,6 +46,8 @@ export function AthleteProfile() {
         </div>
       </div>
 
+      <p><Link className="btn" to="/confidentialite">Confidentialité et mes données</Link></p>
+      <AvailabilityPanel athleteId={me.id} />
       <PushToggle />
       {account && <DevicePrefs email={account.email} />}
 

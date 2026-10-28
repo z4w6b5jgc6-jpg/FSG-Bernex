@@ -1,3 +1,4 @@
+import readXlsxFile from 'read-excel-file/browser'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BackLink } from '../../components/BackLink'
@@ -49,7 +50,6 @@ export function MondayImport() {
     try {
       let d: PlanFile
       if (/\.xlsx$/i.test(f.name)) {
-        const { default: readXlsxFile } = await import('read-excel-file/browser')
         const sheets = await readXlsxFile(f)
         const found = planFromWorkbook(sheets.map((x) => ({ name: x.sheet, rows: x.data as Cell[][] })))
         if (!found) throw new Error('Je n’ai pas trouvé l’onglet du plan (colonnes Date, Cycle, Objectif, Échauffement et une colonne par sous-groupe).')

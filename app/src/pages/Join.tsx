@@ -128,10 +128,12 @@ export function Join() {
         </Field>
         <label className="check small">
           <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required />
-          J’accepte que mes entraînements, mes retours et mes check-ins bien-être soient visibles par mes entraîneurs.
+          J’ai pris connaissance de l’information sur les données nécessaires à l’organisation de mon entraînement. Le suivi de forme facultatif fait l’objet d’un choix séparé après inscription.
         </label>
         {msg && <div className={`alert ${msg.kind}`}>{msg.text}</div>}
-        <button className="btn primary block" disabled={busy || !consent}>{busy ? '…' : 'Rejoindre le programme'}</button>
+        <p className="small"><Link to={`/information?code=${encodeURIComponent(code)}`}>Lire l’information sur mes données</Link></p>
+        {!club.privacy?.published&&<p className="alert warn">L’information du groupe est en préparation. Demande au coach de la finaliser avant ton inscription.</p>}
+        <button className="btn primary block" disabled={busy || !consent || !club.privacy?.published}>{busy ? '…' : 'Rejoindre le programme'}</button>
       </form>
     </div>
   )

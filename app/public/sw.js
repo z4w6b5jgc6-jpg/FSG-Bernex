@@ -1,8 +1,8 @@
 // Service worker : rend l'app installable et utilisable avec un réseau faible.
-// - fichiers de l'app (JS/CSS/icônes) : cache d'abord, mis à jour en arrière-plan
+// - fichiers de l'app (JS/CSS/icônes) : cache d'abord ; version du cache renouvelée au déploiement
 // - page HTML : réseau d'abord, cache si hors-ligne
 // - données (Supabase) : jamais mises en cache ici
-const CACHE = 'coach-athle-v9'
+const CACHE = 'coach-athle-v18'
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html', './manifest.webmanifest', './icon-192.png'])))
@@ -39,14 +39,14 @@ self.addEventListener('fetch', (e) => {
 
   e.respondWith(
     caches.match(req).then((cached) => {
-      const network = fetch(req).then((res) => {
+      if (cached) return cached
+      return fetch(req).then((res) => {
         if (res.ok) {
           const copy = res.clone()
           caches.open(CACHE).then((c) => c.put(req, copy))
         }
         return res
       })
-      return cached || network
     }),
   )
 })

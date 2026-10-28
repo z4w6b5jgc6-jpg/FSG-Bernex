@@ -1,0 +1,9 @@
+import {useState} from 'react'
+import {ACTIONS,runLocalAssistant,unloadLocalAssistant,type LocalProposal} from '../lib/localAssistant'
+import {SOURCES} from '../lib/season'
+import {errorMessage} from '../lib/utils'
+export function LocalAssistant({context,onChoose}:{context:unknown;onChoose:(text:string,source:string)=>void}){
+ const [busy,setBusy]=useState(false),[message,setMessage]=useState(''),[proposals,setProposals]=useState<LocalProposal[]>([])
+ const run=async()=>{setBusy(true);setMessage('');setProposals([]);try{setProposals(await runLocalAssistant(context,setMessage));setMessage('Revue locale terminée. Examine la pertinence de chaque piste avant de la retenir.')}catch(e){setMessage(errorMessage(e))}finally{setBusy(false)}}
+ return <details className="local-assistant"><summary><b>Aide IA sur cet appareil</b></summary><p className="small muted">Option pour les appareils compatibles WebGPU. Le premier usage télécharge un modèle volumineux ; les données de l’athlète sont ensuite analysées dans ce navigateur, sans envoi au modèle distant. La sortie est limitée à des pistes de revue et à des identifiants de références existantes : aucun dosage, étude ou diagnostic n’est généré.</p><div className="row gap wrap"><button type="button" className="btn" disabled={busy} onClick={run}>{busy?'Analyse locale…':'Charger le modèle et examiner la séance'}</button><button type="button" className="btn ghost small" disabled={busy} onClick={()=>unloadLocalAssistant().then(()=>setMessage('Modèle déchargé de la mémoire.'))}>Libérer la mémoire</button></div>{message&&<p role="status" className="small">{message}</p>}{proposals.map((p,i)=><div className="local-proposal" key={i}><b>{ACTIONS[p.action]}</b><p className="tiny muted">{SOURCES.find(s=>s.id===p.source_id)?.scope}</p><button type="button" className="btn small" onClick={()=>onChoose(ACTIONS[p.action],p.source_id)}>Retenir cette piste dans ma justification</button></div>)}</details>
+}

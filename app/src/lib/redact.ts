@@ -29,7 +29,7 @@ export function redactSession<T extends Pick<Session, 'title' | 'objective' | 'f
   const r = (t: string) => redactNames(t, athletes).text
   return {
     ...s,
-    title: r(s.title), objective: r(s.objective),
-    blocks: s.blocks.map((b) => ({ ...b, title: r(b.title), items: b.items.map((it) => ({ ...it, name: r(it.name), notes: r(it.notes), intensity: r(it.intensity) })) })),
+    title: r(s.title), objective: r(s.objective), focus:r(s.focus),
+    blocks: s.blocks.map((b) => ({ ...b, title: r(b.title), items: b.items.map((it) => Object.fromEntries(Object.entries(it).map(([key,value])=>[key,key==='id'||typeof value!=='string'?value:r(value)])) as typeof it) })),
   }
 }

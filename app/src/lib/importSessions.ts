@@ -9,6 +9,8 @@ export interface SessionIn {
   date: string // AAAA-MM-JJ, '' si absente
   title: string
   objective: string
+  duration_min?: number | null
+  expectedWeekday?: number
   blocks: Block[]
   /** Plan par groupes : athlètes prévus (noms tels qu'écrits dans le fichier) et libellé du groupe */
   who?: string[]
@@ -44,7 +46,7 @@ function toISODate(c: Cell): string {
 /** Lit la première feuille qui a une colonne « Exercice ». Les cellules vides de Date / Séance / Bloc reprennent la valeur du dessus. */
 export function parseSessions(sheets: SheetIn[]): SessionIn[] | null {
   for (const s of sheets) {
-    const h = s.rows.slice(0, 10).findIndex((r) => r.some((c) => normText(c).startsWith('exercice')))
+    const h = s.rows.slice(0, 10).findIndex((r) => r.some((c) => normText(c) === 'exercice') && r.some((c) => /^(seance|titre)$/.test(normText(c))))
     if (h < 0) continue
     const cols = new Map<Field, number>()
     s.rows[h].forEach((c, i) => {
@@ -79,7 +81,7 @@ export function parseSessions(sheets: SheetIn[]): SessionIn[] | null {
       for (const f of ['sets', 'reps', 'distance', 'duration', 'recovery', 'intensity', 'notes'] as const) it[f] = text(get(r, f))
       b.items.push(it)
     }
-    return out
+    if (out.length) return out
   }
   return null
 }
@@ -253,4 +255,13 @@ export function parsePlanGrid(sheets: SheetIn[], baseTitle = 'Séance'): Session
     return out
   }
   return null
+}
+
+/** Classement à partir des libellés explicites, sans déduire une intensité ou un contenu. */
+export function focusFromLabel(title:string,audience=''):string {
+ const label=normText(`${title} ${audience}`)
+ if(/\(800\)/.test(title))return 'Endurance'
+ if(/\(400\)/.test(title))return 'Vitesse'
+ const categories=[[/lancer|poids|javelot|disque|marteau/,'Lancers'],[/demifond|endurance|800|1500/,'Endurance'],[/longueur|hauteur|triple|saut/,'Sauts'],[/sprint|vitesse/,'Vitesse'],[/haies/,'Haies'],[/muscul|renforcement/,'Renforcement']].filter(([pattern])=>(pattern as RegExp).test(label)).map(([,name])=>String(name))
+ return categories.length>1?'Multi-disciplines':categories[0]??''
 }

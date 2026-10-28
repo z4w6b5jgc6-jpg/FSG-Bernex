@@ -4,13 +4,16 @@ import type { Athlete, Feedback } from '../types'
 import { useData } from '../lib/data'
 import { fullName } from '../lib/utils'
 import { threadOf, unreadByCoach } from '../lib/messages'
+import { actualLoad } from '../lib/season'
 import { Thread } from './Thread'
 import { FATIGUE_TEXT, MOOD_TEXT, RECOVERY_TEXT, RPE_LABELS, rpeClass } from './ui'
 
-export function FeedbackScores({ fb }: { fb: Pick<Feedback, 'completed' | 'rpe' | 'fatigue' | 'mood' | 'recovery_fit'> }) {
+export function FeedbackScores({ fb }: { fb: Pick<Feedback, 'completed' | 'rpe' | 'fatigue' | 'mood' | 'recovery_fit' | 'duration_min'> }) {
   return (
     <div className="scores">
       {!fb.completed && <span className="pill danger">Séance non faite</span>}
+      {fb.duration_min != null && <span className="pill">{fb.duration_min} min réalisées</span>}
+      {fb.completed && actualLoad(fb) != null && <span className="pill">Charge {actualLoad(fb)} UA</span>}
       {fb.rpe != null && <span className={`pill ${rpeClass(fb.rpe)}`} title={RPE_LABELS[fb.rpe]}>Effort {fb.rpe}/10</span>}
       {fb.fatigue != null && <span className={`pill ${fb.fatigue >= 4 ? 'warn' : ''}`}>Forme : {FATIGUE_TEXT[fb.fatigue].toLowerCase()}</span>}
       {fb.mood != null && <span className="pill">Plaisir : {MOOD_TEXT[fb.mood].toLowerCase()}</span>}

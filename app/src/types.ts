@@ -116,6 +116,9 @@ export interface Exercise {
 }
 
 export interface SessionItem {
+  /** Optional coach-confirmed modality and absolute planned load. Stored in session JSON. */
+  load_kind?: import('./lib/contentLoad').LoadKind
+  load_kg?: string
   id: string
   name: string
   sets: string
@@ -127,10 +130,13 @@ export interface SessionItem {
   notes: string
 }
 
+export interface SessionIllustration { id:string; dataUrl:string; caption:string; sourceName:string }
+
 export interface Block {
   id: string
   title: string
   items: SessionItem[]
+  images?: SessionIllustration[]
 }
 
 export interface Session {
@@ -183,6 +189,8 @@ export interface Feedback {
   assignment_id: string
   athlete_id: string
   completed: boolean
+  /** Durée réellement réalisée, distincte de la durée prévue. */
+  duration_min?: number | null
   rpe: number | null
   fatigue: number | null
   mood: number | null
@@ -196,6 +204,28 @@ export interface Feedback {
 
 /** Notes du coach sur une séance : jamais visibles par les athlètes */
 export interface SessionNote { id: string; session_id: string; text: string }
+
+export interface ExerciseSet { index:number; reps:number|null; load_kg:number|null; result:string; done:boolean }
+export interface ExerciseLog { id:string; assignment_id:string; athlete_id:string; item_id:string; item_name?:string; sets:ExerciseSet[]; updated_at?:string }
+export interface ImportHistory { id:string; filename:string; source_text:string; imported_count:number; updated_count:number; created_at?:string }
+export interface EvidenceRecord { id:string; paper:import('./lib/research').ResearchPaper; review_note:string; reviewed:boolean; created_at?:string }
+export interface Attendance {
+  id: string; assignment_id: string; athlete_id: string
+  status: 'present' | 'absent' | 'excused'; updated_at?: string
+}
+export interface SessionAdjustment {
+  id: string; assignment_id: string; athlete_id: string
+  content: Pick<Session, 'title' | 'objective' | 'focus' | 'duration_min' | 'blocks' | 'targets'>
+  rationale: string; source_ids: string[]; updated_at?: string
+}
+export interface Availability {
+  id: string; athlete_id: string; start_date: string; end_date: string
+  status: 'away' | 'available' | 'camp'; note: string
+}
+export interface PrivacyAcceptance {
+  id: string; athlete_id: string; version: string; health_consent: boolean
+  representative: string; created_at?: string
+}
 
 /** Message d'un fil (une séance planifiée × un athlète), entre l'athlète et ses coachs */
 export interface Message {
@@ -228,6 +258,7 @@ export interface Competition {
   notes: string
   athlete_ids: string[]
   /** disciplines de chaque participant : { id athlète: "60 m, longueur" } */
+  athlete_priorities?: Record<string, 'A' | 'B' | 'C'>
   entries: Record<string, string>
 }
 
@@ -236,15 +267,25 @@ export interface AiSuggestion {
   bloc: string
   exercice: string
   /** champ de l'exercice à modifier ('' = conseil général) */
-  champ: '' | 'sets' | 'reps' | 'distance' | 'duration' | 'recovery' | 'intensity' | 'notes'
+  champ: '' | 'load_kg' | 'name' | 'sets' | 'reps' | 'distance' | 'duration' | 'recovery' | 'intensity' | 'notes'
   valeur: string
   proposition: string
   pourquoi: string
+  block_id?: string
+  item_id?: string
+  source_ids?: string[]
 }
 export interface AiAdvice { resume: string; suggestions: AiSuggestion[] }
 export interface ChatMessage { role: 'user' | 'assistant'; content: string }
 
 export interface Tables {
+  import_history: ImportHistory
+  exercise_logs: ExerciseLog
+  evidence_library: EvidenceRecord
+  attendance: Attendance
+  session_adjustments: SessionAdjustment
+  availability: Availability
+  privacy_acceptances: PrivacyAcceptance
   groups: Group
   athletes: Athlete
   athlete_notes: AthleteNote
@@ -298,6 +339,7 @@ export interface JoinProfile {
 }
 
 export interface ClubInfo {
+  privacy?: import('./lib/settings').PrivacySettings
   name: string
   groups: { id: string; name: string; color: string }[]
 }

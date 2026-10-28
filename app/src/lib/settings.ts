@@ -1,7 +1,16 @@
 import { VENUES } from '../data/defaults'
 
 /** Réglages de l'espace d'un groupe (rempli par ses coachs) */
+export interface PrivacySettings {
+  organization: string; contact: string; address: string; version: string
+  hosting_details?: string
+  published: boolean; retention_months: number; health_retention_months: number
+}
 export interface ClubSettings {
+  /** Coach intentions by week / athlete / programme, independent of a theoretical annual plan. */
+  loadIntentions?: import('./weeklyDynamics').WeeklyIntentions
+  privacy?: PrivacySettings
+  season?: import('./season').SeasonPlan
   /** lieux proposés dans les listes */
   venues?: string[]
   /** lieu de la belle saison et mois de début / fin (1 = janvier) ; le reste de l'année : winterVenue */

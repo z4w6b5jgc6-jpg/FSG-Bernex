@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { BackLink } from '../components/BackLink'
 import { DevicePrefs } from '../components/DevicePrefs'
@@ -28,6 +29,7 @@ export function Settings() {
     setMsg(null)
     try {
       await api.saveSettings({
+        ...me?.settings,
         venues: list, summerVenue: list.includes(summer) ? summer : list[0], winterVenue: list.includes(winter) ? winter : list[1] ?? list[0],
         summerFrom: from, summerTo: to, group: group.trim(), release,
       })
@@ -51,6 +53,7 @@ export function Settings() {
     <div>
       <BackLink to="/" label="Accueil" />
       <h1>Réglages de mon espace</h1>
+      <p><Link className="btn" to="/confidentialite">Confidentialité, consentements et exports</Link></p>
       {me && <DevicePrefs email={me.email} />}
 
       <p className="small muted">Propres à ton groupe : les autres groupes du club ont leurs propres réglages et ne voient rien du tien.</p>

@@ -1,3 +1,4 @@
+import {ExerciseResults} from '../components/AthleteMonitoring'
 import { useState } from 'react'
 import { BackLink } from '../components/BackLink'
 import { DayNav } from '../components/DayNav'
@@ -8,6 +9,7 @@ import { FeedbackCard, FeedbackScores } from '../components/FeedbackCard'
 import { SessionView } from '../components/SessionView'
 import { TargetTable } from '../components/TargetTable'
 import { Thread } from '../components/Thread'
+import { TrainingDesk } from '../components/TrainingDesk'
 import { SessionNoteCard } from '../components/SessionNoteCard'
 import { isReleased, releaseAt, releaseText } from '../lib/release'
 import { Empty, GroupBadge, RECOVERY_TEXT } from '../components/ui'
@@ -78,6 +80,8 @@ export function AssignmentDetail() {
         <button className="btn danger ghost" onClick={del}>Supprimer</button>
       </div>
 
+      {s && <TrainingDesk assignment={a} session={s} />}
+      <ExerciseResults assignmentId={a.id} />
       <section>
         <h2>Retours {past && <span className="muted small">({fbs.length}/{targets.length}{avgRpe && ` · effort moyen ${avgRpe}/10`})</span>}</h2>
         {fbs.some((f) => f.recovery_fit != null) && (

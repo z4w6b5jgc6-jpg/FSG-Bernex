@@ -14,6 +14,7 @@ interface Conv { key: string; assignmentId: string; athleteId: string; last: str
 export function Messages({ coach }: { coach: boolean }) {
   const { messages, feedback, assignments, sessions, athletes } = useData()
   const me = useMyAthlete()
+  const [q,setQ]=useState('')
   const [open, setOpen] = useState<string | null>(null)
 
   const convs = useMemo(() => {
@@ -43,12 +44,12 @@ export function Messages({ coach }: { coach: boolean }) {
   return (
     <div>
       <h1>Messages {coach && todo > 0 && <span className="pill warn">{todo} à traiter</span>}</h1>
-      <PushToggle coach={coach} />
+      <input aria-label="Rechercher une conversation" placeholder="Rechercher une conversation…" value={q} onChange={e=>setQ(e.target.value)}/>
       {convs.length === 0 ? (
         <Empty>{coach ? 'Pas encore de message. Les retours des athlètes avec un commentaire apparaissent ici.' : 'Pas encore de message. Tu peux écrire à ton coach depuis chaque séance.'}</Empty>
       ) : (
         <div className="list">
-          {convs.map((c) => {
+          {convs.filter(c=>`${athletes.find(a=>a.id===c.athleteId)?.first_name??''} ${athletes.find(a=>a.id===c.athleteId)?.last_name??''} ${c.preview}`.toLowerCase().includes(q.toLowerCase())).map((c) => {
             const a = assignments.find((x) => x.id === c.assignmentId)!
             const s = sessions.find((x) => x.id === a.session_id)
             const ath = athletes.find((x) => x.id === c.athleteId)
@@ -77,6 +78,7 @@ export function Messages({ coach }: { coach: boolean }) {
           })}
         </div>
       )}
+      <details className="card"><summary>Notifications sur cet appareil</summary><PushToggle coach={coach}/></details>
     </div>
   )
 }

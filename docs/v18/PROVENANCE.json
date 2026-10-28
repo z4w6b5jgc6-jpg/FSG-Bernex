@@ -1,0 +1,11 @@
+{
+  "version": "v18",
+  "archive_source": "bernex-application-connectee-v18.zip",
+  "sha256_archive_source": "f7614b93cafca776008f74b54d38962837fcc1e1f6fd0933dab1b94a95a40c3d",
+  "archive_construite_reference": "bernex-connecte-v18.zip",
+  "sha256_archive_construite_reference": "5a55e87ba5a6ac3e61b374bf48e4251f3cd02ae89c97708647cbe92b30ed3969",
+  "fichiers_construits_identiques": 25,
+  "fichiers_construits_reference": 25,
+  "fichiers_requis_manquants": [],
+  "remarque": "Sources issues de l’archive v18 conservée. Nettoyage des valeurs de clés, fiches de démonstration et adaptation de rangement documentés ; aucune reconstruction de mémoire. Le déploiement actuellement en ligne n’est pas vérifié."
+}

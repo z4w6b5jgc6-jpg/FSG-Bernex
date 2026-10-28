@@ -10,8 +10,8 @@ export interface PushEnv {
 }
 
 // Mêmes valeurs publiques que app/.env.production
-const SUPABASE_URL = 'https://ledxcccbukvwmgkqijbn.supabase.co'
-const SUPABASE_KEY = 'sb_publishable_SXQVsIh_e2rY6-pkvSAW_A_Oa7DuJVQ'
+const SUPABASE_URL = '' // Renseigner COACH_SUPABASE_URL dans l’environnement.
+const SUPABASE_KEY = '' // Renseigner COACH_SUPABASE_ANON_KEY dans l’environnement.
 
 const b64u = (b: ArrayBuffer | Uint8Array) =>
   btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')

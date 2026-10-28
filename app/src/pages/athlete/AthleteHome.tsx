@@ -1,125 +1,34 @@
-import { Icon } from '../../components/Icon'
-import { Avatar } from '../../components/Avatar'
-import { Link } from 'react-router-dom'
-import { Tiles } from '../../components/Tiles'
-import { useData, useMyAthlete } from '../../lib/data'
-import { WellnessCheckin } from '../../components/WellnessCheckin'
-import { InstallPrompt } from '../../components/InstallPrompt'
-import { allTips, computeBadges, feedbackStreak, greeting, myAssignments, shownColor, tipOfTheDay } from '../../lib/athlete'
-import { addDays, formatDate, todayISO } from '../../lib/utils'
-import { unreadByAthlete } from '../../lib/messages'
+import {useEffect,useState} from 'react'
+import {Link} from 'react-router-dom'
+import {useData,useMyAthlete} from '../../lib/data'
+import {WellnessCheckin} from '../../components/WellnessCheckin'
+import {Icon} from '../../components/Icon'
+import {myAssignments} from '../../lib/athlete'
+import {addDays,formatDate,todayISO,itemSummary} from '../../lib/utils'
+import {validDate} from '../../lib/season'
+import {weekMonday} from '../../lib/weeklyReview'
+import {isReleased,releaseAt,releaseText} from '../../lib/release'
+import {unreadByAthlete} from '../../lib/messages'
 
-export function AthleteHome() {
-  const me = useMyAthlete()
-  const { assignments, sessions, feedback, records, wellness, tips, groups, test_reports, competitions, messages, loading } = useData()
-  if (!me) return <p className="muted">{loading ? 'Chargement…' : 'Profil introuvable.'}</p>
-
-  const today = todayISO()
-  const mine = myAssignments(assignments, me)
-  const todays = mine.filter((a) => a.date === today)
-  const next = mine.filter((a) => a.date > today).sort((a, b) => a.date.localeCompare(b.date))[0]
-  const todo = mine.filter((a) => a.date <= today && !feedback.some((f) => f.assignment_id === a.id))
-  const streak = feedbackStreak(mine, feedback)
-  const done = feedback.filter((f) => f.completed).length
-  const badges = computeBadges({ athlete: me, done, feedbackCount: feedback.length, streak, records, wellness })
-  const earned = badges.filter((b) => b.earned)
-  const tip = tipOfTheDay(allTips(tips))
-  const group = groups.find((g) => g.id === me.group_id)
-  const title = (sid: string) => sessions.find((s) => s.id === sid)?.title ?? 'Séance'
-  const nextComp = competitions.filter((c) => (c.end_date || c.date) >= today).sort((a, b) => a.date.localeCompare(b.date))[0]
-  const inDays = (d: string) => Math.round((new Date(d).getTime() - new Date(today).getTime()) / 86400000)
-
-  return (
-    <div>
-      <div className="hero">
-        <Avatar a={{ ...me, color: shownColor(me.color) }} />
-        <div>
-          <h1>{greeting()} {me.first_name} !</h1>
-          <div className="hero-sub">
-            {group && <span>{group.name}</span>}
-            {streak > 0 && <span className="streak">{streak} séance{streak > 1 ? 's' : ''} d’affilée</span>}
-          </div>
-        </div>
-      </div>
-      {me.goals ? (
-        <div className="goal"><b>Mon objectif :</b> {me.goals}</div>
-      ) : (
-        <Link to="/profil" className="goal muted">Fixe-toi un objectif de saison →</Link>
-      )}
-
-      <InstallPrompt who="athlete" />
-      {unreadByAthlete(messages).length > 0 && (
-        <Link to="/messages" className="alert info link-card">{unreadByAthlete(messages).length} nouveau(x) message(s) de ton coach →</Link>
-      )}
-
-      <Tiles who="athlete" items={[
-        { to: '/seances', icon: 'calendar', label: 'Mes séances', tone: 'green', badge: todo.length,
-          info: todays.length ? 'Séance aujourd’hui !' : next ? `Prochaine : ${formatDate(next.date, { weekday: 'short', day: 'numeric', month: 'short' })}` : 'Rien de prévu' },
-        { to: '/progres', icon: 'chart', label: 'Mes progrès', tone: 'blue', info: `${earned.length}/${badges.length} badges · tests et records` },
-        { to: '/competitions', icon: 'trophy', label: 'Compétitions', tone: 'yellow',
-          info: nextComp ? `${nextComp.name} · ${inDays(nextComp.date) > 0 ? `dans ${inDays(nextComp.date)} j` : 'aujourd’hui'}` : 'Aucune prévue' },
-        { to: '/conseils', icon: 'bulb', label: 'Conseils', tone: 'pink', info: tip ? tip.title : 'Nutrition, sommeil, récup' },
-      ]} />
-
-      {todays.map((a) => (
-        <Link key={a.id} to={`/seances/${a.id}`} className="card link-card today-card">
-          <div className="muted small">AUJOURD’HUI{a.time && ` · ${a.time}`}{a.location && ` · ${a.location}`}</div>
-          <h2>{title(a.session_id)}</h2>
-          {a.note && <div className="small">ℹ️ {a.note}</div>}
-          <div className="small">{feedback.some((f) => f.assignment_id === a.id) ? '✓ Retour envoyé' : 'Voir la séance et donner mon ressenti →'}</div>
-        </Link>
-      ))}
-
-      {todo.filter((a) => a.date < today).length > 0 && (
-        <section>
-          <h2>À faire</h2>
-          <div className="list">
-            {todo.filter((a) => a.date < today).slice(0, 3).map((a) => (
-              <Link key={a.id} to={`/seances/${a.id}`} className="card link-card row between">
-                <span><b>{title(a.session_id)}</b><br /><span className="muted small">{formatDate(a.date)}</span></span>
-                <span className="pill warn">Donner mon retour</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <section>
-        <WellnessCheckin athleteId={me.id} />
-      </section>
-
-      {(() => {
-        const r = [...test_reports].sort((x, y) => y.date.localeCompare(x.date))[0]
-        if (!r || r.date < addDays(today, -21)) return null
-        return (
-          <Link to="/progres" className="card link-card tip-card">
-            <div><strong>Nouveau : {r.title}</strong><div className="muted small">{r.message.slice(0, 110)}{r.message.length > 110 && '…'}</div></div>
-          </Link>
-        )
-      })()}
-
-
-      {tip && (
-        <section>
-          <h2>Le conseil du jour</h2>
-          <Link to={`/conseils/${tip.id}`} className="card link-card tip-card">
-            
-            <div><strong>{tip.title}</strong><div className="muted small">{tip.summary}</div></div>
-          </Link>
-        </section>
-      )}
-
-      <section>
-        <div className="row between">
-          <h2>Mes badges</h2>
-          <Link to="/progres" className="small">{earned.length}/{badges.length} →</Link>
-        </div>
-        <div className="badge-row">
-          {badges.slice(0, 8).map((b) => (
-            <div key={b.id} className={`badge-mini ${b.earned ? '' : 'locked'}`} title={`${b.title} – ${b.desc}`}><Icon name="medal" size={20} /></div>
-          ))}
-        </div>
-      </section>
-    </div>
-  )
+export function AthleteHome(){
+ const athlete=useMyAthlete(),{assignments,sessions,session_adjustments,feedback,messages,records,loading}=useData()
+ const [now,setNow]=useState(Date.now)
+ useEffect(()=>{const id=setInterval(()=>setNow(Date.now()),60000);return()=>clearInterval(id)},[])
+ if(!athlete)return <p className="muted">{loading?'Chargement…':'Profil introuvable.'}</p>
+ const today=todayISO(),week=weekMonday(today),mine=myAssignments(assignments,athlete).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time))
+ const own=feedback.filter(f=>f.athlete_id===athlete.id),next=mine.find(a=>a.date>=today&&!own.some(f=>f.assignment_id===a.id)),unread=unreadByAthlete(messages.filter(m=>m.athlete_id===athlete.id)).length
+ const common=next&&sessions.find(s=>s.id===next.session_id),variant=next&&session_adjustments.find(v=>v.assignment_id===next.id&&v.athlete_id===athlete.id)
+ const released=!!next&&isReleased(next,undefined,now),program=released&&common?{...common,...variant?.content}:undefined
+ const preview=program?.blocks.filter(b=>!/^remarques?$/i.test(b.title.trim())).flatMap(b=>b.items).slice(0,3)??[]
+ const past=mine.filter(a=>a.date>=addDays(today,-6)&&a.date<=today),done=past.filter(a=>own.some(f=>f.assignment_id===a.id&&f.completed)).length
+ const pending=mine.filter(a=>a.date<today&&!own.some(f=>f.assignment_id===a.id)).slice(-3)
+ const reply=[...own].filter(f=>f.coach_reply?.trim()&&mine.some(a=>a.id===f.assignment_id&&a.date<=today)).sort((a,b)=>b.updated_at.localeCompare(a.updated_at))[0]
+ const mark=[...records].filter(r=>r.athlete_id===athlete.id&&validDate(r.date)&&r.date<=today&&r.kind!=='muscu').sort((a,b)=>b.date.localeCompare(a.date))[0]
+ return <div className="athlete-today athlete-clubhouse"><header className="athlete-welcome"><div><p className="eyebrow">TON ESPACE · ATHLÉTISME</p><h1>Bonjour {athlete.first_name}</h1><p className="muted small">{formatDate(today,{weekday:'long',day:'numeric',month:'long'})}</p></div><Link className="athlete-message-link" to="/messages" aria-label={`Messages du coach${unread?' · '+unread+' non lu(s)':''}`}><Icon name="message"/>{unread>0&&<span>{unread}</span>}</Link></header>
+ <section className="athlete-personal-goal"><span className="athlete-goal-icon"><Icon name="target" size={24}/></span><div><p className="eyebrow">TON CAP</p><b>{athlete.goals||'Ton prochain objectif se construit avec ton coach.'}</b><small>{athlete.events||'Tes disciplines à préciser'}</small></div></section>
+ <section className="athlete-week-overview" aria-label="Ma semaine en un regard"><div className="row between"><h2>Ta semaine</h2><span className="tiny muted">{done} séance(s) déclarée(s) faite(s) sur 7 jours</span></div><div className="athlete-week-days">{Array.from({length:7},(_,i)=>{const date=addDays(week,i),planned=mine.filter(a=>a.date===date),completed=planned.filter(a=>own.some(f=>f.assignment_id===a.id&&f.completed)).length;return <div className={`${date===today?'is-today ':''}${completed?'is-recorded':''}`} key={date}><small>{formatDate(date,{weekday:'short'})}</small><b>{date.slice(-2)}</b><span>{completed?<Icon name="check" size={15}/>:planned.length?<i/>:<span className="week-free-mark">—</span>}</span><small>{completed?`${completed} faite(s)`:planned.length?`${planned.length} prévue(s)`:'Libre'}</small></div>})}</div><p className="tiny muted">Libre : aucune séance prévue dans l’application. Le programme et la récupération restent définis avec ton coach.</p></section>
+ {next?<section className="card today-workout youth-workout"><div className="track-art" aria-hidden="true"><i/><i/><i/><i/></div><div className="youth-workout-content"><span className="eyebrow">{next.date===today?'AUJOURD’HUI SUR LA PISTE':'TON PROCHAIN RENDEZ-VOUS'}</span><h2>{program?.title??'Ton prochain entraînement'}</h2><p className="small">{formatDate(next.date,{weekday:'long',day:'numeric',month:'short'})} · {next.time||'Horaire à préciser'}{next.location?' · '+next.location:''}</p>{program?.objective&&<p className="youth-objective">{program.objective}</p>}{preview.length>0&&<p className="tiny youth-release">Aperçu · {preview.length} exercice(s) sur {program?.blocks.filter(b=>!/^remarques?$/i.test(b.title.trim())).flatMap(b=>b.items).length}</p>}{preview.length>0&&<div className="youth-workout-preview">{preview.map((item,index)=><div key={item.id}><span>{String(index+1).padStart(2,'0')}</span><div><b>{item.name}</b>{itemSummary(item)&&<small>{itemSummary(item)}</small>}</div></div>)}</div>}{variant&&released&&<p className="small">Programme personnalisé par ton coach.</p>}<Link to={`/seances/${next.id}`} className="btn primary block">{released?'Ouvrir ma séance':'Voir le rendez-vous'} <Icon name="arrowUpRight" size={17}/></Link>{!released&&<p className="tiny youth-release">Le programme s’ouvre {releaseAt(next)?releaseText(releaseAt(next)!):'à l’heure prévue'}.</p>}</div></section>:<section className="card youth-no-workout"><Icon name="calendar" size={28}/><h2>La suite se prépare</h2><p className="small muted">Ton coach organise les prochains rendez-vous. Tu peux retrouver tes séances et tes réalisations.</p><Link className="btn primary" to="/seances">Mes séances</Link></section>}
+ <div className="youth-home-grid"><section className="youth-readiness"><div className="row gap"><Icon name="activity" size={20}/><h2>Tes sensations comptent</h2></div><WellnessCheckin athleteId={athlete.id}/></section><section className="youth-personal-history"><h2>Tes repères</h2>{mark?<Link to="/progres" className="youth-mark"><span className="tiny muted">DERNIÈRE PERFORMANCE ENREGISTRÉE</span><b>{mark.mark}</b><span>{mark.event}</span><small>{formatDate(mark.date)}{mark.competition?' · '+mark.competition:''}</small></Link>:<div className="card"><Icon name="chart" size={24}/><p className="small muted">Tes résultats et tes repères apparaîtront ici une fois enregistrés.</p><Link to="/progres">Mon suivi</Link></div>}{reply&&<Link className="card youth-coach-reply" to={`/seances/${reply.assignment_id}`}><span className="eyebrow">LE RETOUR DE TON COACH</span><p>{reply.coach_reply}</p></Link>}<div className="athlete-shortcuts"><Link className="card" to="/seances"><Icon name="calendar" size={20}/><b>Mes séances</b><span className="small muted">Programme et réalisations</span></Link><Link className="card" to="/progres"><Icon name="chart" size={20}/><b>Mon suivi</b><span className="small muted">Mes repères personnels</span></Link></div></section></div>
+ {pending.length>0&&<section><h2>Ton ressenti aide ton coach</h2>{pending.map(a=><Link className="card link-card row between" key={a.id} to={`/seances/${a.id}`}><span>{formatDate(a.date,{weekday:'short',day:'numeric',month:'short'})}</span><span className="pill">Donner mon retour →</span></Link>)}</section>}<p className="small athlete-extra-links"><Link to="/competitions">Mes compétitions</Link><Link to="/conseils">Conseils du groupe</Link><Link to="/confidentialite">Mes données et mes choix</Link></p>
+ </div>
 }

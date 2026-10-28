@@ -13,8 +13,12 @@ import { Join } from './pages/Join'
 import { CoachJoin } from './pages/CoachJoin'
 const DbUpdate = lazy(() => import('./pages/DbUpdate').then((m) => ({ default: m.DbUpdate })))
 import { Onboarding } from './pages/Onboarding'
+import {WeeklyReview} from './pages/WeeklyReview'
 import { Dashboard } from './pages/Dashboard'
 import { Planning } from './pages/Planning'
+import { Season } from './pages/Season'
+import { PublicPrivacy } from './pages/PublicPrivacy'
+import { Privacy } from './pages/Privacy'
 import { AssignmentDetail } from './pages/AssignmentDetail'
 import { ExportSessions } from './pages/ExportSessions'
 import { WhoDoesWhat } from './pages/WhoDoesWhat'
@@ -36,7 +40,8 @@ import { ImportResults } from './pages/ImportResults'
 import { ImportSessions } from './pages/ImportSessions'
 import { ImportProfiles } from './pages/ImportProfiles'
 import { Competitions } from './pages/Competitions'
-import { Assistant } from './pages/Assistant'
+import { Imports } from './pages/Imports'
+import { Research } from './pages/Research'
 import { SprintPaces } from './pages/SprintPaces'
 import { AthleteHome } from './pages/athlete/AthleteHome'
 import { AthleteSessions, AthleteSessionDetail } from './pages/athlete/AthleteSessions'
@@ -46,8 +51,11 @@ import { AthleteProfile } from './pages/athlete/AthleteProfile'
 type NavItem = { to: string; label: string; icon: string }
 
 const COACH_NAV: NavItem[] = [
-  { to: '/', label: 'Accueil', icon: 'home' },
+  { to: '/', label: 'Cockpit', icon: 'chart' },
   { to: '/planning', label: 'Planning', icon: 'calendar' },
+  { to: '/saison', label: 'Saison', icon: 'chart' },
+  { to: '/bilan', label: 'Bilans', icon: 'list' },
+  { to: '/assistant', label: 'Méthodes', icon: 'bulb' },
   { to: '/seances', label: 'Séances', icon: 'list' },
   { to: '/athletes', label: 'Athlètes', icon: 'users' },
   { to: '/competitions', label: 'Compét.', icon: 'trophy' },
@@ -57,7 +65,7 @@ const COACH_NAV: NavItem[] = [
 const ATHLETE_NAV: NavItem[] = [
   { to: '/', label: 'Accueil', icon: 'home' },
   { to: '/seances', label: 'Séances', icon: 'calendar' },
-  { to: '/conseils', label: 'Conseils', icon: 'bulb' },
+  { to: '/messages', label: 'Messages', icon: 'message' },
   { to: '/progres', label: 'Progrès', icon: 'chart' },
   { to: '/profil', label: 'Profil', icon: 'user' },
 ]
@@ -80,7 +88,7 @@ function Shell({ nav, brand, right, children }: { nav: NavItem[]; brand: ReactNo
       {error && <div className="alert danger container">Erreur de chargement : {error}</div>}
       <main className="container">{children}</main>
       <nav className="bottomnav">
-        {nav.map((n) => (
+        {nav.filter(n => me?.role !== 'coach' || ['/', '/planning','/saison','/athletes','/messages'].includes(n.to)).map((n) => (
           <NavLink key={n.to} to={n.to} end={n.to === '/'}>
             <span><Icon name={n.icon} />{dot(n.to)}</span>
             <small>{n.label}</small>
@@ -101,8 +109,10 @@ function CoachApp() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/planning" element={<Planning />} />
+        <Route path="/saison" element={<Season />} /><Route path="/bilan" element={<WeeklyReview/>}/>
         <Route path="/messages" element={<Messages coach />} />
         <Route path="/notifications" element={<NotificationsSetup />} />
+        <Route path="/confidentialite" element={<Privacy />} />
         <Route path="/reglages" element={<Settings />} />
         <Route path="/lundi" element={<MondayToday />} />
         <Route path="/lundi/plan" element={<MondayPlan />} />
@@ -112,6 +122,7 @@ function CoachApp() {
         <Route path="/planning/export" element={<ExportSessions />} />
         <Route path="/planning/:id" element={<AssignmentDetail />} />
         <Route path="/seances" element={<Sessions />} />
+        <Route path="/imports" element={<Imports/>}/>
         <Route path="/seances/import" element={<ImportSessions />} />
         <Route path="/seances/:id" element={<SessionEditor />} />
         <Route path="/exercices" element={<Exercises />} />
@@ -121,7 +132,7 @@ function CoachApp() {
         <Route path="/conseils" element={<Tips />} />
         <Route path="/conseils/:id" element={<TipDetail />} />
         <Route path="/competitions" element={<Competitions />} />
-        <Route path="/assistant" element={<Assistant />} />
+        <Route path="/assistant" element={<Research />} />
         <Route path="/tests" element={<Tests />} />
         <Route path="/tests/saisie" element={<TestEntry />} />
         <Route path="/tests/tableau" element={<TestMatrix />} />
@@ -150,6 +161,7 @@ function AthleteApp() {
         <Route path="/progres" element={<AthleteProgress />} />
         <Route path="/messages" element={<Messages coach={false} />} />
         <Route path="/competitions" element={<Competitions />} />
+        <Route path="/confidentialite" element={<Privacy />} />
         <Route path="/profil" element={<AthleteProfile key={athlete.id} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
@@ -172,6 +184,7 @@ export default function App() {
     <HashRouter>
       <DataProvider>
         <Routes>
+          <Route path="/information" element={<PublicPrivacy/>}/>
           <Route path="/rejoindre/:code" element={<Join />} />
           <Route path="/rejoindre/:code/:group" element={<Join />} />
           <Route path="/entraineur/:token" element={<CoachJoin />} />

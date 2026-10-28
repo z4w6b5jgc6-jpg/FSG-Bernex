@@ -1,3 +1,4 @@
+import readXlsxFile from 'read-excel-file/browser'
 import { useState } from 'react'
 import { BackLink } from '../components/BackLink'
 import { useNavigate } from 'react-router-dom'
@@ -33,7 +34,6 @@ export function ImportProfiles() {
   const onFile = async (file: File) => {
     setErr(null)
     try {
-      const { default: readXlsxFile } = await import('read-excel-file/browser')
       const sheets = await readXlsxFile(file)
       const found = parseProfiles(sheets.map((s) => ({ name: s.sheet, rows: s.data as Cell[][] })))
       if (!found?.length) return setErr('Je n’ai pas trouvé de colonnes « Nom / Prénom » et « Objectifs » ou « Disciplines ».')

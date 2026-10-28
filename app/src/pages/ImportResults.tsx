@@ -1,3 +1,4 @@
+import readXlsxFile from 'read-excel-file/browser'
 import { useMemo, useState } from 'react'
 import { BackLink } from '../components/BackLink'
 import { useNavigate } from 'react-router-dom'
@@ -72,7 +73,6 @@ export function ImportResults() {
     setErr(null)
     try {
       if (/\.(csv|tsv|txt)$/i.test(file.name)) return loadText(await file.text(), file.name)
-      const { default: readXlsxFile } = await import('read-excel-file/browser')
       const sheets = await readXlsxFile(file)
       load(sheets.map((s) => ({ name: s.sheet, rows: s.data as Cell[][] })))
     } catch (e) {

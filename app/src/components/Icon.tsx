@@ -1,5 +1,11 @@
 // Icônes au trait (24 × 24), dessinées pour l'app : sobres, lisibles, de la couleur du texte
 const PATHS: Record<string, string> = {
+  strength: 'M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12',
+  recovery: 'M20 7a8 8 0 1 0 0 10M20 3v5h-5M12 8v4l3 2',
+  activity: 'M3 12h4l3-8 4 16 3-8h4',
+  target: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM12 10v4M10 12h4',
+  arrowUpRight: 'M6 18 18 6M6 6h12v12',
+  check: 'm5 12 4 4L19 6',
   home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
   calendar: 'M4 6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM8 3v4M16 3v4M4 10h16',
   list: 'M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01',

@@ -3,10 +3,10 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useData } from '../lib/data'
 import { InviteCard } from '../components/InviteCard'
-import { Empty, Field, GroupBadge, Modal } from '../components/ui'
+import { Empty, Field, Modal } from '../components/ui'
 import type { Athlete, Group } from '../types'
 import { api } from '../api'
-import { errorMessage, fullName, inviteLink, todayISO, whatsappUrl } from '../lib/utils'
+import { errorMessage, fullName } from '../lib/utils'
 import { ImportRoster } from '../components/ImportRoster'
 import { CoachesCard } from '../components/CoachesCard'
 import { SubgroupSelect } from '../components/SubgroupSelect'
@@ -14,102 +14,20 @@ import { SubgroupSelect } from '../components/SubgroupSelect'
 const COLORS = ['#2563eb', '#db2777', '#16a34a', '#ea580c', '#7c3aed', '#0891b2', '#ca8a04', '#64748b']
 
 export function Athletes() {
-  const { athletes, groups, feedback, wellness, me } = useData()
-  const [editAthlete, setEditAthlete] = useState<Partial<Athlete> | null>(null)
-  const [editGroup, setEditGroup] = useState<Partial<Group> | null>(null)
-  const [importing, setImporting] = useState(false)
-  const [showInactive, setShowInactive] = useState(false)
-  const [q, setQ] = useState('')
-
-  const visible = athletes.filter((a) => (showInactive || a.active) && fullName(a).toLowerCase().includes(q.toLowerCase()))
-  const sections: { group: Group | null; list: Athlete[] }[] = [
-    ...groups.map((g) => ({ group: g, list: visible.filter((a) => a.group_id === g.id) })),
-    { group: null, list: visible.filter((a) => !a.group_id || !groups.some((g) => g.id === a.group_id)) },
-  ]
-  const lastFeedback = (id: string) =>
-    feedback.filter((f) => f.athlete_id === id).sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0]
-  const registered = athletes.filter((a) => a.user_id).length
-
-  const inviteMessage = (a: Athlete) => {
-    const link = me?.invite_code ? inviteLink(me.invite_code, a.group_id) : ''
-    return `Salut ${a.first_name} !\nInscris-toi sur l’app d’entraînement pour retrouver tes séances, tes résultats de tests et tes progrès :\n${link}\n\nUtilise ton vrai prénom et nom (${fullName(a)}) pour retrouver ton profil.`
-  }
-
-  return (
-    <div>
-      <div className="row between">
-        <h1>Athlètes</h1>
-        <Link className="btn" to="/tests">Tests</Link>
-      </div>
-      <PendingSignups />
-      <InviteCard />
-      <CoachesCard />
-      <div className="row gap wrap actions">
-        <button className="btn primary" onClick={() => setEditAthlete({ group_id: groups[0]?.id ?? null })}>+ Athlète</button>
-        <button className="btn" onClick={() => setImporting(true)}>Importer ma liste</button>
-        <Link className="btn" to="/athletes/questionnaire">Questionnaire</Link>
-        <button className="btn" onClick={() => setEditGroup({ color: COLORS[groups.length % COLORS.length] })}>+ Groupe</button>
-      </div>
-      {athletes.length > 0 && (
-        <p className="muted small">{athletes.length} athlète(s) · {registered} inscrit(s) dans l’app · {athletes.length - registered} pas encore inscrit(s)</p>
-      )}
-      {athletes.length > 8 && <input className="search" placeholder="Rechercher un athlète…" value={q} onChange={(e) => setQ(e.target.value)} />}
-      {groups.length === 0 && (
-        <Empty>Crée d’abord tes groupes (ex. U18, Sprint, Demi-fond…), ou importe directement ta liste d’athlètes : les groupes seront créés automatiquement.</Empty>
-      )}
-      {sections.map(({ group, list }) => {
-        if (!group && list.length === 0) return null
-        return (
-          <section key={group?.id ?? 'none'}>
-            <div className="row between">
-              <h2 className="row gap">
-                {group ? <GroupBadge name={group.name} color={group.color} /> : 'Sans groupe'}
-                <span className="muted small">{list.length}</span>
-              </h2>
-              {group && <button className="btn ghost small" onClick={() => setEditGroup(group)}>Modifier</button>}
-            </div>
-            {list.length === 0 ? <p className="muted small">Aucun athlète dans ce groupe.</p> : (
-              <div className="cards">
-                {list.map((a) => {
-                  const fb = lastFeedback(a.id)
-                  const checkin = wellness.some((w) => w.athlete_id === a.id && w.date === todayISO())
-                  return (
-                    <div key={a.id} className={`card ${a.active ? '' : 'inactive'}`}>
-                      <div className="row between">
-                        <Link to={`/athletes/${a.id}`} className="row gap"><Avatar a={a} size="sm" /><strong>{fullName(a)}</strong></Link>
-                        <span className="muted small">{a.birth_year}{checkin && ' ·'}</span>
-                      </div>
-                      {a.events && <div className="muted small">{a.events}</div>}
-                      <div className="small">
-                        {a.user_id
-                          ? <span className="pill ok">✓ Inscrit·e</span>
-                          : <span className="pill">Pas encore inscrit·e</span>}
-                        {a.user_id && <span className="muted"> {fb ? `· retour le ${new Date(fb.updated_at).toLocaleDateString('fr-CH')}` : '· aucun retour'}</span>}
-                      </div>
-                      <div className="row gap wrap">
-                        <Link className="btn small" to={`/athletes/${a.id}`}>Fiche</Link>
-                        {!a.user_id && a.phone && (
-                          <a className="btn small whatsapp" href={whatsappUrl(inviteMessage(a), a.phone)} target="_blank" rel="noreferrer">Inviter</a>
-                        )}
-                        {a.user_id && a.phone && <a className="btn small whatsapp" href={whatsappUrl(`Salut ${a.first_name} !`, a.phone)} target="_blank" rel="noreferrer">WhatsApp</a>}
-                        <button className="btn small ghost" onClick={() => setEditAthlete(a)}>Modifier</button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </section>
-        )
-      })}
-      {athletes.some((a) => !a.active) && (
-        <label className="check"><input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} /> Afficher les athlètes inactifs</label>
-      )}
-      {editAthlete && <AthleteForm initial={editAthlete} onClose={() => setEditAthlete(null)} />}
-      {editGroup && <GroupForm initial={editGroup} onClose={() => setEditGroup(null)} />}
-      {importing && <ImportRoster onClose={() => setImporting(false)} />}
-    </div>
-  )
+ const {athletes,groups,wellness,feedback,assignments}=useData()
+ const [editAthlete,setEditAthlete]=useState<Partial<Athlete>|null>(null),[editGroup,setEditGroup]=useState<Partial<Group>|null>(null)
+ const [importing,setImporting]=useState(false),[showInactive,setShowInactive]=useState(false),[q,setQ]=useState('')
+ const visible=athletes.filter(a=>(showInactive||a.active)&&fullName(a).toLowerCase().includes(q.toLowerCase()))
+ const sections=[...groups.map(group=>({group,list:visible.filter(a=>a.group_id===group.id)})),{group:null,list:visible.filter(a=>!a.group_id||!groups.some(g=>g.id===a.group_id))}]
+ return <div><div className="workspace-title"><div><p className="eyebrow">SUIVI INDIVIDUEL</p><h1>Les athlètes</h1></div><button className="btn primary" onClick={()=>setEditAthlete({})}>+ Athlète</button></div>
+  <PendingSignups/>
+  <input aria-label="Rechercher un athlète" placeholder="Rechercher un athlète…" value={q} onChange={e=>setQ(e.target.value)}/>
+  {sections.filter(s=>s.list.length).map(({group,list})=><section className="athlete-board" key={group?.id??'none'}><div className="row between"><h2 style={{color:group?.color}}>{group?.name??'Sans groupe'} <span className="muted small">{list.length}</span></h2>{group&&<button className="btn ghost small" onClick={()=>setEditGroup(group)}>Gérer le groupe</button>}</div><div className="board-scroll"><table className="table board-table"><thead><tr><th>Athlète</th><th>Disciplines et objectif</th><th>Dernière forme déclarée</th><th>Dernier retour</th><th></th></tr></thead><tbody>{list.map(a=>{const w=wellness.filter(w=>w.athlete_id===a.id).sort((a,b)=>b.date.localeCompare(a.date))[0];const f=feedback.filter(f=>f.athlete_id===a.id).sort((a,b)=>b.updated_at.localeCompare(a.updated_at))[0];return <tr key={a.id}><td><Link className="row gap" to={`/athletes/${a.id}`}><Avatar a={a} size="sm"/><b>{fullName(a)}</b></Link><span className={`tiny ${a.active?'muted':'warn-text'}`}>{a.active?(a.user_id?'Compte relié':'Invitation à envoyer'):'Inactif'}</span></td><td><span className="small">{a.events||'À préciser'}</span><p className="tiny muted">{a.goals||'Objectif à compléter'}</p></td><td>{w?<><span className={`pill ${(w.energy??5)<=2?'warn':''}`}>Énergie {w.energy??'—'}/5</span><p className="tiny muted">{w.date}</p></>:<span className="small muted">Non renseignée</span>}</td><td className="small">{f?assignments.find(x=>x.id===f.assignment_id)?.date??'Reçu':'En attente'}</td><td><div className="row gap"><Link className="btn small" to={`/athletes/${a.id}`}>Suivi</Link><button className="btn ghost small" onClick={()=>setEditAthlete(a)}>Modifier</button></div></td></tr>})}</tbody></table></div></section>)}
+  {!visible.length&&<Empty>Aucun athlète pour ce filtre.</Empty>}
+  <details className="card"><summary><b>Invitations et gestion du groupe</b></summary><InviteCard/><CoachesCard/><div className="row gap wrap"><button className="btn" onClick={()=>setImporting(true)}>Importer ma liste</button><Link className="btn" to="/athletes/questionnaire">Importer les profils</Link><button className="btn" onClick={()=>setEditGroup({})}>+ Groupe</button></div></details>
+  <label className="check"><input type="checkbox" checked={showInactive} onChange={e=>setShowInactive(e.target.checked)}/>Afficher les athlètes inactifs</label>
+  {editAthlete&&<AthleteForm initial={editAthlete} onClose={()=>setEditAthlete(null)}/>}{editGroup&&<GroupForm initial={editGroup} onClose={()=>setEditGroup(null)}/>}{importing&&<ImportRoster onClose={()=>setImporting(false)}/>}
+ </div>
 }
 
 /** Nouvelles inscriptions à vérifier : reliées automatiquement à la liste, ou nouveaux profils */
@@ -189,7 +107,7 @@ export function AthleteForm({ initial, onClose }: { initial: Partial<Athlete>; o
       await save('athletes', {
         id: a.id, first_name: a.first_name, last_name: a.last_name ?? '', group_id: a.group_id || null,
         birth_year: a.birth_year ?? null, events: a.events ?? '', phone: a.phone ?? '', email: (a.email ?? '').trim().toLowerCase(),
-        active: a.active ?? true,
+        active: a.active ?? true, goals: a.goals ?? '',
       })
       onClose()
     } catch (err) {
@@ -215,6 +133,7 @@ export function AthleteForm({ initial, onClose }: { initial: Partial<Athlete>; o
           </Field>
         </div>
         <Field label="Disciplines"><input value={a.events ?? ''} onChange={(e) => set({ events: e.target.value })} placeholder="Ex. 60 m, longueur" /></Field>
+        <Field label="Objectif personnel"><textarea rows={2} value={a.goals??''} onChange={e=>set({goals:e.target.value})}/></Field>
         <Field label="Téléphone WhatsApp" hint="De l’athlète ou d’un parent">
           <input type="tel" inputMode="tel" autoComplete="tel" value={a.phone ?? ''} onChange={(e) => set({ phone: e.target.value })} placeholder="079 123 45 67" />
         </Field>

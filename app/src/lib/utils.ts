@@ -9,7 +9,7 @@ export function toISODate(d: Date): string {
 }
 
 export function todayISO(): string {
-  return toISODate(new Date())
+  return new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Zurich',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
 }
 
 export function parseISODate(s: string): Date {
@@ -62,7 +62,7 @@ export function defaultBlocks(): Block[] {
 /** Résumé lisible d'un exercice : "3 × 4 × 60 m · récup 2' · 90%" */
 export function itemSummary(it: SessionItem): string {
   const volume = [it.sets, it.reps, it.distance].filter(Boolean).join(' × ')
-  return [volume, it.duration, it.recovery && `récup ${it.recovery}`, it.intensity].filter(Boolean).join(' · ')
+  return [volume, it.load_kg && `${it.load_kg.replace(/\s*kg\s*$/i,'').trim()} kg`, it.duration, it.recovery && `récup ${it.recovery}`, it.intensity].filter(Boolean).join(' · ')
 }
 
 /** Lien d'inscription à partager aux athlètes (optionnellement pour un groupe précis) */

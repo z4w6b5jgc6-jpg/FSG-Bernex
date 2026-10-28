@@ -1,3 +1,6 @@
+import {LOAD_KINDS} from '../lib/contentLoad'
+import { exerciseLibrary } from '../data/athleticsExercises'
+import {SessionIllustrations} from '../components/SessionIllustrations'
 import { useEffect, useState } from 'react'
 import { BackLink } from '../components/BackLink'
 import { Link, useParams } from 'react-router-dom'
@@ -17,7 +20,8 @@ const ITEM_FIELDS: { key: keyof SessionItem; label: string; placeholder: string 
   { key: 'distance', label: 'Distance', placeholder: '60 m' },
   { key: 'duration', label: 'Durée', placeholder: '10 min' },
   { key: 'recovery', label: 'Récup', placeholder: "2'" },
-  { key: 'intensity', label: 'Intensité', placeholder: '90%' },
+  { key: 'intensity', label: 'Intensité et référence', placeholder: '90 % VMA, 80 % 1RM…' },
+  { key: 'load_kg', label: 'Charge externe totale · kg', placeholder: 'ex. 20 kg' },
 ]
 
 function move<T>(arr: T[], i: number, d: number): T[] {
@@ -47,7 +51,8 @@ export function SessionEditor() {
   const addItems = (bid: string, names: string[]) => {
     const blk = draft?.blocks.find((x) => x.id === bid)
     if (!blk) return
-    const items = names.map((n) => emptyItem(n))
+    const library = exerciseLibrary(exercises)
+    const items = names.map(n => ({...emptyItem(n), notes: library.find(e => e.name === n)?.description ?? '', ...(library.find(e=>e.name===n)?.category==='Musculation'?{load_kind:'strength' as const}:{})}))
     updBlock(bid, { items: [...blk.items, ...items] })
     setOpenItems((o) => new Set([...o, ...items.map((i) => i.id)]))
   }
@@ -118,11 +123,11 @@ export function SessionEditor() {
           </Field>
         </div>
         <Field label="Objectif"><textarea rows={2} value={draft.objective} onChange={(e) => update({ objective: e.target.value })} placeholder="Ce que les athlètes doivent retenir de la séance" /></Field>
-        <AiAdvicePanel session={draft} onApply={updItem} />
+        <AiAdvicePanel key={draft.id} session={draft} onApplyBlocks={setBlocks} />
       </div>
 
       <datalist id="exercise-names">
-        {exercises.map((e) => <option key={e.id} value={e.name} />)}
+        {exerciseLibrary(exercises).map((e) => <option key={e.id} value={e.name} />)}
       </datalist>
 
       {draft.blocks.map((b, bi) => (
@@ -134,6 +139,7 @@ export function SessionEditor() {
             <button className="btn ghost icon small danger" title="Supprimer le bloc"
               onClick={() => (b.items.length === 0 || confirm('Supprimer ce bloc ?')) && setBlocks(draft.blocks.filter((x) => x.id !== b.id))}>✕</button>
           </div>
+          <SessionIllustrations images={b.images} onRemove={id=>updBlock(b.id,{images:b.images?.filter(i=>i.id!==id)})}/>
           {b.items.map((it, ii) => {
             const open = openItems.has(it.id)
             return (
@@ -154,11 +160,12 @@ export function SessionEditor() {
                 </div>
                 {open && (
                   <>
+                    <label className="field"><span>Modalité pour l’analyse de charge</span><select value={it.load_kind??''} onChange={e=>updItem(b.id,it.id,{load_kind:e.target.value?e.target.value as SessionItem['load_kind']:undefined})}><option value="">Repérage à vérifier d’après le nom / bloc</option>{Object.entries(LOAD_KINDS).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label>
                     <div className="item-grid">
                       {ITEM_FIELDS.map((f) => (
                         <label key={f.key}>
                           <span>{f.label}</span>
-                          <input value={it[f.key]} placeholder={f.placeholder} enterKeyHint="next" onChange={(e) => updItem(b.id, it.id, { [f.key]: e.target.value })} />
+                          <input value={it[f.key]??''} placeholder={f.placeholder} enterKeyHint="next" onChange={(e) => updItem(b.id, it.id, { [f.key]: e.target.value })} />
                         </label>
                       ))}
                     </div>
@@ -205,14 +212,14 @@ function ExercisePicker({ onClose, onPick }: { onClose: () => void; onPick: (nam
   const [q, setQ] = useState('')
   const [cat, setCat] = useState('')
   const [sel, setSel] = useState<string[]>([])
-  const list = exercises.filter((e) => (!cat || e.category === cat) && e.name.toLowerCase().includes(q.toLowerCase()))
+  const list = exerciseLibrary(exercises).filter((e) => (!cat || e.category === cat) && e.name.toLowerCase().includes(q.toLowerCase()))
   return (
     <Modal title="Bibliothèque d’exercices" onClose={onClose}>
       <div className="row gap filters">
         <input placeholder="Rechercher…" value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
         <select value={cat} onChange={(e) => setCat(e.target.value)}>
           <option value="">Toutes</option>
-          {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+          {[...new Set([...CATEGORIES, ...exercises.map(e => e.category)])].map((c) => <option key={c}>{c}</option>)}
         </select>
       </div>
       <div className="picker-list">

@@ -1,3 +1,4 @@
+import {AvailabilityPanel,LoadChart,ExerciseResults,PerformanceHighlights} from '../components/AthleteMonitoring'
 import { Avatar } from '../components/Avatar'
 import { useState } from 'react'
 import { BackLink } from '../components/BackLink'
@@ -76,6 +77,12 @@ export function AthleteDetail() {
         <button className="btn small" onClick={() => setEditing(true)}>Modifier / groupe</button>
       </div>
 
+      <Link className="btn" to={`/saison?athlete=${a.id}`}>Cycles et aide à l’adaptation →</Link>
+      <Link className="btn" to={`/bilan?athlete=${a.id}`}>Bilan individuel et semaine suivante →</Link>
+      <PerformanceHighlights athleteId={a.id}/>
+      <LoadChart athleteId={a.id} />
+      <AvailabilityPanel athleteId={a.id} />
+      <ExerciseResults athleteId={a.id} />
       <ProfileTiles athlete={a} coach />
 
       {hash === '#seances' && <AthleteSeriesCard athlete={a} />}
@@ -84,7 +91,7 @@ export function AthleteDetail() {
         <h2>Suivi</h2>
         <div className="stats">
           <div className="stat"><b>{done}</b><span>séances faites</span></div>
-          <div className="stat"><b>{past.length ? Math.round((fbs.length / past.length) * 100) : 0}%</b><span>retours</span></div>
+          <div className="stat"><b>{past.length ? Math.round((fbs.length / past.length) * 100) : '—'}%</b><span>retours</span></div>
           <div className="stat"><b>{avg}</b><span>effort moyen</span></div>
           <div className="stat"><b>{feedbackStreak(mine, fbs)}</b><span>série</span></div>
         </div>

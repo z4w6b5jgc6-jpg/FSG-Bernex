@@ -54,7 +54,7 @@ export function CompetitionCard({ c, onEdit }: { c: Competition; onEdit?: () => 
   return (
     <div className={`card competition level-${c.level} ${past ? 'past' : ''}`}>
       <div className="row between">
-        <span className={`level-badge level-${c.level}`} title={LEVELS[c.level].hint}>{c.level}</span>
+        <span className={`level-badge level-${me?c.athlete_priorities?.[me.id]??c.level:c.level}`} title={LEVELS[me?c.athlete_priorities?.[me.id]??c.level:c.level].hint}>{me?c.athlete_priorities?.[me.id]??c.level:c.level}</span>
         {!past && <span className="small muted">{countdown(c)}</span>}
       </div>
       <h3>{c.name}</h3>
@@ -126,7 +126,7 @@ function CompetitionForm({ initial, onClose }: { initial: Partial<Competition>; 
     try {
       await save('competitions', {
         id: c.id, name: c.name?.trim(), date: c.date, end_date: c.end_date || null, location: c.location?.trim() ?? '',
-        level: c.level, program_url: normUrl(c.program_url ?? ''), registration_url: normUrl(c.registration_url ?? ''),
+        level: c.level, athlete_priorities:c.athlete_priorities??{}, program_url: normUrl(c.program_url ?? ''), registration_url: normUrl(c.registration_url ?? ''),
         results_url: normUrl(c.results_url ?? ''), registration_deadline: c.registration_deadline || null,
         notes: c.notes?.trim() ?? '', athlete_ids: some ? ids : [],
         entries: some ? Object.fromEntries(ids.map((id) => [id, (entries[id] ?? '').trim()]).filter(([, v]) => v)) : {},
@@ -196,7 +196,7 @@ function CompetitionForm({ initial, onClose }: { initial: Partial<Competition>; 
                 const cur = (entries[a.id] ?? '').split(',').map((x) => x.trim().toLowerCase())
                 return (
                   <div key={a.id} className="entry-row">
-                    <b className="small">{fullName(a)}</b>
+                    <b className="small">{fullName(a)}</b><select aria-label={`Priorité ${fullName(a)}`} value={c.athlete_priorities?.[a.id]??c.level??'B'} onChange={e=>set({athlete_priorities:{...c.athlete_priorities,[a.id]:e.target.value as 'A'|'B'|'C'}})}><option value="A">A · objectif principal</option><option value="B">B · importante</option><option value="C">C · préparation</option></select>
                     <input list="events" value={entries[a.id] ?? ''} onChange={(e) => setEntry(a.id, e.target.value)} placeholder="Ex. 60 m, longueur" />
                     <div className="chips-wrap">
                       {suggestions(a.id).map((ev) => (

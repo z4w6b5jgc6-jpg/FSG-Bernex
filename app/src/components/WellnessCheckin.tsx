@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+import { healthConsent } from '../lib/confidentiality'
 import { useState } from 'react'
 import { useData } from '../lib/data'
 import type { Wellness } from '../types'
@@ -13,13 +15,15 @@ const SLEEP_OPTIONS = [5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10]
 
 /** Check-in bien-être du jour (30 secondes) */
 export function WellnessCheckin({ athleteId }: { athleteId: string }) {
-  const { wellness, save } = useData()
+  const { wellness, save, me, privacy_acceptances } = useData()
   const today = todayISO()
   const existing = wellness.find((w) => w.athlete_id === athleteId && w.date === today)
   const [editing, setEditing] = useState(!existing)
   const [w, setW] = useState<Partial<Wellness>>(existing ?? { sleep_hours: null, sleep_quality: null, energy: null, soreness: null, stress: null })
   const [busy, setBusy] = useState(false)
   const set = (p: Partial<Wellness>) => setW({ ...w, ...p })
+
+  if (!healthConsent(athleteId, privacy_acceptances, me?.settings?.privacy)) return <div className="card"><b>Suivi de forme facultatif</b><p className="small muted">Consulte l’information sur tes données et choisis si tu souhaites activer ce suivi.</p><Link className="btn" to="/confidentialite">Information et choix</Link></div>
 
   if (existing && !editing) {
     return (

@@ -1,20 +1,19 @@
-import { releaseAt, releaseText } from '../../lib/release'
+import { healthConsent } from '../../lib/confidentiality'
+import { isReleased, releaseAt, releaseText } from '../../lib/release'
 import { useEffect, useState, type FormEvent } from 'react'
 import { BackLink } from '../../components/BackLink'
-import { sprintReference } from '../../lib/sprint'
 import { TrainingInfo } from '../../components/TrainingInfo'
 import { Link, useParams } from 'react-router-dom'
 import { useData, useMyAthlete } from '../../lib/data'
-import { SessionView } from '../../components/SessionView'
+import { WorkoutTracker } from '../../components/WorkoutTracker'
 import { MyTargets } from '../../components/TargetTable'
 import { Thread } from '../../components/Thread'
 import { api } from '../../api'
 import { feedbackWorthNotice } from '../../lib/messages'
 import { FeedbackScores } from '../../components/FeedbackCard'
-import { Empty, FATIGUE_TEXT, MOOD_TEXT, RECOVERY_TEXT, RPE_LABELS, Scale } from '../../components/ui'
+import { Empty, Field, FATIGUE_TEXT, MOOD_TEXT, RECOVERY_TEXT, RPE_LABELS, Scale } from '../../components/ui'
 import type { Assignment, Feedback } from '../../types'
 import { myAssignments } from '../../lib/athlete'
-import { latestVma } from '../../lib/vma'
 import { errorMessage, formatDate, todayISO } from '../../lib/utils'
 
 export function AthleteSessions() {
@@ -62,9 +61,11 @@ const nowMs = () => Date.now()
 export function AthleteSessionDetail() {
   const { id } = useParams()
   const me = useMyAthlete()
-  const { assignments, sessions, feedback, tests, test_results, records, loading } = useData()
+  const { assignments, sessions, session_adjustments, feedback, loading } = useData()
   const a = assignments.find((x) => x.id === id)
-  const s = a && sessions.find((x) => x.id === a.session_id)
+  const common = a && sessions.find((x) => x.id === a.session_id)
+  const adjustment = a && me && session_adjustments.find((x) => x.assignment_id === a.id && x.athlete_id === me.id)
+  const s = a && common && isReleased(a) ? { ...common, ...adjustment?.content } : undefined
   const { reload } = useData()
   // contenu pas encore visible (règle du groupe) : on recharge tout seul à l'heure prévue
   const at = a && !s ? releaseAt(a) : null
@@ -81,15 +82,16 @@ export function AthleteSessionDetail() {
   // Les « Remarques » du plan sont des notes de coach (elles citent parfois d'autres athlètes) : pas affichées ici
 
   return (
-    <div>
+    <div className="athlete-session-workspace">
       <BackLink to="/seances" label="Mes séances" />
-      <h1>{s?.title ?? 'Séance'}</h1>
+      <div className="athlete-workout-heading"><p className="eyebrow">MON PROGRAMME · ATHLÉTISME</p><h1>{s?.title ?? 'Séance'}</h1>{s?.duration_min!=null&&<span className="pill">{s.duration_min} min prévues</span>}</div>
       <p className="muted">{formatDate(a.date)}{a.time && ` · ${a.time}`}{a.location && ` · ${a.location}`}</p>
-      {a.note && <div className="alert info">{a.note}</div>}
+      {s && a.note && <div className="alert info">{a.note}</div>}
       {s ? (
         <>
+          {adjustment && <div className="alert info"><b>Ton programme a été adapté par ton coach.</b><p>{adjustment.rationale}</p></div>}
           {!!s.targets?.length && <MyTargets targets={s.targets} athleteId={me.id} />}
-          <div className="card"><SessionView session={{ ...s, blocks: s.blocks.filter((b) => !/^remarques?$/i.test(b.title.trim())) }} vma={latestVma(tests, test_results)?.value} sprintLevel={sprintReference(tests, test_results, records)?.level} /></div>
+          <WorkoutTracker session={s} assignmentId={a.id} athleteId={me.id} />
         </>
       ) : (
         <div className="card content-locked">
@@ -98,8 +100,8 @@ export function AthleteSessionDetail() {
           <button className="btn small" onClick={() => reload()}>Actualiser</button>
         </div>
       )}
-      <section>
-        <h2>Mon retour</h2>
+      <section id="workout-feedback" className="workout-feedback">
+        <p className="eyebrow">APRÈS L’EFFORT</p><h2>Mon retour</h2>
         {a.date <= todayISO() ? (
           <FeedbackForm key={fb?.id ?? 'new'} athleteId={me.id} assignmentId={a.id} fb={fb} />
         ) : (
@@ -115,11 +117,12 @@ export function AthleteSessionDetail() {
 }
 
 function FeedbackForm({ athleteId, assignmentId, fb }: { athleteId: string; assignmentId: string; fb?: Feedback }) {
-  const { save } = useData()
+  const { save, me: account, privacy_acceptances } = useData()
+  const healthAllowed = healthConsent(athleteId,privacy_acceptances,account?.settings?.privacy)
   const [editing, setEditing] = useState(!fb)
   const [f, setF] = useState({
     completed: fb?.completed ?? true, rpe: fb?.rpe ?? null, fatigue: fb?.fatigue ?? null,
-    mood: fb?.mood ?? null, recovery_fit: fb?.recovery_fit ?? null, pain: fb?.pain ?? '', comment: fb?.comment ?? '',
+    duration_min: fb?.duration_min ?? null, mood: fb?.mood ?? null, recovery_fit: fb?.recovery_fit ?? null, pain: fb?.pain ?? '', comment: fb?.comment ?? '',
   })
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
@@ -127,11 +130,12 @@ function FeedbackForm({ athleteId, assignmentId, fb }: { athleteId: string; assi
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
+    if (f.duration_min != null && (!Number.isFinite(f.duration_min) || f.duration_min < 0 || f.duration_min > 600)) return setErr('La durée doit être comprise entre 0 et 600 minutes.')
     if (f.completed && f.rpe == null) return setErr('Indique la difficulté de la séance.')
     setBusy(true)
     setErr(null)
     try {
-      const row = { ...f, id: fb?.id, assignment_id: assignmentId, athlete_id: athleteId }
+      const row = { ...f, pain: healthAllowed ? f.pain : '', fatigue: healthAllowed ? f.fatigue : null, mood: healthAllowed ? f.mood : null, id: fb?.id, assignment_id: assignmentId, athlete_id: athleteId }
       // base pas encore mise à jour (#/base) : le retour part quand même, sans la question sur la récup
       const saved = await save('feedback', row).catch((e2) => {
         if (/recovery_fit/.test(errorMessage(e2))) { const { recovery_fit: _r, ...rest } = row; void _r; return save('feedback', rest) }
@@ -168,6 +172,7 @@ function FeedbackForm({ athleteId, assignmentId, fb }: { athleteId: string; assi
           <button type="button" className={`scale-btn wide ${!f.completed ? 'active' : ''}`} onClick={() => set({ completed: false })}>Non</button>
         </div>
       </div>
+      {f.completed && <Field label="Durée réellement effectuée (minutes)" hint="Inclure l’échauffement et le retour au calme. Laisser vide si inconnue."><input type="number" min="0" max="600" value={f.duration_min??''} onChange={e=>set({duration_min:e.target.value===''?null:Number(e.target.value)})}/></Field>}
       {f.completed && (
         <div className="field">
           <span className="field-label">C’était dur ? (1 = très facile, 10 = maximal)</span>
@@ -175,11 +180,13 @@ function FeedbackForm({ athleteId, assignmentId, fb }: { athleteId: string; assi
           {f.rpe != null && <span className="hint">{RPE_LABELS[f.rpe]}</span>}
         </div>
       )}
-      <div className="field">
+      {!healthAllowed && <p className="small muted">Bilan sportif disponible. <Link to="/confidentialite">Choisir le suivi de forme facultatif</Link></p>}
+      {healthAllowed && <div className="field">
         <span className="field-label">Ta forme après la séance (1 = pleine forme, 5 = épuisé·e)</span>
         <Scale min={1} max={5} value={f.fatigue} onChange={(fatigue) => set({ fatigue })} labels={FATIGUE_TEXT} />
         {f.fatigue != null && <span className="hint">{FATIGUE_TEXT[f.fatigue]}</span>}
-      </div>
+      </div>}
+
       {f.completed && (
         <div className="field">
           <span className="field-label">Les temps de récupération étaient…</span>
@@ -192,15 +199,15 @@ function FeedbackForm({ athleteId, assignmentId, fb }: { athleteId: string; assi
           </div>
         </div>
       )}
-      <div className="field">
+      {healthAllowed && <div className="field">
         <span className="field-label">Ton plaisir (1 = pas bien, 5 = super)</span>
         <Scale min={1} max={5} value={f.mood} onChange={(mood) => set({ mood })} labels={MOOD_TEXT} />
         {f.mood != null && <span className="hint">{MOOD_TEXT[f.mood]}</span>}
-      </div>
-      <label className="field">
+      </div>}
+      {healthAllowed && <label className="field">
         <span className="field-label">As-tu mal quelque part ? (facultatif)</span>
         <input value={f.pain} onChange={(e) => set({ pain: e.target.value })} placeholder="Ex. un peu mal au genou gauche" />
-      </label>
+      </label>}
       <label className="field">
         <span className="field-label">Ton commentaire (facultatif)</span>
         <textarea rows={3} value={f.comment} onChange={(e) => set({ comment: e.target.value })}

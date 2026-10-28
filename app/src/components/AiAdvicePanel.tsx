@@ -1,92 +1,55 @@
-import { useState } from 'react'
-import { api } from '../api'
-import type { AiAdvice, AiSuggestion, Session, SessionItem } from '../types'
-import { errorMessage } from '../lib/utils'
-import { Modal } from './ui'
-import { ChatPanel } from './ChatPanel'
-import { useData } from '../lib/data'
-import { redactSession } from '../lib/redact'
+import {useState,useRef,useEffect} from 'react'
+import {api} from '../api'
+import {useData} from '../lib/data'
+import {redactNames,redactSession} from '../lib/redact'
+import {sessionForAI,validateSessionAdvice,type AIField} from '../lib/sessionAI'
+import {TRAINING_KNOWLEDGE} from '../data/trainingKnowledge'
+import {SOURCES} from '../lib/season'
+import {errorMessage} from '../lib/utils'
+import {RichText} from './RichText'
+import type {AiAdvice,Block,ChatMessage,Session} from '../types'
 
-const norm = (t: string) => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '')
-const LABELS: Record<string, string> = { sets: 'Séries', reps: 'Répét.', distance: 'Distance', duration: 'Durée', recovery: 'Récup', intensity: 'Intensité', notes: 'Consignes' }
+const FIELD_LABELS:Record<AIField,string>={name:'Exercice',sets:'Séries',reps:'Répétitions',distance:'Distance',duration:'Durée',recovery:'Récupération',intensity:'Intensité',notes:'Consignes',load_kg:'Charge en kg'}
 
-/** Exercice visé par une suggestion (nom exact ou très proche) */
-function target(s: Session, sug: AiSuggestion): { bid: string; it: SessionItem } | null {
-  if (!sug.champ || !sug.exercice) return null
-  const want = norm(sug.exercice)
-  for (const b of s.blocks) {
-    if (sug.bloc && norm(b.title) !== norm(sug.bloc) && s.blocks.some((x) => norm(x.title) === norm(sug.bloc))) continue
-    const it = b.items.find((x) => norm(x.name) === want) ?? b.items.find((x) => want.length > 5 && (norm(x.name).includes(want) || want.includes(norm(x.name))))
-    if (it) return { bid: b.id, it }
-  }
-  return null
-}
-
-/** Bouton « Améliorer cette séance » et propositions de l'IA, appliquées une par une */
-export function AiAdvicePanel({ session, onApply }: { session: Session; onApply: (bid: string, iid: string, patch: Partial<SessionItem>) => void }) {
-  const [open, setOpen] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const [err, setErr] = useState<string | null>(null)
-  const [advice, setAdvice] = useState<AiAdvice | null>(null)
-  const [done, setDone] = useState<Set<number>>(new Set())
-  const [chat, setChat] = useState(false)
-  const { athletes } = useData()
-
-  const run = async () => {
-    setOpen(true); setBusy(true); setErr(null); setAdvice(null); setDone(new Set())
-    try {
-      setAdvice(await api.improveSession(redactSession(session, athletes)))
-    } catch (e) {
-      setErr(errorMessage(e))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <>
-      <div className="row gap wrap">
-        <button type="button" className="btn ai-btn" onClick={run} disabled={!session.blocks.some((b) => b.items.length)}>Améliorer cette séance</button>
-        <button type="button" className="btn ai-btn" onClick={() => setChat(true)}>Discuter de cette séance</button>
-      </div>
-      {chat && (
-        <Modal title="Assistant · cette séance" onClose={() => setChat(false)}>
-          <ChatPanel session={session} storageKey={`athle-chat-${session.id}`} />
-        </Modal>
-      )}
-      {open && (
-        <Modal title="Suggestions pour la séance" onClose={() => setOpen(false)}>
-          <p className="tiny muted">Seul le contenu de la séance (exercices, séries, distances, récupérations) est envoyé à l’IA de Cloudflare — aucun nom ni donnée d’athlète. Ce sont des propositions : à toi de juger.</p>
-          {busy && <p className="muted">L’IA lit la séance… (quelques secondes)</p>}
-          {err && <div className="alert warn">{err}</div>}
-          {advice && (
-            <div className="form">
-              {advice.resume && <div className="card ai-resume">{advice.resume}</div>}
-              {advice.suggestions.length === 0 && <p className="muted">Pas de suggestion particulière.</p>}
-              {advice.suggestions.map((s, i) => {
-                const t = target(session, s)
-                return (
-                  <div key={i} className={`card ai-sug ${done.has(i) ? 'done' : ''}`}>
-                    {(s.bloc || s.exercice) && <div className="tiny muted">{[s.bloc, s.exercice].filter(Boolean).join(' › ')}</div>}
-                    <div><b>{s.proposition}</b></div>
-                    {s.pourquoi && <div className="small muted">{s.pourquoi}</div>}
-                    {t && s.valeur && (
-                      <div className="row between wrap">
-                        <span className="small">{LABELS[s.champ]} : {t.it[s.champ as keyof SessionItem] || '—'} → <b>{s.valeur}</b></span>
-                        <button className="btn small primary" disabled={done.has(i)} onClick={() => { onApply(t.bid, t.it.id, { [s.champ]: s.valeur }); setDone(new Set(done).add(i)) }}>
-                          {done.has(i) ? '✓ Appliqué' : 'Appliquer'}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-              <p className="tiny muted">Les changements appliqués sont dans la séance : pense à <b>Enregistrer</b>.</p>
-              <button className="btn" onClick={run} disabled={busy}>↻ Nouvelles suggestions</button>
-            </div>
-          )}
-        </Modal>
-      )}
-    </>
-  )
+/** Deux entrées, un même moteur : propositions sourcées et discussion, puis choix du coach. */
+export function AiAdvicePanel({session,onApplyBlocks}:{session:Session;onApplyBlocks:(blocks:Block[])=>void}){
+ const {athletes,assignments}=useData()
+ const [input,setInput]=useState(''),[messages,setMessages]=useState<ChatMessage[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState('')
+ const [result,setResult]=useState<{advice:AiAdvice;snapshot:string}|null>(null),[selected,setSelected]=useState<number[]>([]),[applied,setApplied]=useState(false)
+ const current=useRef(session);useEffect(()=>{current.current=session},[session])
+ const signature=JSON.stringify(sessionForAI(session)),stale=!!result&&result.snapshot!==signature
+ const request=async(mode:'direct'|'discussion')=>{
+  if(busy||(mode==='discussion'&&!input.trim()))return
+  setBusy(true);setError('');setApplied(false)
+  const snapshot=JSON.stringify(sessionForAI(session)),safeSession=redactSession(sessionForAI(session),athletes)
+  const question=redactNames(input.trim(),athletes).text
+  const history=mode==='direct'?[]:[...messages,{role:'user' as const,content:question}]
+  try{
+   if(history.length>12)throw new Error('Cette discussion atteint douze messages. Ouvre une nouvelle discussion pour continuer ; aucun message n’a été supprimé silencieusement.')
+   const answer=mode==='direct'?await api.improveSession(safeSession):JSON.parse(await api.chat(history,safeSession))
+   const advice=validateSessionAdvice(answer,safeSession)
+   if(snapshot!==JSON.stringify(sessionForAI(current.current))){setError('La séance a changé pendant la réponse. Relance l’analyse sur le contenu actuel.');return}
+   setResult({advice,snapshot});setSelected(advice.suggestions.flatMap((s,i)=>s.champ?[i]:[]))
+   setMessages(mode==='direct'?[{role:'assistant',content:JSON.stringify(advice)}]:[...history,{role:'assistant',content:JSON.stringify(advice)}]);if(mode==='discussion')setInput('')
+  }catch(e){setError(errorMessage(e))}finally{setBusy(false)}
+ }
+ const apply=()=>{
+  if(!result||stale||busy)return
+  const blocks=structuredClone(session.blocks)
+  for(const idx of selected){const s=result.advice.suggestions[idx];if(!s?.champ)continue;const item=blocks.find(b=>b.id===s.block_id)?.items.find(i=>i.id===s.item_id);if(!item){setError('Exercice introuvable : relance l’analyse.');return}item[s.champ as AIField]=s.valeur}
+  onApplyBlocks(blocks);setApplied(true);setResult(null);setSelected([])
+ }
+ const uses=assignments.filter(a=>a.session_id===session.id).length
+ return <section className="card form session-ai" aria-label="Assistant de séance">
+  <div className="row between wrap gap"><div><h2>Améliorer et ajuster avec l’IA</h2><p className="small muted">Des propositions directes ou une discussion à partir de cette séance. Tu décides des changements.</p></div><button type="button" className="btn primary" disabled={busy} onClick={()=>request('direct')}>{busy?'Analyse en cours…':'Analyser et proposer'}</button></div>
+  <details><summary className="small">Références et données utilisées</summary><p className="small">Fiches vérifiées : Egger, périodisation, sprint, affûtage et développement des jeunes. Ces synthèses ne remplacent pas les ouvrages complets. Un dosage proposé reste une hypothèse pratique à valider.</p><ul className="plain">{TRAINING_KNOWLEDGE.map(k=><li key={k.id} className="small"><b>{k.title}</b> — {k.locator}</li>)}</ul><p className="tiny muted">IA hébergée par Cloudflare : le contenu de la séance et les messages sont transmis au service. Les noms connus du groupe sont masqués ; cela ne garantit pas l’anonymat. Aucun profil, historique de santé ou illustration n’est ajouté automatiquement. La discussion reste en mémoire dans cet écran ; aucune promesse de non-conservation par le fournisseur.</p></details>
+  {messages.length>0&&<div className="chat-list" aria-label="Discussion de la séance">{messages.map((m,i)=><div className={`bubble ${m.role}`} key={i}><RichText text={m.role==='assistant'?JSON.parse(m.content).resume:m.content}/></div>)}</div>}
+  {result&&<div className="form"><h3>Ajustements proposés</h3>{stale&&<p role="status" className="alert warn">Le contenu a changé. Relance l’analyse avant d’appliquer ces propositions.</p>}{!result.advice.suggestions.length&&<p className="small">Aucun changement de champ proposé pour le moment. Tu peux préciser ta demande ci-dessous.</p>}{result.advice.suggestions.map((s,i)=>{
+   const before=session.blocks.find(b=>b.id===s.block_id)?.items.find(it=>it.id===s.item_id)
+   return <article className="card form" key={i}><div className="row gap">{s.champ&&<input aria-label={`Retenir la proposition ${i+1}`} type="checkbox" checked={selected.includes(i)} disabled={stale||busy} onChange={()=>setSelected(x=>x.includes(i)?x.filter(v=>v!==i):[...x,i])}/>}<b>{s.proposition}</b></div>{s.champ&&<><p className="small">{s.bloc} · {s.exercice} · {FIELD_LABELS[s.champ as AIField]}</p><div className="grid2"><div className="small"><b>Actuel</b><p>{before?.[s.champ as AIField]||'Non renseigné'}</p></div><div className="small"><b>Proposé</b><p>{s.valeur||'Champ vide'}</p></div></div></>}<RichText text={s.pourquoi}/><div className="small">{s.source_ids?.map(id=>{const k=TRAINING_KNOWLEDGE.find(k=>k.id===id)!,ref=SOURCES.find(r=>r.id===k.sourceId);return <details key={id}><summary>{k.title}</summary><p>{k.principle}</p><p>Limite : {k.limit}</p>{ref&&<a href={ref.url} target="_blank" rel="noreferrer">{ref.title} — {k.locator}</a>}</details>})}</div></article>
+  })}{selected.length>0&&<><button type="button" className="btn primary" disabled={stale||busy} onClick={apply}>Appliquer les {selected.length} modifications retenues au brouillon</button><p className="tiny muted">La séance n’est pas encore enregistrée.{uses>0?` Ce modèle est utilisé à ${uses} date(s) : son enregistrement modifiera le contenu commun à ces dates. Pour une seule occurrence, utilise « Adapter cette séance » depuis Saison.`:''}</p></>}</div>}
+  {applied&&<p role="status" className="alert info">Modifications ajoutées au brouillon. Vérifie-les puis utilise Enregistrer en haut de la séance.</p>}
+  {error&&<p role="alert" className="alert warn">{error}</p>}
+  <form className="form" onSubmit={e=>{e.preventDefault();request('discussion')}}><label className="field"><span className="field-label">Discuter et ajuster cette séance</span><textarea rows={3} value={input} onChange={e=>setInput(e.target.value)} maxLength={4000} placeholder="Ex. Je souhaite rester sur piste. Que proposes-tu pour conserver l’objectif de cette séance ?"/></label><div className="row gap wrap"><button className="btn primary" disabled={busy||!input.trim()}>Envoyer à l’IA</button><button type="button" className="btn ghost" disabled={busy} onClick={()=>{setMessages([]);setResult(null);setSelected([]);setError('');setApplied(false)}}>Nouvelle discussion</button></div></form>
+ </section>
 }

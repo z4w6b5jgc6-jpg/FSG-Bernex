@@ -14,7 +14,7 @@ export function AssignmentForm({
   onSaved?: (a: Assignment) => void
 }) {
   const { sessions, groups, athletes, save } = useData()
-  const [a, setA] = useState<Partial<Assignment>>({ time: '', location: '', note: '', athlete_ids: [], group_id: null, ...initial })
+  const [a, setA] = useState<Partial<Assignment>>({ time: '18:00', location: '', note: '', athlete_ids: [], group_id: null, ...initial })
   // contenu montré tout de suite aux athlètes, sans attendre la règle du groupe (Réglages)
   const [showNow, setShowNow] = useState(!!initial?.visible_from)
   const [busy, setBusy] = useState(false)

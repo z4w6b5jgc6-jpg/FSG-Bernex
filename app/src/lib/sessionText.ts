@@ -1,5 +1,5 @@
 import { unzipSync, strFromU8 } from 'fflate'
-import type { Block } from '../types'
+import type { Block, SessionIllustration } from '../types'
 import type { SessionIn } from './importSessions'
 import { emptyItem, uid } from './utils'
 
@@ -46,7 +46,7 @@ const HEADERS: [RegExp, string][] = [
 const WARMUP = /^(e|é)chauffement/i
 const COOL = /^(\d+ tours? (et|de) )?(stre?t?ching|etirements?)\b/
 
-function parseDate(line: string, today: Date): { iso: string; rest: string } | null {
+function parseDate(line: string, _today: Date): { iso: string; rest: string } | null {
   const p = plain(line)
   let m = p.match(/^(?:(?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\s+)?(\d{1,2})(?:er)?\s+([a-z]+)\.?(?:\s+(\d{4}))?/)
   let day = 0, month = 0, year = 0, len = 0
@@ -56,14 +56,12 @@ function parseDate(line: string, today: Date): { iso: string; rest: string } | n
     if (!m) return null
     day = +m[1]; month = +m[2]; year = m[3].length === 2 ? 2000 + +m[3] : +m[3]; len = m[0].length
   }
-  if (!year) {
-    // Sans année : saison d'août à juillet
-    const start = today.getMonth() + 1 >= 8 ? today.getFullYear() : today.getFullYear() - 1
-    year = month >= 8 ? start : start + 1
-  }
   if (month < 1 || month > 12 || day < 1 || day > 31) return null
   const rest = line.slice(len).replace(/^\s*(\(\d+\))?\s*[:–-]?\s*/, '').trim()
-  return { iso: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`, rest }
+  if (!year) return { iso: '', rest }
+  const iso=`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`
+  if(new Date(iso).toISOString().slice(0,10)!==iso)return null
+  return {iso,rest}
 }
 
 export function item(text: string) {
@@ -75,17 +73,18 @@ export function item(text: string) {
   return it
 }
 
-export interface TextParse { sessions: SessionIn[]; skipped: string[] }
+export interface TextParse { sessions: SessionIn[]; skipped: string[]; commonBlocks: Block[] }
 
 /**
  * Découpe un plan d'entraînement écrit librement (document Word, texte collé) :
  * une date (« Mercredi 28 octobre 2026 ») ouvre une séance ; « Cycle 2 … » / « Phase … » donnent l'objectif ;
  * « Titre : » ou un titre connu (Éducatifs, Gainage…) ouvre un bloc ; les autres lignes sont des exercices.
  */
-export function parseSessionText(lines: string[], baseTitle: string, today = new Date()): TextParse {
+export function parseSessionText(lines: string[], baseTitle: string, today = new Date(), illustrations:Record<string,SessionIllustration>={}): TextParse {
   const sessions: (SessionIn & { subtitle: string })[] = []
   const skipped: string[] = []
-  let cycle = '', phase = ''
+  let cycle = '', phase = '', preparation = ''
+  const commonBlocks:Block[]=[]
   let cur: (SessionIn & { subtitle: string }) | null = null
   // blocs complets sur une seule ligne (« Échauffement 4 tours et stretching 20 min ») : rien ne s'y ajoute
   const closed = new Set<string>()
@@ -119,14 +118,21 @@ export function parseSessionText(lines: string[], baseTitle: string, today = new
     const line = raw.replace(/ /g, ' ')
     const l = clean(line.replace(/^[•·▪◦-]\s*/, ''))
     if (!l) continue
+    const image=l.match(/^\[\[ILLUSTRATION:([^\]]+)\]\]$/)
+    if(image){const illustration=illustrations[image[1]];if(illustration){if(cur){const b=last()??block('Illustrations');b.images=[...(b.images??[]),illustration]}else{let b=commonBlocks[0];if(!b){b={id:uid(),title:'Circuit illustré commun — à vérifier',items:[]};commonBlocks.push(b)}b.images=[...(b.images??[]),illustration]}}continue}
+    if(!cur&&commonBlocks.length&&/^G[1-8]\s*[—·-]/.test(l)){commonBlocks[0].items.push(emptyItem(l));continue}
+    if(!cur&&/^TRANSCRIPTION DU CIRCUIT/.test(l))continue
+    if(cur&&/^TRANSCRIPTION P[12]\b/.test(l)){const b=last();const illustration=b?.images?.at(-1);if(illustration)illustration.caption=l;else add(l);continue}
     const p = plain(l)
     const c = p.match(/^cycle\s*(\d+)\s*[:–-]?\s*(.*)/)
-    if (c) { cycle = `Cycle ${c[1]}`; phase = l.slice(l.length - c[2].length).trim(); continue }
-    if (/^phase\b/.test(p)) { phase = l; continue }
+    if (c) { preparation = ''; cycle = `Cycle ${c[1]}`; phase = l.slice(l.length - c[2].length).trim(); continue }
+    if (/^phase\b/.test(p)) { phase = l; preparation = ''; continue }
+    if (/^pr[ée]paration physique g[ée]n[ée]rale$/i.test(l)) { preparation = l; continue }
     if (/^saison\b/.test(p) && !cur) continue
     const d = parseDate(l, today)
     if (d) {
-      cur = { key: uid(), date: d.iso, title: '', objective: [cycle, phase].filter(Boolean).join(' – '), blocks: [], subtitle: /[a-z]{3}/i.test(d.rest) ? d.rest : '' }
+      cur = { key: uid(), date: d.iso, title: '', objective: [cycle, phase, preparation].filter(Boolean).join(' – '), blocks: [], subtitle: /[a-z]{3}/i.test(d.rest) ? d.rest : '' }
+      const declared=plain(l).match(/^(dimanche|lundi|mardi|mercredi|jeudi|vendredi|samedi)\b/);if(declared)cur.expectedWeekday=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'].indexOf(declared[1])
       sessions.push(cur)
       continue
     }
@@ -158,10 +164,25 @@ export function parseSessionText(lines: string[], baseTitle: string, today = new
     add(line.replace(/^[•·▪◦]\s*/, '• '))
   }
 
-  const sorted = sessions.filter((s) => s.blocks.some((b) => b.items.length)).sort((a, b) => a.date.localeCompare(b.date))
+  const sorted = sessions.filter((s) => s.blocks.some((b) => b.items.length||b.images?.length)).sort((a, b) => a.date.localeCompare(b.date))
   sorted.forEach((s, i) => {
-    s.blocks = s.blocks.filter((b) => b.items.length || b.title.includes('–'))
+    s.blocks = s.blocks.filter((b) => b.items.length || b.images?.length || b.title.includes('–'))
     s.title = `${baseTitle.trim() || 'Séance'} S${String(i + 1).padStart(2, '0')}${s.subtitle ? ` – ${s.subtitle}` : ''}`
   })
-  return { sessions: sorted.map(({ subtitle: _s, ...rest }) => (void _s, rest)), skipped }
+  return { sessions: sorted.map(({ subtitle: _s, ...rest }) => (void _s, rest)), skipped, commonBlocks }
+}
+
+/** Préserve les cellules des tableaux Word pour les imports en grille. */
+export function docxTables(data:ArrayBuffer):import('./importResults').SheetIn[]{
+ const files=unzipSync(new Uint8Array(data),{filter:f=>f.name==='word/document.xml'})
+ if(!files['word/document.xml'])throw new Error('Document Word illisible.')
+ const doc=new DOMParser().parseFromString(strFromU8(files['word/document.xml']),'application/xml')
+ if(doc.querySelector('parsererror'))throw new Error('XML du document invalide.')
+ const W='http://schemas.openxmlformats.org/wordprocessingml/2006/main'
+ return Array.from(doc.getElementsByTagNameNS(W,'tbl')).map((table,index)=>({name:`Tableau Word ${index+1}`,rows:Array.from(table.children).filter(e=>e.localName==='tr').map(row=>Array.from(row.children).filter(e=>e.localName==='tc').map(cell=>{
+  const text=Array.from(cell.getElementsByTagNameNS(W,'p')).map(p=>Array.from(p.getElementsByTagNameNS(W,'t')).map(t=>t.textContent??'').join('')).join('\n').trim()
+  const dated=plain(text).match(/^(?:(?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\s+)?(\d{1,2})\s+([a-z]+)\s+(\d{4})$/)
+  if(dated&&MONTHS.includes(dated[2])){const iso=`${dated[3]}-${String(MONTHS.indexOf(dated[2])+1).padStart(2,'0')}-${dated[1].padStart(2,'0')}`;if(new Date(iso).toISOString().slice(0,10)===iso)return iso}
+  return text
+ }))}))
 }

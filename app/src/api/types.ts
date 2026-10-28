@@ -5,6 +5,7 @@ export type Draft<K extends TableName> = Partial<Tables[K]> & { id?: string }
 
 export interface Api {
   mode: 'demo' | 'supabase'
+  research(options:import('../lib/research').ResearchRequest):Promise<import('../lib/research').ResearchResult>
 
   // Comptes
   getMe(): Promise<Me | null>
@@ -46,6 +47,9 @@ export interface Api {
   saveMany<K extends TableName>(table: K, rows: Draft<K>[]): Promise<Row<K>[]>
   remove(table: TableName, id: string): Promise<void>
   removeMany(table: TableName, ids: string[]): Promise<void>
+
+  retentionPreview():Promise<Record<string,number>>
+  purgeRetention(expected:Record<string,number>):Promise<Record<string,number>>
 
   // Notifications sur le téléphone (Web Push, sans contenu : seulement « nouveau message »)
   /** clé publique du serveur, null si les notifications ne sont pas configurées */

@@ -66,7 +66,7 @@ export function ImportRoster({ onClose }: { onClose: () => void }) {
         <code className="block">Prénom · Nom · Année de naissance · Groupe · Email · Téléphone</code>
         <p className="tiny muted">Seuls le prénom et le nom sont obligatoires. Les groupes inconnus seront créés. L’email permet de relier l’inscription de l’athlète à coup sûr.</p>
         <textarea rows={7} value={text} onChange={(e) => setText(e.target.value)}
-          placeholder={'Léa\tMartin\t2010\tU18\tlea@mail.ch\nNoah\tRossier\t2009\tU18'} />
+          placeholder={'Prénom\tNom\tAnnée\tGroupe\tE-mail'} />
         {rows.length > 0 && (
           <div className="import-preview">
             <table className="table small">

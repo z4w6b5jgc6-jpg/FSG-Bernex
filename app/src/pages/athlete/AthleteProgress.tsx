@@ -1,3 +1,4 @@
+import {LoadChart,ExerciseResults,PerformanceHighlights} from '../../components/AthleteMonitoring'
 import { Icon } from '../../components/Icon'
 import { useData, useMyAthlete } from '../../lib/data'
 import { EffortBars, SleepBars } from '../../components/Charts'
@@ -23,6 +24,9 @@ export function AthleteProgress() {
   return (
     <div>
       <h1>Mes progrès</h1>
+      <PerformanceHighlights athleteId={me.id}/>
+      <LoadChart athleteId={me.id} />
+      <ExerciseResults athleteId={me.id} />
       <ProfileTiles athlete={me} coach={false} />
 
       {test_reports.length > 0 && (

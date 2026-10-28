@@ -1,9 +1,10 @@
+import {healthConsent} from '../lib/confidentiality'
 // Mode démo : toutes les données restent dans le navigateur (localStorage).
 // Simule les comptes (entraîneur / athlètes) et les règles d'accès de la base.
 import { isReleased, releaseRule } from '../lib/release'
 import { DEFAULT_EXERCISES, DEFAULT_TESTS } from '../data/defaults'
 import type { Me, TableName, Tables } from '../types'
-import { addDays, athletesFor, emptyItem, todayISO, uid } from '../lib/utils'
+import { athletesFor, todayISO, uid } from '../lib/utils'
 import type { Api, Draft, Row } from './types'
 
 const KEY = 'athle-demo-db-v5'
@@ -19,125 +20,31 @@ type Db = { [K in TableName]: Tables[K][] } & {
 }
 
 function seed(): Db {
-  const today = todayISO()
-  const u18 = { id: uid(), name: 'U18', color: '#2563eb' }
-  const actifs = { id: uid(), name: 'U20 / Actifs', color: '#db2777' }
-  const users: DemoUser[] = []
-  const mk = (first: string, last: string, group: string, year: number, events: string, avatar: string, color: string, goals: string) => {
-    const email = `${first.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')}@demo.ch`
-    const user = { email, id: uid(), coach: false }
-    users.push(user)
-    return {
-      id: uid(), user_id: user.id, group_id: group, first_name: first, last_name: last, birth_year: year,
-      events, phone: '', avatar, color, goals, favorite_tips: [] as string[], active: true,
-      email, linked_at: new Date().toISOString() as string | null, signup_reviewed: true,
-    }
-  }
-  // Athlètes de la liste de l'entraîneur, pas encore inscrits dans l'app
-  const roster = (first: string, last: string, group: string, year: number, events: string, email = '') => ({
-    id: uid(), user_id: null as string | null, group_id: group, first_name: first, last_name: last, birth_year: year,
-    events, phone: '', avatar: '', color: '#e85d04', goals: '', favorite_tips: [] as string[], active: true,
-    email, linked_at: null as string | null, signup_reviewed: true, created_at: addDays(today, -30) + 'T12:00:00.000Z',
-  })
-  const athletes = [
-    mk('Léa', 'Martin', u18.id, 2010, '100 m, longueur', '', '#7c3aed', 'Passer sous les 13" au 100 m cette saison'),
-    mk('Noah', 'Rossier', u18.id, 2009, '800 m, 1500 m', '', '#ea580c', 'Qualif championnats romands'),
-    mk('Inès', 'Favre', actifs.id, 2007, '100 m haies, hauteur', '', '#db2777', ''),
-    mk('Luca', 'Bianchi', actifs.id, 2006, 'poids, disque', '', '#16a34a', ''),
-    roster('Emma', 'Rochat', u18.id, 2009, '400 m'),
-    roster('Samuel', 'Keller', actifs.id, 2007, 'longueur, triple saut', 'samuel@demo.ch'),
-  ]
-  const tests = DEFAULT_TESTS.map((t) => ({ id: uid(), ...t }))
-  const res = (ath: number, test: number, daysAgo: number, value: number) =>
-    ({ id: uid(), athlete_id: athletes[ath].id, test_id: tests[test].id, date: addDays(today, -daysAgo), value, trials: [] as number[], notes: '' })
-  const item = (name: string, f: Partial<ReturnType<typeof emptyItem>>) => ({ ...emptyItem(name), ...f })
-  const vitesse = {
-    id: uid(), title: 'Vitesse – départs et accélérations', objective: 'Améliorer la mise en action et la réaction au signal.',
-    focus: 'Vitesse', duration_min: 90, updated_at: new Date().toISOString(),
-    blocks: [
-      { id: uid(), title: 'Échauffement', items: [
-        item('Footing léger', { duration: '10 min' }),
-        item('Montées de genoux', { sets: '2', distance: '20 m' }),
-        item('Skipping', { sets: '2', distance: '20 m' }),
-      ] },
-      { id: uid(), title: 'Corps de séance', items: [
-        item('Départs en position', { sets: '2', reps: '4', distance: '20 m', recovery: "1'30", intensity: '100%', notes: 'Départ 3 appuis, au clap.' }),
-        item('Sprint lancé', { reps: '4', distance: '30 m', recovery: "3'", intensity: '95%' }),
-      ] },
-      { id: uid(), title: 'Retour au calme', items: [item('Étirements', { duration: '10 min' })] },
-    ],
-  }
-  const endurance = {
-    id: uid(), title: 'Endurance – fractionné court', objective: 'Développer la VMA.',
-    focus: 'Endurance', duration_min: 75, updated_at: new Date().toISOString(),
-    blocks: [
-      { id: uid(), title: 'Échauffement', items: [item('Footing léger', { duration: '15 min' })] },
-      { id: uid(), title: 'Corps de séance', items: [
-        item('Fractionné court', { sets: '2', reps: '8', duration: '30"/30"', recovery: "3' entre séries", intensity: '100% VMA' }),
-      ] },
-      { id: uid(), title: 'Retour au calme', items: [item('Retour au calme', { duration: '10 min' })] },
-    ],
-  }
-  const asg = (session: string, date: string, group: string, ids: string[] = [], note = '') =>
-    ({ id: uid(), session_id: session, date, time: '18:00', location: 'Evaux', group_id: group, athlete_ids: ids, note })
-  const assignments = [
-    asg(vitesse.id, addDays(today, -9), u18.id), asg(endurance.id, addDays(today, -7), u18.id),
-    asg(vitesse.id, addDays(today, -4), u18.id), asg(endurance.id, addDays(today, -2), u18.id),
-    asg(endurance.id, today, actifs.id, [], 'Prendre des baskets de route.'),
-    asg(vitesse.id, addDays(today, 3), u18.id, [athletes[2].id]),
-  ]
-  const now = new Date().toISOString()
-  const fb = (a: number, ath: number, rpe: number, fatigue: number, mood: number, comment = '', pain = '') => ({
-    id: uid(), assignment_id: assignments[a].id, athlete_id: athletes[ath].id, completed: true, rpe, fatigue, mood,
-    pain, comment, coach_reply: '', updated_at: addDays(today, -1) + 'T18:00:00.000Z',
-  })
-  const wellness = [6, 5, 4, 3, 2, 1].map((d, i) => ({
-    id: uid(), athlete_id: athletes[0].id, date: addDays(today, -d), sleep_hours: [8, 7.5, 6, 8.5, 7, 9][i],
-    sleep_quality: [4, 4, 2, 5, 3, 5][i], energy: [4, 3, 2, 5, 4, 5][i], soreness: [2, 3, 4, 2, 2, 1][i], stress: [2, 2, 4, 1, 2, 1][i], note: '',
-  }))
+  // Export sans fiches d’athlètes ni données individuelles préchargées.
   return {
-    club: { coach_id: COACH_ID, name: 'FSG Bernex (démo)', invite_code: 'DEMO2026' },
-    users,
-    groups: [u18, actifs],
-    athletes,
+    club: { coach_id: COACH_ID, name: 'Bernex — développement', invite_code: '' },
+    users: [],
+    import_history: [],
+    exercise_logs: [],
+    evidence_library: [],
+    attendance: [],
+    session_adjustments: [],
+    availability: [],
+    privacy_acceptances: [],
+    groups: [],
+    athletes: [],
     athlete_notes: [],
     exercises: DEFAULT_EXERCISES.map((e) => ({ id: uid(), ...e })),
-    sessions: [vitesse, endurance],
-    assignments,
-    feedback: [
-      fb(0, 0, 6, 2, 4), fb(1, 0, 8, 3, 4, 'Dur mais j’ai tenu toutes les séries'), fb(2, 0, 7, 2, 5, 'Super séance, les départs au clap c’était cool !'),
-      fb(2, 1, 8, 4, 3, 'Dur à la fin.', 'Un peu mal au mollet droit'),
-    ].map((f) => ({ ...f, updated_at: f.updated_at || now })),
-    tips: [{
-      id: uid(), category: 'Club', emoji: '', title: 'Règles du groupe', published: true,
-      summary: 'Ce que j’attends de chacun à l’entraînement.',
-      body: '- Arriver 10 minutes avant le début\n- Prévenir sur WhatsApp en cas d’absence\n- Donner son ressenti dans l’app après chaque séance\n\nMerci à tous',
-    }],
-    records: [
-      { id: uid(), athlete_id: athletes[0].id, event: '100 m', mark: '13"21', date: addDays(today, -40), competition: 'Meeting de Genève' },
-      { id: uid(), athlete_id: athletes[0].id, event: 'Longueur', mark: '5,12 m', date: addDays(today, -20), competition: 'Championnat cantonal' },
-    ],
-    wellness,
-    tests,
-    // Index des tests : 0 20 m lancé · 1 30 m lancé · 2 40 m arrêté · 3 monobond · 4 triple · 5 penta · 6 déca · 7 VMA
-    test_results: [
-      res(0, 0, 60, 2.78), res(0, 0, 10, 2.71), res(0, 1, 60, 3.95), res(0, 1, 10, 3.88), res(0, 2, 10, 5.92),
-      res(0, 3, 60, 2.18), res(0, 3, 10, 2.26), res(0, 4, 10, 6.65), res(0, 5, 10, 11.9), res(0, 7, 10, 13.5),
-      res(1, 0, 10, 2.95), res(1, 2, 10, 6.21), res(1, 7, 60, 15.5), res(1, 7, 10, 16.5),
-      res(2, 0, 10, 2.69), res(2, 1, 10, 3.82), res(2, 3, 10, 2.31), res(2, 5, 10, 12.6), res(2, 6, 10, 25.4),
-      res(3, 2, 10, 6.05), res(3, 3, 10, 2.42), res(3, 4, 10, 7.1), res(4, 0, 10, 2.88), res(4, 7, 10, 15),
-      res(0, 6, 10, 23.4), res(2, 4, 10, 6.85),
-    ],
-    test_reports: [{
-      id: uid(), athlete_id: athletes[0].id, date: addDays(today, -10), title: 'Bilan des tests',
-      strengths: 'Vitesse lancée et impulsion isolée.', priority: 'Maintien des impulsions sur les bonds longs.',
-      training: 'Bonds courts enchaînés, gainage dynamique, sprints lancés en petit volume.',
-      message: 'Belle progression sur le 20 m lancé ! Ton prochain cap : garder la même qualité d’appui quand les bonds s’enchaînent.',
-    }],
-    competitions: [
-      { id: uid(), name: 'Meeting en salle de Genève', date: addDays(today, 24), end_date: null, location: 'Genève', level: 'C', program_url: 'https://example.org/programme', registration_url: '', results_url: '', registration_deadline: addDays(today, 10), notes: 'Premier test de la saison en salle.', athlete_ids: [], entries: {} },
-      { id: uid(), name: 'Championnats régionaux en salle U16/U18', date: addDays(today, 80), end_date: addDays(today, 81), location: 'Macolin', level: 'A', program_url: '', registration_url: '', results_url: '', registration_deadline: addDays(today, 60), notes: '', athlete_ids: [athletes[0].id, athletes[2].id], entries: { [athletes[0].id]: '60 m, longueur', [athletes[2].id]: '60 m haies' } },
-    ],
+    sessions: [],
+    assignments: [],
+    feedback: [],
+    tips: [],
+    records: [],
+    wellness: [],
+    tests: DEFAULT_TESTS.map((t) => ({ id: uid(), ...t })),
+    test_results: [],
+    test_reports: [],
+    competitions: [],
     messages: [],
     session_notes: [],
   }
@@ -154,6 +61,9 @@ function load(): Db {
       db.competitions ??= [] // données démo enregistrées avant l'ajout des compétitions
       db.messages ??= []
       db.session_notes ??= []
+      db.import_history ??=[];
+      db.exercise_logs ??=[]; db.evidence_library ??=[];
+      db.attendance ??= []; db.session_adjustments ??= []; db.availability ??= []; db.privacy_acceptances ??= []
       for (const c of db.competitions) c.entries ??= {}
       return db
     }
@@ -212,7 +122,7 @@ export function createDemoApi(): Api {
       athletes: (a) => a.id === me.id,
       athlete_notes: () => false,
       exercises: () => false,
-      sessions: (s) => mine.some((a) => a.session_id === s.id && isReleased(a, releaseRule(db.club.settings?.release ?? 'hour'))),
+      sessions: (s) => mine.some((a) => a.session_id === s.id && isReleased(a, releaseRule(db.club.settings?.release ?? 'start'))),
       assignments: (a) => mine.includes(a),
       feedback: (f) => f.athlete_id === me.id,
       tips: (t) => t.published,
@@ -224,12 +134,20 @@ export function createDemoApi(): Api {
       wellness: (x) => x.athlete_id === me.id,
       messages: (x) => x.athlete_id === me.id,
       session_notes: () => false,
+      evidence_library: () => false,
+      import_history: () => false,
+      exercise_logs: (x) => x.athlete_id === me.id,
+      attendance: (x) => x.athlete_id === me.id,
+      availability: (x) => x.athlete_id === me.id,
+      privacy_acceptances: (x) => x.athlete_id === me.id,
+      session_adjustments: (x) => x.athlete_id === me.id && mine.some((a) => a.id === x.assignment_id && isReleased(a, releaseRule(db.club.settings?.release ?? 'start'))),
     }
     return rows.filter(filters[table] as (x: Row<K>) => boolean)
   }
 
   return {
     mode: 'demo',
+    async research() { throw new Error('La recherche en direct nécessite le service documentaire du déploiement Cloudflare. Les références initiales restent consultables ci-dessous.') },
 
     async getMe() {
       db = load()
@@ -238,7 +156,7 @@ export function createDemoApi(): Api {
       if (!u || !r) return null
       const a = myAthlete()
       return {
-        email: u.email, role: r, athlete_id: a?.id, club_name: db.club.name, training_info: db.club.training_info ?? '', settings: db.club.settings ?? {},
+        email: u.email, role: r, athlete_id: a?.id, club_name: db.club.name, training_info: db.club.training_info ?? '', settings: r === 'coach' ? db.club.settings ?? {} : { release: db.club.settings?.release, privacy: db.club.settings?.privacy },
         invite_code: r === 'coach' ? db.club.invite_code : undefined, is_owner: r === 'coach' ? true : undefined,
       }
     },
@@ -285,7 +203,7 @@ export function createDemoApi(): Api {
     async clubByCode(code) {
       db = load()
       if (code.trim().toUpperCase() !== db.club.invite_code) return null
-      return { name: db.club.name, groups: db.groups.map(({ id, name, color }) => ({ id, name, color })) }
+      return { name: db.club.name, groups: db.groups.map(({ id, name, color }) => ({ id, name, color })), privacy:db.club.settings?.privacy }
     },
     async joinClub(code, p) {
       db = load()
@@ -344,25 +262,14 @@ export function createDemoApi(): Api {
       persist(db)
     },
     async chat(messages, s) {
-      const q = messages[messages.length - 1]?.content ?? ''
-      if (/propos|seance|séance|plan b/i.test(q)) {
-        return delay(`(Mode démo, réponse d’exemple) Voici une proposition en salle :\n\n## Échauffement :\n- Footing et mobilité 15 min\n\n## Éducatifs :\n- Skipping 4 x 20m\n- Talon-fesses 4 x 20m\n\n## Corps de séance :\n- Départs à genoux 6 x 15m\n- Bondissements sur tapis 3 x 8\n\n## Retour au calme :\n- Étirements 10 min`)
-      }
-      return delay(`(Mode démo, réponse d’exemple) Tu as demandé : « ${q.slice(0, 120)} »${s ? ` à propos de la séance « ${s.title} »` : ''}.\n\n## Piste\n- Vitesse en début de séance, sur athlètes frais\n- **Récupération** : environ 1 min par 10 m en vitesse maximale\n- Terminer par un retour au calme`)
+      if(!s)throw new Error('Choisis une séance.')
+      return delay(JSON.stringify({resume:'Démonstration uniquement, sans appel IA. Ta demande : '+(messages.at(-1)?.content??''),suggestions:[]}))
     },
     async readPlan() {
       throw new Error('La lecture intelligente n’est pas disponible en démo.')
     },
-    async improveSession(s) {
-      // Démo : réponse d'exemple (pas d'IA appelée)
-      const first = s.blocks.flatMap((b) => b.items.map((it) => ({ b, it }))).find(({ it }) => /m\b/.test(it.distance) && !it.recovery)
-      return delay({
-        resume: 'Exemple en mode démo : la séance est bien construite, la vitesse est placée en début de séance.',
-        suggestions: [
-          ...(first ? [{ bloc: first.b.title, exercice: first.it.name, champ: 'recovery' as const, valeur: "3'", proposition: 'Ajouter 3 min de récupération entre les répétitions.', pourquoi: 'Vitesse maximale : environ 1 min par 10 m pour garder la qualité.' }] : []),
-          { bloc: '', exercice: '', champ: '' as const, valeur: '', proposition: 'Terminer par 10 min de retour au calme (footing lent + étirements).', pourquoi: 'Favorise la récupération pour la séance suivante.' },
-        ],
-      })
+    async improveSession(_s) {
+      return delay({resume:'Démonstration du parcours : aucun modèle IA n’est appelé et aucun dosage n’est généré.',suggestions:[]})
     },
     async saveTrainingInfo(text) {
       db = load()
@@ -426,8 +333,14 @@ export function createDemoApi(): Api {
     async save<K extends TableName>(table: K, row: Draft<K>) {
       db = load()
       const rows = db[table] as Row<K>[]
+      if(role()!=='coach'&&!['athletes','feedback','records','wellness','test_results','messages','availability','exercise_logs','privacy_acceptances'].includes(table))throw new Error('Accès refusé')
+      if(table==='privacy_acceptances'&&(role()==='coach'||row.id))throw new Error('Le choix de l’athlète doit être ajouté comme un nouvel événement.')
+      const healthRow=row as {athlete_id?:string;pain?:string;fatigue?:number|null;mood?:number|null}
+      if((table==='wellness'||table==='feedback'&&!!(healthRow.pain||healthRow.fatigue!=null||healthRow.mood!=null))&&!healthConsent(healthRow.athlete_id??'',db.privacy_acceptances,db.club.settings?.privacy))throw new Error('Suivi de santé facultatif non activé.')
+      if (role() !== 'coach' && ['attendance', 'session_adjustments'].includes(table)) throw new Error('Réservé aux coachs')
+      if (role() !== 'coach' && ['privacy_acceptances', 'availability'].includes(table) && (row as { athlete_id?: string }).athlete_id !== myAthlete()?.id) throw new Error('Accès refusé')
       const extra: Record<string, unknown> = {}
-      if (table === 'sessions' || table === 'feedback' || table === 'tips') extra.updated_at = new Date().toISOString()
+      if (['attendance', 'session_adjustments', 'sessions', 'feedback', 'tips'].includes(table)) extra.updated_at = new Date().toISOString()
       // messages : l'expéditeur est fixé comme dans la base
       if (table === 'messages' && !row.id) { extra.from_coach = role() === 'coach'; extra.author = role() === 'coach' ? 'Coach' : '' }
       let saved: Row<K>
@@ -447,7 +360,7 @@ export function createDemoApi(): Api {
         rows[i] = saved
       } else {
         const created = { ...defaults(table), ...row, ...extra, id: row.id ?? uid() } as Record<string, unknown>
-        if (table === 'athlete_notes' || table === 'athletes') created.created_at = new Date().toISOString()
+        if (['privacy_acceptances', 'import_history', 'evidence_library', 'athlete_notes', 'athletes'].includes(table)) created.created_at = new Date().toISOString()
         saved = created as unknown as Row<K>
         rows.push(saved)
       }
@@ -463,6 +376,8 @@ export function createDemoApi(): Api {
       return this.removeMany(table, [id])
     },
     // Notifications : pas disponibles en démo
+    async retentionPreview(){return {wellness:0,feedback_health:0,messages:0,exercise_logs:0,athlete_notes:0}},
+    async purgeRetention(){throw new Error('La purge de démonstration ne supprime aucune donnée.')},
     async pushKey() { return null },
     async savePush() {},
     async removePush() {},
@@ -470,6 +385,7 @@ export function createDemoApi(): Api {
     async removeMany(table, list) {
       const ids = new Set(list)
       db = load()
+      if(role()!=='coach'&&(!['availability','exercise_logs','feedback','records','wellness','test_results'].includes(table)||list.some(id=>!visible(table).some(r=>r.id===id))))throw new Error('Accès refusé')
       ;(db[table] as { id: string }[]) = (db[table] as { id: string }[]).filter((r) => !ids.has(r.id))
       if (table === 'sessions') db.assignments = db.assignments.filter((a) => !ids.has(a.session_id))
       if (table === 'groups') {
@@ -478,6 +394,11 @@ export function createDemoApi(): Api {
       }
       const assignmentIds = new Set(db.assignments.map((a) => a.id))
       const athleteIds = new Set(db.athletes.map((a) => a.id))
+      db.attendance=db.attendance.filter(x=>assignmentIds.has(x.assignment_id)&&athleteIds.has(x.athlete_id))
+      db.session_adjustments=db.session_adjustments.filter(x=>assignmentIds.has(x.assignment_id)&&athleteIds.has(x.athlete_id))
+      db.exercise_logs=db.exercise_logs.filter(x=>assignmentIds.has(x.assignment_id)&&athleteIds.has(x.athlete_id))
+      db.availability=db.availability.filter(x=>athleteIds.has(x.athlete_id))
+      db.privacy_acceptances=db.privacy_acceptances.filter(x=>athleteIds.has(x.athlete_id))
       db.feedback = db.feedback.filter((f) => assignmentIds.has(f.assignment_id) && athleteIds.has(f.athlete_id))
       db.records = db.records.filter((x) => athleteIds.has(x.athlete_id))
       db.wellness = db.wellness.filter((x) => athleteIds.has(x.athlete_id))
@@ -496,6 +417,13 @@ export function createDemoApi(): Api {
 function defaults(table: TableName): Record<string, unknown> {
   switch (table) {
     case 'groups': return { color: '#2563eb' }
+    case 'exercise_logs': return { sets: [] }
+    case 'import_history': return { filename:'',source_text:'',imported_count:0,updated_count:0 }
+    case 'evidence_library': return { paper: {}, review_note: '', reviewed: false }
+    case 'attendance': return { status: 'present' }
+    case 'session_adjustments': return { content: {}, rationale: '', source_ids: [] }
+    case 'availability': return { status: 'away', note: '' }
+    case 'privacy_acceptances': return { health_consent: false, representative: '' }
     case 'athletes': return { user_id: null, group_id: null, last_name: '', birth_year: null, events: '', phone: '', avatar: '', color: '#e85d04', goals: '', favorite_tips: [], active: true, email: '', linked_at: null, signup_reviewed: true, subgroup: '' }
     case 'athlete_notes': return {}
     case 'exercises': return { category: 'Autre', description: '' }

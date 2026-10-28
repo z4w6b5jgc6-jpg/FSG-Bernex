@@ -41,6 +41,7 @@ export function Login() {
         <p className="muted">Tes entraînements, tes progrès, tes conseils.</p>
       </div>
       <form className="card login-card" onSubmit={submit}>
+        {!demo&&<p className="connected-login-note">Version connectée à ton club · utilise ton compte habituel.</p>}
         {mode !== 'reset' && (
           <div className="tabs">
             <button type="button" className={mode === 'in' ? 'active' : ''} onClick={() => setMode('in')}>Connexion</button>
@@ -50,7 +51,7 @@ export function Login() {
         {mode === 'reset' && <h2>Mot de passe oublié</h2>}
         {demo && mode === 'in' && (
           <div className="alert info small">
-            <b>Mode démo</b> — Entraîneur : n’importe quel email. Athlète : <code>lea@demo.ch</code>.
+            <b>Mode démo</b> — Entraîneur : n’importe quel email. Aucune fiche d’athlète n’est préchargée.
             Inscription d’un nouvel athlète : <a href="#/rejoindre/DEMO2026">lien du club démo</a>.
           </div>
         )}

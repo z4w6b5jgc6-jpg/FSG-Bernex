@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { cloneElement,isValidElement,useId,useEffect, type ReactNode } from 'react'
 
 export function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
   useEffect(() => {
@@ -20,13 +20,14 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
 }
 
 export function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
-  return (
-    <label className="field">
-      <span className="field-label">{label}</span>
-      {children}
-      {hint && <span className="hint">{hint}</span>}
-    </label>
-  )
+  const generated=useId()
+  const direct=isValidElement<{id?:string;'aria-describedby'?:string}>(children)&&typeof children.type==='string'&&['input','select','textarea'].includes(children.type)
+  const id=direct?(children.props.id??generated):undefined
+  return <div className="field">
+    {id?<label className="field-label" htmlFor={id}>{label}</label>:<span className="field-label">{label}</span>}
+    {direct?cloneElement(children,{id,'aria-describedby':[children.props['aria-describedby'],hint?`${generated}-hint`:null].filter(Boolean).join(' ')||undefined}):children}
+    {hint&&<span id={`${generated}-hint`} className="hint">{hint}</span>}
+  </div>
 }
 
 export function Empty({ children }: { children: ReactNode }) {

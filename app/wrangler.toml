@@ -1,8 +1,11 @@
-# Configuration Cloudflare Pages (site fsg-bernex-athle.pages.dev)
-name = "fsg-bernex-athle"
+# Configuration du site de test existant bernexdemo.pages.dev
+name = "bernexdemo"
 pages_build_output_dir = "./dist"
 compatibility_date = "2025-06-01"
 
-# IA de Cloudflare (Workers AI) pour le bouton « Améliorer cette séance » : functions/api/ameliorer.ts
+# Sur demande explicite du coach : aide externe sur le contenu des séances et la discussion.
+# Les profils, dossiers de santé et illustrations ne sont pas ajoutés automatiquement.
+
+# Requis pour les propositions directes et la discussion Cloudflare Workers AI.
 [ai]
 binding = "AI"

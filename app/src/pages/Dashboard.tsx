@@ -1,141 +1,57 @@
-import { Link } from 'react-router-dom'
-import { Tiles } from '../components/Tiles'
-import { useData } from '../lib/data'
-import { FeedbackCard } from '../components/FeedbackCard'
-import { Empty, GroupBadge } from '../components/ui'
-import { InviteCard } from '../components/InviteCard'
-import { FirstSteps } from '../components/FirstSteps'
-import { feedbackToAnswer, unreadByCoach } from '../lib/messages'
-import { addDays, athletesFor, formatDate, formatShort, todayISO } from '../lib/utils'
+import {useEffect,useState} from 'react'
+import {Icon} from '../components/Icon'
+import {Link} from 'react-router-dom'
+import {useData} from '../lib/data'
+import {FirstSteps} from '../components/FirstSteps'
+import {feedbackToAnswer,unreadByCoach} from '../lib/messages'
+import {addDays,athletesFor,formatDate,formatShort,fullName,todayISO} from '../lib/utils'
+import {managerCockpit} from '../lib/managerCockpit'
+import {dayCycle} from '../lib/planningPhases'
+import {HOLIDAYS,PHASES,dayNumber} from '../lib/season'
+import {weekMonday} from '../lib/weeklyReview'
+import {CoachAthletePanel} from '../components/CoachAthletePanel'
+import {CoachWeekBoard} from '../components/CoachWeekBoard'
 
-export function Dashboard() {
-  const { assignments, sessions, groups, athletes, feedback, wellness, competitions, tests, messages, me, loading } = useData()
-  const today = todayISO()
-  const upcoming = assignments
-    .filter((a) => a.date >= today && a.date <= addDays(today, 7))
-    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
-  const recent = [...feedback].sort((a, b) => b.updated_at.localeCompare(a.updated_at)).slice(0, 8)
-  const fbAlerts = feedback
-    .filter((f) => f.updated_at >= addDays(today, -7) && (f.pain || (f.fatigue ?? 0) >= 4 || (f.rpe ?? 0) >= 9))
-    .map((f) => ({
-      id: f.id, athlete_id: f.athlete_id,
-      text: [f.pain && `douleur : ${f.pain}`, (f.fatigue ?? 0) >= 4 && 'très fatigué·e après la séance', (f.rpe ?? 0) >= 9 && `effort ${f.rpe}/10`].filter(Boolean).join(', '),
-    }))
-  const wAlerts = wellness
-    .filter((w) => w.date >= addDays(today, -2) && ((w.sleep_hours ?? 9) < 6.5 || (w.energy ?? 5) <= 1 || (w.soreness ?? 0) >= 4 || (w.stress ?? 0) >= 4))
-    .map((w) => ({
-      id: w.id, athlete_id: w.athlete_id,
-      text: '' + [(w.sleep_hours ?? 9) < 6.5 && `${w.sleep_hours} h de sommeil`, (w.energy ?? 5) <= 1 && 'très peu d’énergie',
-        (w.soreness ?? 0) >= 4 && 'fortes courbatures', (w.stress ?? 0) >= 4 && 'stressé·e'].filter(Boolean).join(', '),
-    }))
-  const alerts = [...wAlerts, ...fbAlerts]
-  const checkins = new Set(wellness.filter((w) => w.date === today).map((w) => w.athlete_id)).size
-  const pastWeek = assignments.filter((a) => a.date < today && a.date >= addDays(today, -7))
-  const expected = pastWeek.reduce((n, a) => n + athletesFor(a, athletes).length, 0)
-  const received = pastWeek.reduce((n, a) => n + feedback.filter((f) => f.assignment_id === a.id).length, 0)
-  const unanswered = feedbackToAnswer(feedback, messages).length
-  const unread = unreadByCoach(messages).length
-
-  const pending = athletes.filter((a) => a.user_id && !a.signup_reviewed).length
-  const nextComp = competitions.filter((c) => (c.end_date || c.date) >= today).sort((a, b) => a.date.localeCompare(b.date))[0]
-  const inDays = (d: string) => Math.round((new Date(d).getTime() - new Date(today).getTime()) / 86400000)
-  const deadlines = competitions.filter((c) => c.registration_deadline && inDays(c.registration_deadline) >= 0 && inDays(c.registration_deadline) <= 7).length
-  const rate = expected ? Math.round((received / expected) * 100) : null
-
-  const sessionOf = (id: string) => sessions.find((s) => s.id === id)
-  const athleteOf = (id: string) => athletes.find((a) => a.id === id)
-
-  return (
-    <div>
-      <h1>Bonjour</h1>
-      <p className="muted">{me?.club_name} · {formatDate(today)}</p>
-
-      <FirstSteps />
-      {athletes.length === 0 && <InviteCard />}
-      {pending > 0 && (
-        <Link to="/athletes" className="alert warn link-card">
-          {pending} nouvelle(s) inscription(s) à vérifier →
-        </Link>
-      )}
-      <Tiles who="coach" items={[
-        { to: '/planning', icon: 'calendar', label: 'Planning', tone: 'green',
-          info: (upcoming.length ? `${upcoming.length} séance(s) dans les 7 j` : 'Rien de prévu cette semaine') + (rate !== null ? ` · retours ${rate} %` : '') },
-        { to: '/athletes', icon: 'users', label: 'Athlètes', tone: 'blue', badge: pending,
-          info: `${athletes.filter((a) => a.active).length} athlètes` + (checkins ? ` · ${checkins} check-in(s) aujourd’hui` : '') },
-        { to: '/messages', icon: 'message', label: 'Messages', tone: 'pink', badge: unread + unanswered,
-          info: unread ? `${unread} message(s) non lu(s)` : unanswered ? `${unanswered} retour(s) sans réponse` : 'Retours et discussions des athlètes' },
-        { to: '/seances', icon: 'list', label: 'Séances', tone: 'violet', info: `${sessions.length} séance(s) type` },
-        { to: '/lundi', icon: 'timer', label: 'Temps cibles', tone: 'orange', info: 'Plan avec temps par athlète, mode piste' },
-        { to: '/assistant', icon: 'sparkles', label: 'Assistant', tone: 'blue', info: 'Météo, intention, période : demande une séance' },
-        { to: '/competitions', icon: 'trophy', label: 'Compétitions', tone: 'yellow', badge: deadlines,
-          info: nextComp ? `${nextComp.name} · ${inDays(nextComp.date) > 0 ? `dans ${inDays(nextComp.date)} j` : 'aujourd’hui'}` : 'Aucune prévue' },
-        { to: '/tests', icon: 'ruler', label: 'Tests', tone: 'orange', info: `${tests.length} tests · résultats et VMA` },
-        { to: '/conseils', icon: 'bulb', label: 'Conseils', tone: 'pink', info: 'Nutrition, sommeil, récup' },
-        { to: '/reglages', icon: 'settings', label: 'Réglages', tone: 'violet', info: 'Lieux, saison, mon groupe' },
-      ]} />
-
-      {alerts.length > 0 && (
-        <section>
-          <h2>À surveiller</h2>
-          <div className="card">
-            <ul className="plain">
-              {alerts.map((al) => {
-                const a = athleteOf(al.athlete_id)
-                return (
-                  <li key={al.id}>
-                    <Link to={`/athletes/${al.athlete_id}`}><strong>{a ? `${a.first_name} ${a.last_name}` : '?'}</strong></Link> — {al.text}
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        </section>
-      )}
-
-      <section>
-        <div className="row between">
-          <h2>Prochaines séances</h2>
-          <Link className="btn small" to="/planning">Planning →</Link>
-        </div>
-        {upcoming.length === 0 ? (
-          <Empty>Aucune séance prévue cette semaine. <Link to="/planning">Planifier une séance</Link></Empty>
-        ) : (
-          <div className="list">
-            {upcoming.map((a) => {
-              const g = groups.find((x) => x.id === a.group_id)
-              return (
-                <Link key={a.id} to={`/planning/${a.id}`} className="card link-card">
-                  <div className="row between">
-                    <strong>{sessionOf(a.session_id)?.title ?? 'Séance supprimée'}</strong>
-                    <span className="muted small">{a.date === today ? "Aujourd'hui" : formatShort(a.date)} {a.time}</span>
-                  </div>
-                  <div className="row gap small">
-                    {g && <GroupBadge name={g.name} color={g.color} />}
-                    {a.athlete_ids.length > 0 && <span className="muted">+ {a.athlete_ids.length} athlète(s)</span>}
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        )}
-      </section>
-
-      <section>
-        <h2>Derniers retours {unanswered > 0 && <span className="pill warn">{unanswered} sans réponse</span>}</h2>
-        {loading && recent.length === 0 ? <p className="muted">Chargement…</p> : recent.length === 0 ? (
-          <Empty>Pas encore de retour. Les athlètes donnent leur ressenti depuis l’app après chaque séance.</Empty>
-        ) : (
-          <div className="list">
-            {recent.map((f) => {
-              const as = assignments.find((a) => a.id === f.assignment_id)
-              return (
-                <FeedbackCard key={f.id} fb={f} athlete={athleteOf(f.athlete_id)}
-                  subtitle={as && <Link to={`/planning/${as.id}`}>{sessionOf(as.session_id)?.title} · {formatShort(as.date)}</Link>} />
-              )
-            })}
-          </div>
-        )}
-      </section>
-    </div>
-  )
+type Focus='all'|'review'|'missing'|'today'
+export function Dashboard(){
+ const data=useData()
+ const {me,assignments,sessions,athletes,groups,feedback,messages,attendance,competitions}=data
+ const [period,setPeriod]=useState<7|30>(7),[search,setSearch]=useState(''),[groupId,setGroupId]=useState(''),[focus,setFocus]=useState<Focus>('all'),[athleteSearch,setAthleteSearch]=useState('')
+ const [tab,setTab]=useState<'overview'|'athletes'|'agenda'>('overview'),[panelAthlete,setPanelAthlete]=useState<string|null>(null),[agendaWeek,setAgendaWeek]=useState(()=>weekMonday(todayISO()))
+ const [now,setNow]=useState(()=>Date.now())
+ useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),60000);return()=>clearInterval(timer)},[])
+ const today=todayISO(),since=addDays(today,-6),week=weekMonday(today)
+ const members=managerCockpit(athletes,data,today,now,groupId)
+ const ids=new Set(members.map(m=>m.athlete.id))
+ const scoped=assignments.filter(a=>!groupId||athletesFor(a,athletes).some(p=>ids.has(p.id))||a.group_id===groupId)
+ const upcoming=scoped.filter(a=>a.date>=today).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time))
+ const visible=upcoming.filter(a=>a.date<=addDays(today,period-1)&&`${sessions.find(s=>s.id===a.session_id)?.title??''} ${groups.find(g=>g.id===a.group_id)?.name??''}`.toLocaleLowerCase('fr').includes(search.toLocaleLowerCase('fr'))).slice(0,30)
+ const next=upcoming[0],dayAssignments=scoped.filter(a=>a.date===today)
+ const signals=members.filter(m=>m.needsReview),missing=members.reduce((s,m)=>s+m.missing,0),checkins=members.filter(m=>m.form?.date===today).length
+ const unread=unreadByCoach(messages.filter(m=>ids.has(m.athlete_id))).length
+ const unanswered=feedbackToAnswer(feedback.filter(f=>ids.has(f.athlete_id)),messages).length
+ const shownMembers=members.filter(m=>(focus==='all'||focus==='review'&&m.needsReview||focus==='missing'&&m.missing>0||focus==='today'&&m.expectedToday)&&`${fullName(m.athlete)} ${m.athlete.events}`.toLocaleLowerCase('fr').includes(athleteSearch.toLocaleLowerCase('fr'))).sort((a,b)=>Number(b.needsReview)-Number(a.needsReview)||b.missing-a.missing||fullName(a.athlete).localeCompare(fullName(b.athlete),'fr'))
+ const nextCompetitions=competitions.filter(c=>(c.end_date||c.date)>=today&&(!groupId||!c.athlete_ids.length||c.athlete_ids.some(id=>ids.has(id)))).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3)
+ const plan=me?.settings?.season
+ const currentBlocks=plan?.blocks.filter(b=>b.start<=addDays(today,6)&&b.end>=today&&(!groupId||!b.athleteIds.length||b.athleteIds.some(id=>ids.has(id))))??[]
+ const unready=dayAssignments.filter(a=>!sessions.some(s=>s.id===a.session_id)||!athletesFor(a,athletes).length)
+ const groupQuery=groupId?'&group='+encodeURIComponent(groupId):''
+ const reviewDate=(m:typeof members[number])=>m.rows.find(r=>r.feedbackExpected&&!r.feedback)?.assignment.date??m.rows.filter(r=>r.started).at(-1)?.assignment.date??week
+ const missingDate=members.flatMap(m=>m.rows.filter(r=>r.feedbackExpected&&!r.feedback).map(r=>r.assignment.date)).sort()[0]??week
+ return <div className="workspace-home manager-cockpit">
+  <p className="workspace-crumb">Espace entraîneurs <span>/</span> Vue d’ensemble</p><div className="workspace-title"><div><p className="eyebrow">COCKPIT COACH · {me?.club_name}</p><h1>Le groupe, aujourd’hui</h1><p className="muted">{formatDate(today,{weekday:'long',day:'numeric',month:'long',year:'numeric'})} · Genève</p></div><div className="cockpit-actions"><label className="cockpit-scope">Périmètre du cockpit<select value={groupId} onChange={e=>{setGroupId(e.target.value);setFocus('all')}}><option value="">Tous mes groupes</option>{groups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}</select></label><Link className="btn primary" to={`/planning?date=${today}`}>Préparer la séance <span aria-hidden="true">→</span></Link></div></div>
+  <div className="workspace-tabs" aria-label="Vues du cockpit">{([['overview','Vue d’ensemble'],['athletes','Mes athlètes'],['agenda','Agenda']] as const).map(([key,label])=><button key={key} aria-pressed={tab===key} onClick={()=>setTab(key)}>{label}</button>)}</div>
+  <div className="cockpit-summary" aria-label="Indicateurs du cockpit"><button onClick={()=>{setFocus('today');setTab('athletes')}}><Icon name="calendar"/><b>{dayAssignments.length}</b><span>Séances aujourd’hui</span><small>{members.filter(m=>m.expectedToday).length} athlètes concernés</small></button><button onClick={()=>{setFocus('review');setTab('athletes')}} className={signals.length?'has-attention':''}><Icon name="users"/><b>{signals.length}</b><span>Athlètes à examiner</span><small>Signaux déclarés · 7 jours</small></button><button onClick={()=>{setFocus('missing');setTab('athletes')}}><Icon name="list"/><b>{missing}</b><span>Retours à compléter</span><small>Après les séances · 7 jours</small></button><Link to="/messages"><Icon name="message"/><b>{unread}</b><span>Messages non lus</span><small>{unanswered} retour(s) sans réponse</small></Link></div>
+  {tab==='overview'&&<div className="cockpit-top-grid">
+   <section className="card next-training cockpit-training"><div className="track-art" aria-hidden="true"><i/><i/><i/><i/></div><div className="hero-label"><Icon name="timer" size={18}/><span>{dayAssignments.length?'AUJOURD’HUI SUR LA PISTE':'PROCHAIN RENDEZ-VOUS'}</span></div>{next?<><h2>{sessions.find(s=>s.id===next.session_id)?.title??'Séance à préparer'}</h2><p>{formatShort(next.date)} · {next.time||'Heure à préciser'} · {next.location||'Lieu à préciser'}</p><p className="small muted">{sessions.find(s=>s.id===next.session_id)?.objective||'Objectif à compléter dans la séance.'}</p><div className="row gap wrap"><Link className="btn primary" to={`/planning/${next.id}`}>Programme et présences</Link><Link className="btn" to={`/planning?date=${next.date}`}>Toutes les séances du jour</Link></div>{dayAssignments.length>1&&<p className="small muted">{dayAssignments.length} programmes aujourd’hui · {members.filter(m=>m.expectedToday&&m.away).length} absence(s) annoncée(s) parmi les athlètes concernés</p>}</>:<><h2>Construire le prochain rendez-vous</h2><p>Aucune séance programmée dans ce périmètre.</p><Link className="btn primary" to="/planning">Ouvrir le planning</Link></>}</section>
+   <section className="card cockpit-decisions" aria-label="File de décisions"><div className="row between"><div><p className="eyebrow">VOTRE PROCHAINE ACTION</p><h2>À décider / à compléter</h2></div><span className="pill">{signals.length+Number(missing>0)+Number(unready.length>0)}</span></div>{signals.slice(0,3).map(m=><Link className="cockpit-decision" key={m.athlete.id} to={`/athletes/${m.athlete.id}`}><span className="cockpit-dot attention"/><span><b>{fullName(m.athlete)}</b><small>{m.signals.map(s=>s.replace(/(\d{4})-(\d{2})-(\d{2})/g,'$3.$2.$1')).join(' · ')}</small></span><span aria-hidden="true">→</span></Link>)}{signals.length>3&&<button className="btn ghost small" onClick={()=>{setFocus('review');setTab('athletes')}}>Voir les {signals.length} athlètes concernés</button>}{missing>0&&<Link className="cockpit-decision" to={`/bilan?date=${missingDate}${groupQuery}`}><Icon name="list" size={18}/><span><b>{missing} retour(s) après séance manquant(s)</b><small>Compléter le bilan avant d’interpréter la charge.</small></span><span aria-hidden="true">→</span></Link>}{unready.length>0&&<Link className="cockpit-decision" to={`/planning?date=${today}`}><Icon name="calendar" size={18}/><span><b>{unready.length} séance(s) du jour à préparer</b><small>Modèle absent ou aucun athlète actif attribué.</small></span></Link>}{!signals.length&&!missing&&!unready.length&&<p className="muted small">Aucun point repéré dans les données disponibles. Les réponses manquantes restent visibles ci-dessous.</p>}<p className="tiny muted cockpit-disclaimer">Seuils de tri explicites : énergie ≤ 2/5, courbatures ≥ 4/5, douleur signalée ou réalisation incohérente. Aucun diagnostic ni changement automatique.</p></section>
+  </div>}
+  {tab!=='agenda'&&<section className="card cockpit-roster" aria-label="Vue d’ensemble des athlètes"><div className="row between wrap"><div><p className="eyebrow">SUIVI INDIVIDUEL · {formatShort(since)} – {formatShort(today)}</p><h2>Le groupe en un regard</h2></div><span className="small muted">{checkins}/{members.length} questionnaires aujourd’hui · {members.filter(m=>m.away).length} absence(s) annoncée(s)</span></div><div className="cockpit-roster-controls"><div className="segmented" aria-label="Filtrer les athlètes du cockpit">{([['all','Tous'],['review','À examiner'],['missing','Retours manquants'],['today','Prévus aujourd’hui']] as const).map(([id,label])=><button key={id} aria-pressed={focus===id} onClick={()=>setFocus(id)}>{label}</button>)}</div><input aria-label="Rechercher un athlète du cockpit" placeholder="Athlète, discipline…" value={athleteSearch} onChange={e=>setAthleteSearch(e.target.value)}/></div><div className="board-scroll cockpit-desktop-roster"><table className="table cockpit-athletes"><thead><tr><th>Athlète / objectif</th><th>Disponibilité</th><th>Dernier questionnaire</th><th>Charge déclarée · 7 j</th><th>À suivre</th><th>Agir</th></tr></thead><tbody>{shownMembers.map(m=>{const max=Math.max(1,...m.daily.map(d=>d.load??0));return <tr key={m.athlete.id}><td><button className="coach-person-button" onClick={()=>setPanelAthlete(m.athlete.id)}>{fullName(m.athlete)}</button><small>{m.athlete.events||'Disciplines à renseigner'}</small><small className="cockpit-goal" title={m.athlete.goals}>{m.athlete.goals||'Objectif à renseigner'}</small></td><td><span className={`pill ${m.away?'':'ok'}`}>{m.away?'Absence annoncée':m.expectedToday?'Prévu aujourd’hui':'Non prévu aujourd’hui'}</span></td><td>{m.form?<><b>{m.form.energy!=null?`Énergie ${m.form.energy}/5`:'Énergie non renseignée'}</b><small>{formatShort(m.form.date)} · sommeil {m.form.sleep_hours!=null?`${m.form.sleep_hours} h`:'non renseigné'}</small></>:<span className="muted">Non renseigné<br/><small>sur les 3 derniers jours</small></span>}</td><td><div className="cockpit-load"><b>{m.load===null?'—':`${m.load} UA`}</b><div className="cockpit-spark" aria-label="Charges quotidiennes déclarées">{m.daily.map(d=><span key={d.date} className={d.load===null?'unknown':''} style={{height:d.load==null?'5px':`${Math.max(3,24*d.load/max)}px`}} title={`${formatShort(d.date)} : ${d.load===null?'charge inconnue ou aucune réalisation déclarée':d.load+' UA'}${d.partial?' · partielle':''}`}/>)}</div></div><small>{m.complete?'Données complètes':m.started?`Partiel · ${m.known}/${m.started} réalisations renseignées`:'Aucune réalisation renseignée'}</small></td><td>{m.needsReview?<span className="pill warn">À examiner</span>:<span className="tiny muted">Pas de signal repéré</span>}{m.missing>0&&<small>{m.missing} retour(s) manquant(s)</small>}{m.attendanceMissing>0&&<small>{m.attendanceMissing} présence(s) non relevée(s)</small>}</td><td><Link className="btn small" to={`/bilan?date=${reviewDate(m)}&athlete=${m.athlete.id}`}>Bilan →</Link></td></tr>})}</tbody></table></div><div className="cockpit-member-cards">{shownMembers.map(m=><article className="cockpit-member-card" key={m.athlete.id}><div className="row between wrap"><button className="coach-person-button" onClick={()=>setPanelAthlete(m.athlete.id)}>{fullName(m.athlete)}</button><span className={`pill ${m.needsReview?'warn':''}`}>{m.needsReview?'À examiner':m.away?'Absence annoncée':m.expectedToday?'Prévu aujourd’hui':'Non prévu aujourd’hui'}</span></div><p className="tiny muted">{m.athlete.events||'Disciplines à renseigner'}</p><p className="small cockpit-card-goal">{m.athlete.goals||'Objectif à renseigner'}</p>{m.needsReview&&m.away&&<p className="tiny">Absence annoncée aujourd’hui</p>}<div className="cockpit-member-stats"><div><small>Dernier questionnaire</small><b>{m.form?.energy!=null?`Énergie ${m.form.energy}/5`:'Non renseigné'}</b><small>{m.form?`${formatShort(m.form.date)} · sommeil ${m.form.sleep_hours!=null?m.form.sleep_hours+' h':'non renseigné'}`:'sur les 3 derniers jours'}</small></div><div><small>Charge déclarée · 7 j</small><b>{m.load===null?'—':`${m.load} UA`}</b><small>{m.complete?'Données complètes':m.started?`Partiel · ${m.known}/${m.started} réalisations`:'Aucune réalisation renseignée'}</small></div></div>{m.signals.length>0&&<p className="tiny warn-text">{m.signals.map(s=>s.replace(/(\d{4})-(\d{2})-(\d{2})/g,'$3.$2.$1')).join(' · ')}</p>}<div className="row between wrap"><span className="tiny muted">{m.missing?`${m.missing} retour(s) manquant(s)`:'Aucun retour attendu manquant'}{m.attendanceMissing?` · ${m.attendanceMissing} présence(s) à relever`:''}</span><Link className="btn small" to={`/bilan?date=${reviewDate(m)}&athlete=${m.athlete.id}`}>Bilan →</Link></div></article>)}</div>{!shownMembers.length&&<p className="agenda-empty muted">Aucun athlète ne correspond à ce filtre.</p>}<p className="tiny muted">Charge = durée réelle × effort ressenti. Une donnée inconnue reste inconnue. Les mini-barres décrivent l’historique propre à chaque athlète, sans classement du groupe.</p></section>}
+  {tab==='overview'&&<div className="cockpit-bottom-grid"><section className="card cockpit-season"><div className="row between"><div><p className="eyebrow">MACRO → MICRO</p><h2>Cap sur les 7 prochains jours</h2></div><Link className="small" to="/saison">Saison →</Link></div><div className="cockpit-cycle-strip">{Array.from({length:7},(_,i)=>{const date=addDays(today,i),cycle=dayCycle(plan,date),holiday=HOLIDAYS.find(h=>h.start<=date&&h.end>=date);return <Link key={date} to={`/planning?date=${date}`} style={{borderTopColor:cycle.phase?PHASES[cycle.phase].color:undefined}}><small>{formatDate(date,{weekday:'short',day:'numeric'})}</small><b>{cycle.ambiguous?'À préciser':cycle.phase?PHASES[cycle.phase].label:'À définir'}</b><small>{scoped.filter(a=>a.date===date).length} séance(s)</small>{holiday&&<small>Vacances</small>}</Link>})}</div><p className="tiny muted">Socle commun enregistré · les phases individuelles restent accessibles dans le planning.</p><div className="cockpit-phase-count"><span>{currentBlocks.filter(b=>b.provisional).length} bloc(s) à valider</span><Link to="/saison">Développer les cycles et la récupération →</Link></div></section><section className="card cockpit-events"><div className="row between"><div><p className="eyebrow">ÉCHÉANCES RENSEIGNÉES</p><h2>Prochaines compétitions</h2></div><Icon name="trophy"/></div>{nextCompetitions.map(c=><Link key={c.id} className="cockpit-event" to="/competitions"><span className="cockpit-countdown">{c.date<=today?'En cours':`J−${dayNumber(c.date)-dayNumber(today)}`}</span><span><b>{c.name}</b><small>{formatShort(c.date)}{c.end_date&&c.end_date!==c.date?' – '+formatShort(c.end_date):''} · {c.location||'Lieu à préciser'}</small></span></Link>)}{!nextCompetitions.length&&<p className="small muted">Aucune compétition à venir renseignée pour ce périmètre. Les fenêtres de saison ne remplacent pas les dates confirmées.</p>}<Link className="small" to="/competitions">Organiser les échéances →</Link></section></div>}
+  {tab==='agenda'&&<section className="cockpit-agenda-workspace"><div className="row between wrap"><h2>Le programme de la semaine</h2><div className="row gap"><button className="btn small" aria-label="Semaine précédente" onClick={()=>setAgendaWeek(addDays(agendaWeek,-7))}>←</button><span className="small">{formatShort(agendaWeek)} – {formatShort(addDays(agendaWeek,6))}</span><button className="btn small" aria-label="Semaine suivante" onClick={()=>setAgendaWeek(addDays(agendaWeek,7))}>→</button></div></div><CoachWeekBoard week={agendaWeek} groupId={groupId}/></section>}
+  <details className="agenda-panel cockpit-agenda"><summary><b>Agenda détaillé et recherche de programmes</b></summary><div className="agenda-controls"><div className="segmented" aria-label="Période des entraînements">{([7,30] as const).map(days=><button key={days} type="button" aria-pressed={period===days} onClick={()=>setPeriod(days)}>{days===7?'7 prochains jours':'30 prochains jours'}</button>)}</div><div className="agenda-search"><Icon name="list" size={17}/><input aria-label="Rechercher les entraînements" placeholder="Une séance, un groupe…" value={search} onChange={e=>setSearch(e.target.value)}/></div></div><div className="board-scroll card"><table className="table board-table"><thead><tr><th>Séance</th><th>Date</th><th>Groupe</th><th>Présences relevées</th><th>Programme</th></tr></thead><tbody>{visible.map(a=>{const audience=athletesFor(a,athletes).filter(p=>!groupId||ids.has(p.id)),present=attendance.filter(r=>r.assignment_id===a.id&&r.status==='present'&&audience.some(p=>p.id===r.athlete_id)).length;return <tr key={a.id}><td><Link to={`/planning/${a.id}`}><b>{sessions.find(s=>s.id===a.session_id)?.title??'Séance'}</b></Link></td><td>{formatShort(a.date)}<small className="muted"> · {a.time}</small></td><td>{groups.find(g=>g.id===a.group_id)?.name??'Individualisé'}</td><td>{a.date>today?'À venir':`${present}/${audience.length}`}</td><td><Link className="board-status" to={`/planning/${a.id}`} style={{background:a.date===today?'#118876':'#65729d'}}>{a.date===today?'Aujourd’hui':'Planifié'}</Link></td></tr>})}</tbody></table>{!visible.length&&<p className="agenda-empty muted">{search?'Aucun entraînement ne correspond à cette recherche.':'Aucune séance prévue sur cette période.'}</p>}</div></details>
+  <section className="card dashboard-tools"><Link to="/seances/import">Importer Excel / Word</Link><Link to="/bilan">Bilans et semaine suivante</Link><Link to="/tests">Tests et performances</Link><Link to="/assistant">Recherche et méthodes</Link><Link to="/reglages">Réglages</Link><Link to="/confidentialite">Confidentialité et exports</Link></section>
+  {panelAthlete&&<CoachAthletePanel athleteId={panelAthlete} onClose={()=>setPanelAthlete(null)}/>}
+  {athletes.length===0&&<FirstSteps/>}
+ </div>
 }
