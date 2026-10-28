@@ -25,7 +25,7 @@ if(process.env.COACH_DB_UPGRADE==='1'){
  await db.query("insert into records(id,athlete_id,event,mark,date) values($1,$2,'100 m','12.80 s','2026-10-18')",[legacy.record,legacy.athlete])
  const snapshots=[]
  for(const [table,key]of[['groups','group'],['athletes','athlete'],['sessions','session'],['assignments','assignment'],['feedback','feedback'],['records','record']])snapshots.push({table,key,row:(await db.query('select * from '+table+' where id=$1',[legacy[key]])).rows[0]})
- for(let repeat=0;repeat<2;repeat++)for(const file of ['migration-season-2027.sql','migration-complete-2027.sql'])await db.exec(await readFile(new URL('../../supabase/'+file,import.meta.url),'utf8'))
+ for(let repeat=0;repeat<2;repeat++)for(const file of ['migration-season-2027.sql','migration-complete-2027.sql','migration-light-2027.sql'])await db.exec(await readFile(new URL('../../supabase/'+file,import.meta.url),'utf8'))
  for(const before of snapshots){const after=(await db.query('select * from '+before.table+' where id=$1',[legacy[before.key]])).rows[0];for(const key of Object.keys(before.row))assert.deepEqual(after[key],before.row[key],before.table+'.'+key);checks++}
  await db.query("select set_config('request.jwt.claim.sub','',false)")
 }else{
@@ -62,12 +62,12 @@ await expectFailure(()=>db.query('insert into exercise_logs(assignment_id,athlet
 await db.query('insert into exercise_logs(assignment_id,athlete_id,item_id,sets) values($1,$2,$3,$4)',[assignment,ath,'item','[]']);checks++
 await expectFailure(()=>db.query('update exercise_logs set sets=$1 where athlete_id=$2',[JSON.stringify([{index:1,reps:2,load_kg:-1,result:'test',done:true}]),ath]))
 await expectFailure(()=>db.query('select retention_preview()'))
-await expectFailure(()=>db.query('insert into wellness(athlete_id,date,energy) values($1,current_date,4)',[ath]))
+await db.query('insert into wellness(athlete_id,date,energy) values($1,current_date-1,3)',[ath]);checks++
 await expectFailure(()=>db.query('insert into privacy_acceptances(athlete_id,version,health_consent) values($1,$2,true)',[ath,'wrong']))
 await db.query('insert into privacy_acceptances(athlete_id,version,health_consent) values($1,$2,true)',[ath,'v1']);checks++
 await db.query('insert into wellness(athlete_id,date,energy) values($1,current_date,4)',[ath]);checks++
 await db.query('insert into privacy_acceptances(athlete_id,version,health_consent) values($1,$2,false)',[ath,'v1']);checks++
-await expectFailure(()=>db.query('update wellness set energy=3 where athlete_id=$1',[ath]))
+await db.query('update wellness set energy=3 where athlete_id=$1',[ath]);checks++
 await expectFailure(()=>db.query('insert into privacy_acceptances(athlete_id,version,health_consent) values($1,$2,true)',[otherAth,'v1']))
 await act(otherUser);assert.equal((await db.query('select * from session_adjustments')).rows.length,0);checks++
 await act(otherCoach);assert.equal((await db.query('select * from attendance')).rows.length,0);checks++

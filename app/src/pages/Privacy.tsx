@@ -5,6 +5,7 @@ import { useData } from '../lib/data'
 import { DEFAULT_HOSTING, DRAFT_PRIVACY, decryptExport, downloadData, encryptExport, healthConsent, validatePrivacy } from '../lib/confidentiality'
 import { errorMessage, todayISO } from '../lib/utils'
 import { Field } from '../components/ui'
+import { DataInfo } from '../components/DataInfo'
 import type { PrivacySettings } from '../lib/settings'
 
 export function Privacy() {
@@ -39,10 +40,9 @@ export function Privacy() {
  }
  return <div className="privacy-page"><p className="eyebrow">DONNÉES PERSONNELLES</p><h1>Confidentialité et mes données</h1>
   <p className="muted">Information, choix du suivi facultatif et outils de gestion.</p>
-  {!policy.published&&<p className="alert warn">Document en préparation. Le suivi de santé facultatif reste désactivé jusqu’à publication d’une information complète et enregistrement du choix de l’athlète.</p>}
-  <PolicyDocument policy={policy}/>
+  {policy.published?<PolicyDocument policy={policy}/>:<DataInfo club={me?.club_name}/>}
   {!coach&&me?.athlete_id&&policy.published&&<section className="card form"><h2>Mon choix pour le suivi facultatif</h2><p>{accepted?'Suivi facultatif activé pour cette version.':'Suivi facultatif non activé pour cette version. Tu peux consulter tes programmes et transmettre ton bilan sportif sans l’activer.'}</p><label className="check"><input type="checkbox" checked={agree} onChange={(e)=>setAgree(e.target.checked)}/>J’ai compris l’information et j’accepte le suivi facultatif de sommeil, fatigue, douleurs et ressenti par les coachs.</label><Field label="Représentant légal, si son intervention est requise"><input value={representative} onChange={(e)=>setRepresentative(e.target.value)}/></Field><div className="row gap wrap"><button className="btn primary" disabled={busy||!agree} onClick={()=>consent(true)}>Enregistrer mon accord</button><button className="btn" disabled={busy||!accepted} onClick={()=>consent(false)}>Retirer mon accord</button></div></section>}
-  {coach&&<details className="card" open={!policy.published}><summary><b>Préparer et publier l’information du groupe</b></summary><form className="form" onSubmit={updatePolicy}>
+  {coach&&<details className="card"><summary><b>Information détaillée (facultatif)</b> <span className="small muted">— remplace le texte court ci-dessus une fois publiée</span></summary><form className="form" onSubmit={updatePolicy}>
    <Field label="Responsable du traitement"><input required value={draft.organization} onChange={(e)=>setDraft({...draft,organization:e.target.value})}/></Field><Field label="Adresse"><input required value={draft.address} onChange={(e)=>setDraft({...draft,address:e.target.value})}/></Field><Field label="Contact pour les données personnelles"><input required type="email" value={draft.contact} onChange={(e)=>setDraft({...draft,contact:e.target.value})}/></Field><Field label="Version de l’information"><input required value={draft.version} onChange={(e)=>setDraft({...draft,version:e.target.value})}/></Field>
    <Field label="Lieux de traitement, sous-traitants et garanties vérifiés"><textarea rows={4} required value={draft.hosting_details??''} onChange={(e)=>setDraft({...draft,hosting_details:e.target.value})}/></Field>
    <div className="grid2"><Field label="Conservation sportive · mois"><input type="number" min="1" max="120" value={draft.retention_months} onChange={(e)=>setDraft({...draft,retention_months:Number(e.target.value)})}/></Field><Field label="Conservation santé · mois"><input type="number" min="1" max="120" value={draft.health_retention_months} onChange={(e)=>setDraft({...draft,health_retention_months:Number(e.target.value)})}/></Field></div>

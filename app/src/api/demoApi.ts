@@ -1,4 +1,3 @@
-import {healthConsent} from '../lib/confidentiality'
 // Mode démo : toutes les données restent dans le navigateur (localStorage).
 // Simule les comptes (entraîneur / athlètes) et les règles d'accès de la base.
 import { isReleased, releaseRule } from '../lib/release'
@@ -335,8 +334,6 @@ export function createDemoApi(): Api {
       const rows = db[table] as Row<K>[]
       if(role()!=='coach'&&!['athletes','feedback','records','wellness','test_results','messages','availability','exercise_logs','privacy_acceptances'].includes(table))throw new Error('Accès refusé')
       if(table==='privacy_acceptances'&&(role()==='coach'||row.id))throw new Error('Le choix de l’athlète doit être ajouté comme un nouvel événement.')
-      const healthRow=row as {athlete_id?:string;pain?:string;fatigue?:number|null;mood?:number|null}
-      if((table==='wellness'||table==='feedback'&&!!(healthRow.pain||healthRow.fatigue!=null||healthRow.mood!=null))&&!healthConsent(healthRow.athlete_id??'',db.privacy_acceptances,db.club.settings?.privacy))throw new Error('Suivi de santé facultatif non activé.')
       if (role() !== 'coach' && ['attendance', 'session_adjustments'].includes(table)) throw new Error('Réservé aux coachs')
       if (role() !== 'coach' && ['privacy_acceptances', 'availability'].includes(table) && (row as { athlete_id?: string }).athlete_id !== myAthlete()?.id) throw new Error('Accès refusé')
       const extra: Record<string, unknown> = {}

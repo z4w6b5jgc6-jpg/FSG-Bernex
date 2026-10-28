@@ -1,5 +1,3 @@
-import { Link } from 'react-router-dom'
-import { healthConsent } from '../lib/confidentiality'
 import { useState } from 'react'
 import { useData } from '../lib/data'
 import type { Wellness } from '../types'
@@ -15,7 +13,7 @@ const SLEEP_OPTIONS = [5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10]
 
 /** Check-in bien-être du jour (30 secondes) */
 export function WellnessCheckin({ athleteId }: { athleteId: string }) {
-  const { wellness, save, me, privacy_acceptances } = useData()
+  const { wellness, save } = useData()
   const today = todayISO()
   const existing = wellness.find((w) => w.athlete_id === athleteId && w.date === today)
   const [editing, setEditing] = useState(!existing)
@@ -23,9 +21,6 @@ export function WellnessCheckin({ athleteId }: { athleteId: string }) {
   const [busy, setBusy] = useState(false)
   const set = (p: Partial<Wellness>) => setW({ ...w, ...p })
 
-  if (!healthConsent(athleteId, privacy_acceptances, me?.settings?.privacy)) return me?.settings?.privacy?.published
-    ? <div className="card"><b>Suivi de forme facultatif</b><p className="small muted">Sommeil, fatigue, courbatures : si tu l’actives, ton coach peut adapter tes séances. Lis l’information et fais ton choix, tu pourras le changer à tout moment.</p><Link className="btn primary" to="/confidentialite">Lire et activer</Link></div>
-    : <div className="card"><b>Suivi de forme facultatif</b><p className="small muted">Bientôt disponible : ton coach prépare l’information sur tes données.</p></div>
 
   if (existing && !editing) {
     return (

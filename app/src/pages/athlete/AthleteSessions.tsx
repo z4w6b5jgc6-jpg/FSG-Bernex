@@ -1,4 +1,3 @@
-import { healthConsent } from '../../lib/confidentiality'
 import { isReleased, releaseAt, releaseText } from '../../lib/release'
 import { useEffect, useState, type FormEvent } from 'react'
 import { BackLink } from '../../components/BackLink'
@@ -117,8 +116,7 @@ export function AthleteSessionDetail() {
 }
 
 function FeedbackForm({ athleteId, assignmentId, fb }: { athleteId: string; assignmentId: string; fb?: Feedback }) {
-  const { save, me: account, privacy_acceptances } = useData()
-  const healthAllowed = healthConsent(athleteId,privacy_acceptances,account?.settings?.privacy)
+  const { save } = useData()
   const [editing, setEditing] = useState(!fb)
   const [f, setF] = useState({
     completed: fb?.completed ?? true, rpe: fb?.rpe ?? null, fatigue: fb?.fatigue ?? null,
@@ -135,7 +133,7 @@ function FeedbackForm({ athleteId, assignmentId, fb }: { athleteId: string; assi
     setBusy(true)
     setErr(null)
     try {
-      const row = { ...f, pain: healthAllowed ? f.pain : '', fatigue: healthAllowed ? f.fatigue : null, mood: healthAllowed ? f.mood : null, id: fb?.id, assignment_id: assignmentId, athlete_id: athleteId }
+      const row = { ...f, id: fb?.id, assignment_id: assignmentId, athlete_id: athleteId }
       // base pas encore mise à jour (#/base) : le retour part quand même, sans la question sur la récup
       const saved = await save('feedback', row).catch((e2) => {
         if (/recovery_fit/.test(errorMessage(e2))) { const { recovery_fit: _r, ...rest } = row; void _r; return save('feedback', rest) }
@@ -180,12 +178,11 @@ function FeedbackForm({ athleteId, assignmentId, fb }: { athleteId: string; assi
           {f.rpe != null && <span className="hint">{RPE_LABELS[f.rpe]}</span>}
         </div>
       )}
-      {!healthAllowed && <p className="small muted">Bilan sportif disponible. <Link to="/confidentialite">Choisir le suivi de forme facultatif</Link></p>}
-      {healthAllowed && <div className="field">
+      <div className="field">
         <span className="field-label">Ta forme après la séance (1 = pleine forme, 5 = épuisé·e)</span>
         <Scale min={1} max={5} value={f.fatigue} onChange={(fatigue) => set({ fatigue })} labels={FATIGUE_TEXT} />
         {f.fatigue != null && <span className="hint">{FATIGUE_TEXT[f.fatigue]}</span>}
-      </div>}
+      </div>
 
       {f.completed && (
         <div className="field">
@@ -199,15 +196,15 @@ function FeedbackForm({ athleteId, assignmentId, fb }: { athleteId: string; assi
           </div>
         </div>
       )}
-      {healthAllowed && <div className="field">
+      <div className="field">
         <span className="field-label">Ton plaisir (1 = pas bien, 5 = super)</span>
         <Scale min={1} max={5} value={f.mood} onChange={(mood) => set({ mood })} labels={MOOD_TEXT} />
         {f.mood != null && <span className="hint">{MOOD_TEXT[f.mood]}</span>}
-      </div>}
-      {healthAllowed && <label className="field">
+      </div>
+      <label className="field">
         <span className="field-label">As-tu mal quelque part ? (facultatif)</span>
         <input value={f.pain} onChange={(e) => set({ pain: e.target.value })} placeholder="Ex. un peu mal au genou gauche" />
-      </label>}
+      </label>
       <label className="field">
         <span className="field-label">Ton commentaire (facultatif)</span>
         <textarea rows={3} value={f.comment} onChange={(e) => set({ comment: e.target.value })}

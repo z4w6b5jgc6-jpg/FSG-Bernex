@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { DataInfo } from '../components/DataInfo'
 import { Logo } from '../components/Logo'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { api } from '../api'
@@ -126,14 +127,14 @@ export function Join() {
         <Field label="Téléphone (facultatif)" hint="Pour que ton coach puisse te contacter sur WhatsApp">
           <input type="tel" inputMode="tel" autoComplete="tel" value={p.phone} onChange={(e) => set({ phone: e.target.value })} placeholder="079 123 45 67" />
         </Field>
+        <DataInfo club={club.name} />
         <label className="check small">
           <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required />
-          J’ai pris connaissance de l’information sur les données nécessaires à l’organisation de mon entraînement. Le suivi de forme facultatif fait l’objet d’un choix séparé après inscription.
+          J’ai lu l’information sur mes données ci-dessus.
         </label>
         {msg && <div className={`alert ${msg.kind}`}>{msg.text}</div>}
-        <p className="small"><Link to={`/information?code=${encodeURIComponent(code)}`}>Lire l’information sur mes données</Link></p>
-        {!club.privacy?.published&&<p className="alert warn">L’information du groupe est en préparation. Demande au coach de la finaliser avant ton inscription.</p>}
-        <button className="btn primary block" disabled={busy || !consent || !club.privacy?.published}>{busy ? '…' : 'Rejoindre le programme'}</button>
+        {club.privacy?.published && <p className="small"><Link to={`/information?code=${encodeURIComponent(code)}`}>Information détaillée du groupe</Link></p>}
+        <button className="btn primary block" disabled={busy || !consent}>{busy ? '…' : 'Rejoindre le programme'}</button>
       </form>
     </div>
   )

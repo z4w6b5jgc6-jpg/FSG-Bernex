@@ -567,7 +567,6 @@ begin
   if exists (select 1 from athletes where user_id = auth.uid()) then raise exception 'already_member'; end if;
   select coach_id into v_coach from clubs where invite_code = upper(trim(p_code));
   if v_coach is null then raise exception 'invalid_code'; end if;
-  if not coalesce((select (settings->'privacy'->>'published')::boolean from clubs where coach_id=v_coach),false) then raise exception 'privacy_not_ready'; end if;
   if p_group_id is not null and not exists (select 1 from groups where id = p_group_id and coach_id = v_coach) then
     p_group_id := null;
   end if;
@@ -954,7 +953,7 @@ begin
  return new;
 end $$;
 drop trigger if exists consent_required on public.wellness;
-create trigger consent_required before insert or update on public.wellness for each row execute function public.protect_health_writes();
+-- Version légère : le suivi de forme ne dépend pas d'un consentement enregistré (information à l'inscription).
 -- Permettre les présences et le bilan sportif sans imposer le suivi de santé.
 create or replace function public.protect_feedback_health() returns trigger
 language plpgsql security definer set search_path=public as $$
@@ -968,7 +967,7 @@ begin
  return new;
 end $$;
 drop trigger if exists consent_required on public.feedback;
-create trigger consent_required before insert or update on public.feedback for each row execute function public.protect_feedback_health();
+-- Version légère : le suivi de forme ne dépend pas d'un consentement enregistré (information à l'inscription).
 -- Les horodatages sont fixés côté base pour les présences, adaptations et consentements.
 create or replace function public.touch_training_row() returns trigger language plpgsql as $$
 begin new.updated_at=now(); return new; end $$;

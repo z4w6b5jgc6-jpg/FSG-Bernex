@@ -19,7 +19,6 @@ import { Planning } from './pages/Planning'
 import { Season } from './pages/Season'
 import { PublicPrivacy } from './pages/PublicPrivacy'
 import { Privacy } from './pages/Privacy'
-import { PrivacyBanner } from './components/PrivacyBanner'
 import { AssignmentDetail } from './pages/AssignmentDetail'
 import { ExportSessions } from './pages/ExportSessions'
 import { WhoDoesWhat } from './pages/WhoDoesWhat'
@@ -107,7 +106,6 @@ function CoachApp() {
     <Shell nav={COACH_NAV} brand={<><Logo kind="symbol" className="brand-logo" /><span className="brand-name">{me?.club_name ?? 'Coach Athlé'}</span></>}
       right={<button className="btn ghost small" onClick={() => logout(me?.email, api.signOut)}>Déconnexion</button>}>
       <InstallPrompt who="coach" />
-      <PrivacyBanner />
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/planning" element={<Planning />} />
