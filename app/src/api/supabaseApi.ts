@@ -1,4 +1,5 @@
 import { blockExternalAI } from '../lib/privacy'
+import { settings } from '../lib/settings'
 import { createClient } from '@supabase/supabase-js'
 import type { ClubInfo, Me, TableName } from '../types'
 import type { Api, Draft, Row } from './types'
@@ -41,7 +42,7 @@ export function createSupabaseApi(url: string, key: string): Api {
     const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),90000)
     try{
       const res=await fetch('/api/'+path,{method:'POST',headers:{'content-type':'application/json',authorization:`Bearer ${data.session.access_token}`},body:JSON.stringify(payload),signal:controller.signal})
-      if(!res.headers.get('content-type')?.includes('application/json'))throw new Error('Le service IA n’est pas déployé sur cette adresse. Publie l’archive connectée sur bernexdemo.')
+      if(!res.headers.get('content-type')?.includes('application/json'))throw new Error('Le service IA ne répond pas sur cette adresse. Réessaie après le prochain déploiement.')
       const out=await res.json();if(!res.ok)throw new Error(out.error??'Assistant indisponible.');return out
     }catch(e){if(e instanceof DOMException&&e.name==='AbortError')throw new Error('L’IA ne répond pas dans le délai prévu. Aucune modification appliquée.');if(e instanceof TypeError)throw new Error('Connexion au service IA impossible. Vérifie le réseau et le déploiement Cloudflare.');throw e}finally{clearTimeout(timeout)}
   }
@@ -105,7 +106,7 @@ export function createSupabaseApi(url: string, key: string): Api {
       const res=await fetch('/api/research',{method:'POST',headers:{'content-type':'application/json',authorization:`Bearer ${data.session?.access_token??''}`},body:JSON.stringify(options)})
       const out=await res.json();if(!res.ok)throw new Error(out.error??'Recherche indisponible');return out
     },
-    async chat(messages, session) { return (await assistantRequest('chat',{messages,session})).reply },
+    async chat(messages, session) { return (await assistantRequest('chat',{messages,session,groupe:settings().group})).reply },
     async readPlan(_texte) { return blockExternalAI() },
     async improveSession(session) { return assistantRequest('ameliorer',{session}) },
     async saveSettings(settings) {
