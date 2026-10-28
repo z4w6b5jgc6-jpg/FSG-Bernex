@@ -7,6 +7,7 @@ import { contentDiff, reduceRepetitions, sessionContent, type SessionContent } f
 import { athletesFor, errorMessage, fullName, uid } from '../lib/utils'
 import type { Assignment, Athlete, Session, SessionItem } from '../types'
 import { Field, Modal } from './ui'
+import { Avatar } from './Avatar'
 
 const STATUS = { present: 'Présent', absent: 'Absent', excused: 'Excusé' } as const
 export function TrainingDesk({ assignment, session }: { assignment: Assignment; session: Session }) {
@@ -20,16 +21,28 @@ export function TrainingDesk({ assignment, session }: { assignment: Assignment; 
     try { await save('attendance', { id: attendance.find((r) => r.assignment_id === assignment.id && r.athlete_id === athlete.id)?.id, assignment_id: assignment.id, athlete_id: athlete.id, status }) }
     catch (e) { setError(errorMessage(e)) } finally { setBusy(null) }
   }
-  return <section className="card training-desk">
-    <div className="row between wrap"><div><p className="eyebrow">AU BORD DE LA PISTE</p><h2>Présences et programmes individuels</h2></div><span className="pill">{members.filter((a) => attendance.some((r) => r.assignment_id === assignment.id && r.athlete_id === a.id && r.status === 'present')).length}/{members.length} présents</span></div>
-    <p className="small muted">Une présence est indépendante du retour après séance. Les adaptations concernent une seule personne et une seule séance.</p>
+  const present = members.filter((a) => attendance.some((r) => r.assignment_id === assignment.id && r.athlete_id === a.id && r.status === 'present')).length
+  return <section>
+    <div className="row between"><h2 className="section-title">Présences <span className="count">{present}/{members.length}</span></h2>
+      <button className="btn small" disabled={!!busy} onClick={() => members.filter((a) => !attendance.some((r) => r.assignment_id === assignment.id && r.athlete_id === a.id)).forEach((a) => mark(a, 'present'))}>Tous présents</button></div>
     {error && <p role="alert" className="alert warn">{error}</p>}
-    <div className="desk-roster">{members.map((a) => {
+    <div className="rows">{members.map((a) => {
       const current = attendance.find((r) => r.assignment_id === assignment.id && r.athlete_id === a.id)
       const adjustment = session_adjustments.find((r) => r.assignment_id === assignment.id && r.athlete_id === a.id)
       const absence = availability.find((r) => r.athlete_id === a.id && r.status === 'away' && r.start_date <= assignment.date && r.end_date >= assignment.date)
-      return <div className="desk-athlete" key={a.id}><div><Link to={`/athletes/${a.id}`}><b>{fullName(a)}</b></Link><p className="tiny muted">{a.events || 'Disciplines à préciser'}</p>{absence && <span className="pill warn">Absence annoncée</span>}{adjustment && <span className="pill ok">Programme adapté</span>}</div><div className="row gap wrap"><select aria-label={`Présence ${fullName(a)}`} value={current?.status ?? ''} disabled={busy === a.id} onChange={(e) => mark(a, e.target.value as keyof typeof STATUS)}><option value="" disabled>À relever</option>{Object.entries(STATUS).map(([k,v]) => <option key={k} value={k}>{v}</option>)}</select><button className="btn small" onClick={() => setEdit(a)}>{adjustment ? 'Revoir l’adaptation' : 'Adapter la séance'}</button></div></div>
+      return <div className="row-item" key={a.id}>
+        <Avatar a={a} size="sm" />
+        <span className="row-main"><Link to={`/athletes/${a.id}`}>{a.first_name} {a.last_name}</Link>
+          {(absence || adjustment) && <span className="row-tags">{absence && <span className="status orange">Absence annoncée</span>}{adjustment && <span className="status blue">Programme adapté</span>}</span>}
+        </span>
+        <span className="seg" role="group" aria-label={`Présence ${fullName(a)}`}>
+          {(['present', 'absent', 'excused'] as const).map((k) => <button key={k} type="button" disabled={busy === a.id} title={STATUS[k]}
+            className={current?.status === k ? `on ${k}` : ''} onClick={() => mark(a, k)}>{k === 'present' ? 'P' : k === 'absent' ? 'A' : 'E'}</button>)}
+        </span>
+        <button type="button" className="btn ghost small icon" aria-label={`Adapter pour ${a.first_name}`} title="Adapter la séance" onClick={() => setEdit(a)}>✎</button>
+      </div>
     })}</div>
+    <p className="tiny muted">P présent · A absent · E excusé · ✎ adapter la séance pour cet athlète</p>
     {edit && <AdjustmentEditor key={edit.id} athlete={edit} assignment={assignment} session={session} onClose={() => setEdit(null)} />}
   </section>
 }

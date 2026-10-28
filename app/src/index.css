@@ -1365,3 +1365,27 @@ a.row-item:active { background: color-mix(in srgb, var(--primary) 9%, var(--surf
 .day-chip { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 40px; flex-shrink: 0; line-height: 1.05; }
 .day-chip b { font-size: 1.15rem; } .day-chip small { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; }
 :root[data-theme='dark'] .session-hero { background: linear-gradient(140deg, #0f1a14, #1a8526 160%); }
+.plan-head h1 { margin-bottom: 0.15rem; }
+.plan-head .actions { margin-top: 0.6rem; }
+.plan-tabs { margin: 0.9rem 0 0.8rem; position: sticky; top: 56px; z-index: 4; }
+.plan-tabs button { flex: 1; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; flex-shrink: 0; }
+.seg button { font: inherit; font-size: 0.8rem; font-weight: 700; width: 32px; height: 32px; border: 0; border-left: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer; }
+.seg button:first-child { border-left: 0; }
+.seg button.on.present { background: #00a35c; color: #fff; } .seg button.on.absent { background: #e2445c; color: #fff; } .seg button.on.excused { background: #f2a100; color: #fff; }
+.row-main a { color: inherit; }
+.hero-preview { list-style: none; margin: 0.7rem 0 0; padding: 0; display: grid; gap: 0.35rem; }
+.hero-preview li { background: rgb(255 255 255 / 9%); border-radius: 10px; padding: 0.45rem 0.6rem; }
+.hero-preview b { display: block; font-size: 0.92rem; } .hero-preview small { color: rgb(255 255 255 / 70%); }
+.session-hero .tiny { color: rgb(255 255 255 / 70%); margin-top: 0.5rem; }
+button.row-item { width: 100%; font: inherit; background: none; border: 0; border-top: 1px solid var(--border); text-align: left; cursor: pointer; }
+.rows > button.row-item:first-child { border-top: 0; }
+.checkin-open { display: block; padding: 0.4rem 0.6rem 0.8rem; }
+.checkin-open .card { border: 0; box-shadow: none; padding: 0; }
+.week-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.3rem; }
+.week-strip > div { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; padding: 0.45rem 0; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
+.week-strip small { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; } .week-strip b { font-size: 1rem; }
+.week-strip i { width: 7px; height: 7px; border-radius: 50%; background: transparent; }
+.week-strip .is-planned i { background: var(--muted); } .week-strip .is-done i { background: #00a35c; }
+.week-strip .is-today { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
+.today-head.row { align-items: flex-start; }

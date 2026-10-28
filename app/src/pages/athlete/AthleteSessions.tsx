@@ -13,28 +13,35 @@ import { FeedbackScores } from '../../components/FeedbackCard'
 import { Empty, Field, FATIGUE_TEXT, MOOD_TEXT, RECOVERY_TEXT, RPE_LABELS, Scale } from '../../components/ui'
 import type { Assignment, Feedback } from '../../types'
 import { myAssignments } from '../../lib/athlete'
-import { errorMessage, formatDate, todayISO } from '../../lib/utils'
+import { addDays, errorMessage, formatDate, todayISO } from '../../lib/utils'
 
 export function AthleteSessions() {
   const me = useMyAthlete()
   const { assignments, sessions, feedback } = useData()
+  const [tab, setTab] = useState<'next' | 'past'>('next')
+  const [more, setMore] = useState(false)
   if (!me) return null
   const today = todayISO()
   const mine = myAssignments(assignments, me)
-  const upcoming = mine.filter((a) => a.date >= today).sort((a, b) => a.date.localeCompare(b.date))
+  const upcoming = mine.filter((a) => a.date >= today).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
   const past = mine.filter((a) => a.date < today).sort((a, b) => b.date.localeCompare(a.date))
+  const title = (a: Assignment) => (isReleased(a) && sessions.find((s) => s.id === a.session_id)?.title) || 'Entraînement'
+  // semaines : lundi de la date
+  const monday = (d: string) => { const x = new Date(d + 'T12:00:00'); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x.toISOString().slice(0, 10) }
+  const thisWeek = monday(today)
+  const weekLabel = (m: string) => m === thisWeek ? 'Cette semaine' : m === addDays(thisWeek, 7) ? 'Semaine prochaine' : `Semaine du ${formatDate(m, { day: 'numeric', month: 'long' })}`
+  const shown = more ? upcoming : upcoming.filter((a) => a.date < addDays(thisWeek, 28))
+  const weeks = [...new Set(shown.map((a) => monday(a.date)))]
 
-  const Item = ({ a }: { a: Assignment }) => {
+  const Row = ({ a }: { a: Assignment }) => {
     const f = feedback.find((x) => x.assignment_id === a.id)
+    const status = a.date >= today ? null : f ? (f.completed ? ['green', 'Fait'] : ['grey', 'Absent']) : ['orange', 'Retour']
     return (
-      <Link to={`/seances/${a.id}`} className="card link-card">
-        <div className="row between">
-          <strong>{sessions.find((s) => s.id === a.session_id)?.title ?? 'Séance'}</strong>
-          {f ? <span className="pill ok">✓</span> : a.date <= today ? <span className="pill warn">Retour</span> : null}
-        </div>
-        <div className="muted small">
-          {a.date === today ? "Aujourd'hui" : formatDate(a.date)}{a.time && ` · ${a.time}`}{a.location && ` · ${a.location}`}
-        </div>
+      <Link to={`/seances/${a.id}`} className="row-item">
+        <span className="day-chip"><b>{Number(a.date.slice(-2))}</b><small>{formatDate(a.date, { weekday: 'short' })}</small></span>
+        <span className="row-main">{title(a)}<small>{[a.date === today ? 'Aujourd’hui' : '', a.time, a.location].filter(Boolean).join(' · ')}</small></span>
+        {status && <span className={`status ${status[0]}`}>{status[1]}</span>}
+        <span className="chev" aria-hidden>›</span>
       </Link>
     )
   }
@@ -42,15 +49,22 @@ export function AthleteSessions() {
   return (
     <div>
       <h1>Mes séances</h1>
-      <TrainingInfo />
-      <section>
-        <h2>À venir</h2>
-        {upcoming.length === 0 ? <Empty>Pas de séance prévue pour l’instant.</Empty> : <div className="list">{upcoming.map((a) => <Item key={a.id} a={a} />)}</div>}
-      </section>
-      <section>
-        <h2>Passées</h2>
-        {past.length === 0 ? <p className="muted">Rien pour l’instant.</p> : <div className="list">{past.map((a) => <Item key={a.id} a={a} />)}</div>}
-      </section>
+      <div className="tabs plan-tabs" role="tablist">
+        <button role="tab" aria-selected={tab === 'next'} className={tab === 'next' ? 'active' : ''} onClick={() => setTab('next')}>À venir</button>
+        <button role="tab" aria-selected={tab === 'past'} className={tab === 'past' ? 'active' : ''} onClick={() => setTab('past')}>Passées</button>
+      </div>
+      {tab === 'next' && (upcoming.length === 0 ? <Empty>Pas de séance prévue pour l’instant.</Empty> : <>
+        {weeks.map((w) => (
+          <section key={w}>
+            <h2 className="section-title">{weekLabel(w)}</h2>
+            <div className="rows">{shown.filter((a) => monday(a.date) === w).map((a) => <Row key={a.id} a={a} />)}</div>
+          </section>
+        ))}
+        {!more && shown.length < upcoming.length && <button className="btn block" onClick={() => setMore(true)}>Voir les {upcoming.length - shown.length} suivantes</button>}
+      </>)}
+      {tab === 'past' && (past.length === 0 ? <Empty>Rien pour l’instant.</Empty> : <div className="rows">{past.slice(0, more ? undefined : 15).map((a) => <Row key={a.id} a={a} />)}</div>)}
+      {tab === 'past' && !more && past.length > 15 && <button className="btn block" onClick={() => setMore(true)}>Voir tout</button>}
+      <details className="section-fold"><summary>Organisation des entraînements</summary><TrainingInfo /></details>
     </div>
   )
 }
