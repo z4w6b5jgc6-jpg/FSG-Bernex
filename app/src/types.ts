@@ -169,6 +169,8 @@ export interface SessionPlan {
   cooldown: string
   remarks: string
   subgroup: string
+  /** contenu détaillé importé (onglet Détail) : l'édition du plan ne le régénère pas */
+  detailed?: boolean
 }
 
 export interface Assignment {

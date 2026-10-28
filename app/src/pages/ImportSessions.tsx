@@ -18,8 +18,8 @@ import {confirmedStrengthCircuit} from '../data/strengthCircuit'
 import {SessionIllustrations} from '../components/SessionIllustrations'
 import { noteOf, saveNote, splitRemarks } from '../lib/notes'
 import { sheetText,looksLikePlan,extractTargets } from '../lib/smartImport'
-import { targetLabel } from '../lib/targets'
-import type { Assignment, Block, SessionIllustration } from '../types'
+import { planOf, targetLabel } from '../lib/targets'
+import type { Assignment, Block, Session, SessionIllustration } from '../types'
 import { errorMessage, formatDate, fullName, parseISODate } from '../lib/utils'
 
 // ids / unknown : plan par groupes, athlètes de la séance retrouvés (ou non) dans l'app
@@ -127,7 +127,16 @@ export function ImportSessions() {
     if(!source.length)return
     setRows(current=>current&&current.map(r=>!r.include?r:{...r,blocks:[...cloneBlocks(source).filter(b=>!r.blocks.some(old=>old.title===b.title)),...r.blocks]}));setReviewed(false)
   }
-  const chosen = rows?.filter((r) => r.include) ?? []
+  // Lundis à temps cibles déjà planifiés (même date, même sous-groupe) : on remplace seulement leur contenu détaillé
+  const subgroupOfTitle = (t: string) => /400\s*[-–]?\s*800|400 m/i.test(t) ? '400-800' : /sprint/i.test(t) ? 'sprint' : ''
+  const mondayOf = (r: Row) => {
+    const sg = r.date ? subgroupOfTitle(r.title) : ''
+    const m = sg ? sessions.filter((s) => planOf(s)?.date === r.date && planOf(s)!.subgroup === sg) : []
+    return m.length === 1 ? m[0] : undefined
+  }
+  const chosenAll = rows?.filter((r) => r.include) ?? []
+  const mondays = chosenAll.filter((r) => mondayOf(r))
+  const chosen = chosenAll.filter((r) => !mondayOf(r))
   const weekday = (d: string) => (d ? parseISODate(d).getDay() : -1)
   const fresh = chosen.filter((r) => !exists(r))
   const toRefresh = refresh ? chosen.filter(changed) : []
@@ -150,7 +159,7 @@ export function ImportSessions() {
   const existingSameDates=plan?chosen.filter(r=>r.date&&!plannedOf(r)&&assignments.some(a=>a.date===r.date&&JSON.stringify([a.group_id,[...a.athlete_ids].sort()])===JSON.stringify([scopeFor(r).group_id,[...scopeFor(r).athlete_ids].sort()]))):[]
   const invalidDurations=chosen.filter(r=>r.duration_min!=null&&(!Number.isInteger(r.duration_min)||r.duration_min<1||r.duration_min>480))
   const needsReview=declaredMismatch.length>0||repeatedDates.length>0||ambiguousMatches.length>0||otherDates.length>0||existingSameDates.length>0
-  const canRun=!loading&&!dataError&&chosen.length>0&&(plan||fresh.length>0||toRefresh.length>0)&&!invalidDurations.length&&!invalidDates.length&&(!plan||canPlan)&&(!needsReview||reviewed)&&!ambiguousMatches.length
+  const canRun=!loading&&!dataError&&chosenAll.length>0&&(plan||fresh.length>0||toRefresh.length>0||mondays.length>0)&&!invalidDurations.length&&!invalidDates.length&&(!plan||canPlan)&&(!needsReview||reviewed)&&!ambiguousMatches.length
   const run = async () => {
     if(!canRun||busy)return
     if(JSON.stringify(chosen.map(r=>r.blocks)).length>8*1024*1024){setErr('Le contenu avec illustrations dépasse 8 Mo. Importe moins de séances à la fois.');return}
@@ -161,6 +170,12 @@ export function ImportSessions() {
       const [liveSessions,liveAssignments]=await Promise.all([api.list('sessions'),api.list('assignments')])
       if(inventorySignature(liveSessions,liveAssignments)!==inventorySignature(sessions,assignments)){
         await reload();setReviewed(false);setErr('Le planning ou la bibliothèque ont évolué depuis l’aperçu. Les correspondances sont actualisées : vérifie les lignes puis relance l’import. Aucun contenu n’a été enregistré par cette tentative.');return
+      }
+      // Lundis à temps cibles : contenu détaillé seulement (plan, temps cibles, athlètes et retours conservés)
+      for (const r of mondays) {
+        const s = mondayOf(r)!
+        await save('sessions', { id: s.id, blocks: r.blocks, plan: { ...planOf(s)!, detailed: true } } as Partial<Session> & { id: string })
+        if (r.notes) await saveNote(save, session_notes, s.id, r.notes)
       }
       // Séances modifiées dans le fichier : contenu mis à jour (retours des athlètes conservés).
       // Une séance aussi planifiée à d'autres dates est copiée pour ne changer que celle-ci.
@@ -251,7 +266,8 @@ export function ImportSessions() {
                 {FOCUSES.map((f) => <option key={f}>{f}</option>)}
               </select>
             </Field>
-            <label className="check"><input type="checkbox" checked={plan} onChange={(e) => {setReviewed(false);setPlan(e.target.checked)}} /> <span><b>Planifier aussi</b> chaque séance à sa date</span></label>
+            {mondays.length > 0 && <div className="alert info small"><b>{mondays.length} lundi(s) à temps cibles</b> reconnu(s) : leur contenu détaillé remplacera celui du plan. Les temps cibles, les athlètes et les retours sont conservés ; aucune séance en double n’est créée.</div>}
+            {chosen.length > 0 && <label className="check"><input type="checkbox" checked={plan} onChange={(e) => {setReviewed(false);setPlan(e.target.checked)}} /> <span><b>Planifier aussi</b> les {chosen.length} autre(s) séance(s) à leur date</span></label>}
             {rows.some(changed) && (
               <label className="check">
                 <input type="checkbox" checked={refresh} onChange={(e) => setRefresh(e.target.checked)} />
@@ -364,7 +380,8 @@ export function ImportSessions() {
           <div className="sticky-actions">
             <button className="btn primary block" disabled={busy || !canRun || (plan && !perRow && members.length > 0 && out.length === members.length)} onClick={run}>
               {busy ? 'Import…' : [
-                fresh.length > 0 && `Importer ${fresh.length} séance(s)${plan && canPlan ? ` et planifier ${chosen.filter(r=>r.date&&(!perRow||r.ids.length>0)).length}` : ''}`,
+                mondays.length > 0 && `compléter ${mondays.length} lundi(s)`,
+                fresh.length > 0 && `importer ${fresh.length} séance(s)${plan && canPlan ? ` et planifier ${chosen.filter(r=>r.date&&(!perRow||r.ids.length>0)).length}` : ''}`,
                 toRefresh.length > 0 && `mettre à jour ${toRefresh.length} séance(s) modifiée(s)`,
                 toUpdate > 0 && `mettre à jour ${toUpdate} planification(s)`,
                 chosen.length > fresh.length + toUpdate && plan && `planifier ${chosen.length - fresh.length - toUpdate} séance(s) existante(s)`,

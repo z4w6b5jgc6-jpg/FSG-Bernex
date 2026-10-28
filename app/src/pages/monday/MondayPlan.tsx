@@ -88,7 +88,7 @@ function EditDay({ date, day }: { date: string; day: Session[] }) {
       for (const s of day) {
         const p: SessionPlan = { ...common, remarks: '', subgroup: planOf(s)!.subgroup, content: parts[s.id].content }
         const targets = parts[s.id].targets.filter((t) => t.d > 0 && t.pct > 0).map((t, i) => ({ ...t, ordre: i + 1 }))
-        await save('sessions', { id: s.id, plan: p, objective: planObjective(p), blocks: planBlocks(p), targets } as Partial<Session> & { id: string })
+        await save('sessions', { id: s.id, plan: p, objective: planObjective(p), blocks: p.detailed ? s.blocks : planBlocks(p), targets } as Partial<Session> & { id: string })
         await saveNote(save, session_notes, s.id, remarks)
       }
       nav(`/lundi?date=${date}`)
