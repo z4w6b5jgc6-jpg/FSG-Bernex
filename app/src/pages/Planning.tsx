@@ -3,12 +3,13 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { validDate } from '../lib/season'
 import { useData } from '../lib/data'
 import { AssignmentForm } from '../components/AssignmentForm'
+import { phaseTone, weekOf } from '../lib/macro'
 import type { Assignment } from '../types'
 import { addDays, athletesFor, formatDate, startOfWeek, todayISO } from '../lib/utils'
 
 /** Planning : la semaine en tableau (un jour = une section, une séance = une ligne), filtre par groupe */
 export function Planning() {
-  const { assignments, sessions, groups, athletes, feedback, competitions } = useData()
+  const { me, assignments, sessions, groups, athletes, feedback, competitions } = useData()
   const [params, setParams] = useSearchParams()
   const [groupId, setGroupId] = useState('')
   const [week, setWeek] = useState(startOfWeek(validDate(params.get('date') ?? '') ? params.get('date')! : todayISO()))
@@ -35,6 +36,16 @@ export function Planning() {
         </button>
         <button className="btn small" aria-label="Semaine suivante" onClick={() => setWeek(addDays(week, 7))}>›</button>
       </div>
+      {(() => {
+        const w = weekOf(me?.settings?.macro, addDays(week, 3))
+        return w && w.monday >= addDays(week, -6) ? (
+          <Link to="/saison" className="week-phase">
+            <span className={`status ${phaseTone(w.phase)}`}>S{w.week}</span>
+            <span className="row-main">{w.phase}{(w.mondayNote || w.wednesdayNote) && <small>{[w.mondayNote && `Lun. : ${w.mondayNote}`, w.wednesdayNote && `Mer. : ${w.wednesdayNote}`].filter(Boolean).join(' · ')}</small>}</span>
+            <span className="charge-cell"><b>{w.charge ?? '—'}</b><i style={{ width: `${w.charge ?? 0}%` }} className={phaseTone(w.phase)} /></span>
+          </Link>
+        ) : null
+      })()}
       {groups.length > 1 && (
         <div className="chips-wrap planning-filter">
           <button className={`mini-chip ${!groupId ? 'on' : ''}`} onClick={() => setGroupId('')}>Tous</button>

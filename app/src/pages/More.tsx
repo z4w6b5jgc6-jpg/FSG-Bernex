@@ -3,6 +3,7 @@ import { Icon } from '../components/Icon'
 
 export const MORE_ITEMS = [
   { to: '/seances', label: 'Séances', info: 'Bibliothèque et import Excel', icon: 'list' },
+  { to: '/saison', label: 'Saison', info: 'Macro-planification : phases et charge', icon: 'chart' },
   { to: '/assistant', label: 'Assistant IA', info: 'Discuter, demander une séance', icon: 'sparkles' },
   { to: '/sources', label: 'Sources de l’IA', info: 'Publications utilisées par l’Assistant', icon: 'bulb' },
   { to: '/lundi', label: 'Temps cibles', info: 'Plan du lundi, mode piste', icon: 'timer' },

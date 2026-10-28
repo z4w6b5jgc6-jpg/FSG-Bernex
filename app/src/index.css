@@ -1403,3 +1403,26 @@ button.row-item { width: 100%; font: inherit; background: none; border: 0; borde
 .kpis b { display: block; font-size: 1.35rem; line-height: 1.1; } .kpis span { font-size: 0.72rem; color: var(--muted); }
 .row-item > .row-tags { display: flex; gap: 0.25rem; flex-wrap: wrap; justify-content: flex-end; }
 .group-dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+/* ---------- Saison (macro-planification) ---------- */
+.charge-cell { width: 64px; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem; }
+.charge-cell b { font-size: 0.95rem; }
+.charge-cell i { display: block; height: 5px; border-radius: 3px; align-self: stretch; max-width: 100%; }
+i.blue, .group-dot.blue { background: #3d7bf7; } i.orange, .group-dot.orange { background: #f2a100; } i.red, .group-dot.red { background: #e2445c; }
+i.grey, .group-dot.grey { background: color-mix(in srgb, var(--muted) 55%, var(--surface)); } i.green, .group-dot.green { background: #00a35c; }
+.row-item.is-current { box-shadow: inset 3px 0 0 var(--primary); }
+.week-detail { display: block; background: color-mix(in srgb, var(--primary) 4%, var(--surface)); }
+.week-detail p { margin: 0.2rem 0; }
+.charge-chart { display: flex; align-items: flex-end; gap: 3px; height: 130px; overflow-x: auto; padding: 0.4rem 0.3rem 0; margin: 0.8rem 0 0.2rem;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
+.charge-chart button { position: relative; flex: 0 0 14px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; border: 0; background: none; padding: 0 0 16px; cursor: pointer; border-radius: 4px; }
+.charge-chart button.is-holiday { background: color-mix(in srgb, var(--muted) 12%, transparent); }
+.charge-chart button.is-current { outline: 2px solid var(--primary); outline-offset: -1px; }
+.charge-chart i { width: 10px; border-radius: 3px 3px 0 0; }
+.charge-chart small { position: absolute; bottom: 2px; font-size: 0.55rem; color: var(--muted); }
+.charge-chart em { position: absolute; top: 0; font-style: normal; font-size: 0.6rem; color: #e2445c; }
+.season-hero { background: linear-gradient(140deg, #14213a, #3d7bf7 160%); }
+.micro-days li { padding: 0.2rem 0; font-size: 0.85rem; }
+.micro-days span { display: inline-block; width: 2.4rem; }
+.week-phase { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 0.8rem; margin-bottom: 0.6rem; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); text-decoration: none; }
+.week-phase:hover { text-decoration: none; }

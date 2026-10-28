@@ -14,6 +14,7 @@ const DbUpdate = lazy(() => import('./pages/DbUpdate').then((m) => ({ default: m
 import { Onboarding } from './pages/Onboarding'
 import { Dashboard } from './pages/Dashboard'
 import { More, MORE_ITEMS } from './pages/More'
+import { Season } from './pages/Season'
 import { Planning } from './pages/Planning'
 import { PublicPrivacy } from './pages/PublicPrivacy'
 import { Privacy } from './pages/Privacy'
@@ -108,6 +109,7 @@ function CoachApp() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/planning" element={<Planning />} />
         <Route path="/plus" element={<More />} />
+        <Route path="/saison" element={<Season />} />
         <Route path="/messages" element={<Messages coach />} />
         <Route path="/notifications" element={<NotificationsSetup />} />
         <Route path="/confidentialite" element={<Privacy />} />

@@ -10,6 +10,8 @@ export interface ClubSettings {
   /** Coach intentions by week / athlete / programme, independent of a theoretical annual plan. */
   loadIntentions?: import('./weeklyDynamics').WeeklyIntentions
   privacy?: PrivacySettings
+  /** macro-planification importée (page Saison) */
+  macro?: import('./macro').MacroPlan
   season?: import('./season').SeasonPlan
   /** lieux proposés dans les listes */
   venues?: string[]
