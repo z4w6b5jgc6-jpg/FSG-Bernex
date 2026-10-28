@@ -1,10 +1,9 @@
 import { Icon } from './components/Icon'
 import { lazy, Suspense, useEffect, type ReactNode } from 'react'
-import { HashRouter, Navigate, NavLink, Route, Routes } from 'react-router-dom'
+import { HashRouter, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { api } from './api'
 import { DataProvider, useData, useMyAthlete } from './lib/data'
 import { applyAccent } from './lib/athlete'
-import { InstallPrompt } from './components/InstallPrompt'
 import { Logo } from './components/Logo'
 import { AppLock } from './components/AppLock'
 import { logout } from './lib/lock'
@@ -15,6 +14,8 @@ const DbUpdate = lazy(() => import('./pages/DbUpdate').then((m) => ({ default: m
 import { Onboarding } from './pages/Onboarding'
 import {WeeklyReview} from './pages/WeeklyReview'
 import { Dashboard } from './pages/Dashboard'
+import { Cockpit } from './pages/Cockpit'
+import { More, MORE_ITEMS } from './pages/More'
 import { Planning } from './pages/Planning'
 import { Season } from './pages/Season'
 import { PublicPrivacy } from './pages/PublicPrivacy'
@@ -51,17 +52,15 @@ import { AthleteProfile } from './pages/athlete/AthleteProfile'
 
 type NavItem = { to: string; label: string; icon: string }
 
+// Barre du bas (téléphone) : 4 entrées + « Plus » ; sur ordinateur, la barre du haut montre aussi les entrées de « Plus »
 const COACH_NAV: NavItem[] = [
-  { to: '/', label: 'Cockpit', icon: 'chart' },
+  { to: '/', label: 'Aujourd’hui', icon: 'home' },
   { to: '/planning', label: 'Planning', icon: 'calendar' },
-  { to: '/saison', label: 'Saison', icon: 'chart' },
-  { to: '/bilan', label: 'Bilans', icon: 'list' },
-  { to: '/assistant', label: 'Assistant', icon: 'sparkles' },
-  { to: '/seances', label: 'Séances', icon: 'list' },
   { to: '/athletes', label: 'Athlètes', icon: 'users' },
-  { to: '/competitions', label: 'Compét.', icon: 'trophy' },
   { to: '/messages', label: 'Messages', icon: 'message' },
+  { to: '/plus', label: 'Plus', icon: 'list' },
 ]
+const COACH_TOPNAV: NavItem[] = [...COACH_NAV.slice(0, 4), ...MORE_ITEMS.map(({ to, label, icon }) => ({ to, label, icon }))]
 
 const ATHLETE_NAV: NavItem[] = [
   { to: '/', label: 'Accueil', icon: 'home' },
@@ -71,7 +70,9 @@ const ATHLETE_NAV: NavItem[] = [
   { to: '/profil', label: 'Profil', icon: 'user' },
 ]
 
-function Shell({ nav, brand, right, children }: { nav: NavItem[]; brand: ReactNode; right?: ReactNode; children: ReactNode }) {
+function Shell({ nav, top = nav, brand, right, children }: { nav: NavItem[]; top?: NavItem[]; brand: ReactNode; right?: ReactNode; children: ReactNode }) {
+  const { pathname } = useLocation()
+  const inMore = MORE_ITEMS.some((m) => pathname.startsWith(m.to))
   const { error, me, messages, feedback } = useData()
   // Pastille du menu Messages : non lus (+ retours sans réponse pour le coach)
   const badge = me?.role === 'coach' ? unreadByCoach(messages).length + feedbackToAnswer(feedback, messages).length : unreadByAthlete(messages).length
@@ -81,7 +82,7 @@ function Shell({ nav, brand, right, children }: { nav: NavItem[]; brand: ReactNo
       <header className="topbar">
         <span className="brand">{brand}</span>
         <nav className="topnav">
-          {nav.map((n) => <NavLink key={n.to} to={n.to} end={n.to === '/'}><span className="nav-ico" aria-hidden><Icon name={n.icon} /></span>{n.label}{dot(n.to)}</NavLink>)}
+          {top.map((n) => <NavLink key={n.to} to={n.to} end={n.to === '/'}><span className="nav-ico" aria-hidden><Icon name={n.icon} /></span>{n.label}{dot(n.to)}</NavLink>)}
         </nav>
         {right}
       </header>
@@ -89,8 +90,8 @@ function Shell({ nav, brand, right, children }: { nav: NavItem[]; brand: ReactNo
       {error && <div className="alert danger container">Erreur de chargement : {error}</div>}
       <main className="container">{children}</main>
       <nav className="bottomnav">
-        {nav.filter(n => me?.role !== 'coach' || ['/', '/planning','/saison','/athletes','/messages'].includes(n.to)).map((n) => (
-          <NavLink key={n.to} to={n.to} end={n.to === '/'}>
+        {nav.map((n) => (
+          <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => (isActive || (n.to === '/plus' && inMore) ? 'active' : '')}>
             <span><Icon name={n.icon} />{dot(n.to)}</span>
             <small>{n.label}</small>
           </NavLink>
@@ -104,12 +105,13 @@ function CoachApp() {
   const { me } = useData()
   useEffect(() => applyAccent(null), [])
   return (
-    <Shell nav={COACH_NAV} brand={<><Logo kind="symbol" className="brand-logo" /><span className="brand-name">{me?.club_name ?? 'Coach Athlé'}</span></>}
+    <Shell nav={COACH_NAV} top={COACH_TOPNAV} brand={<><Logo kind="symbol" className="brand-logo" /><span className="brand-name">{me?.club_name ?? 'Coach Athlé'}</span></>}
       right={<button className="btn ghost small" onClick={() => logout(me?.email, api.signOut)}>Déconnexion</button>}>
-      <InstallPrompt who="coach" />
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/planning" element={<Planning />} />
+        <Route path="/plus" element={<More />} />
+        <Route path="/cockpit" element={<Cockpit />} />
         <Route path="/saison" element={<Season />} /><Route path="/bilan" element={<WeeklyReview/>}/>
         <Route path="/messages" element={<Messages coach />} />
         <Route path="/notifications" element={<NotificationsSetup />} />
