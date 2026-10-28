@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { validDate } from '../lib/season'
 import { useData } from '../lib/data'
 import { AssignmentForm } from '../components/AssignmentForm'
 import { phaseTone, weekOf } from '../lib/macro'
+import { findDuplicates } from '../lib/duplicates'
 import type { Assignment } from '../types'
 import { addDays, athletesFor, formatDate, startOfWeek, todayISO } from '../lib/utils'
 
@@ -20,6 +21,7 @@ export function Planning() {
   const days = Array.from({ length: 7 }, (_, i) => addDays(week, i))
   const active = athletes.filter((a) => a.active)
   const shown = assignments.filter((a) => !groupId || a.group_id === groupId || athletesFor(a, athletes).some((p) => p.group_id === groupId))
+  const dups = useMemo(() => findDuplicates(assignments, sessions, athletes, feedback).length, [assignments, sessions, athletes, feedback])
   const closeForm = () => { setForm(null); if (params.has('seance')) setParams({}, { replace: true }) }
   const planOn = (date: string) => setForm({ date, group_id: groupId || null, athlete_ids: [] })
 
@@ -94,6 +96,7 @@ export function Planning() {
       })}
 
       <div className="rows planning-tools">
+        <Link to="/planning/doublons" className="row-item"><span className="row-main">Vérifier les doublons<small>Même jour, mêmes athlètes</small></span>{dups > 0 && <span className="status red">{dups}</span>}<span className="chev" aria-hidden>›</span></Link>
         <Link to="/planning/athletes" className="row-item"><span className="row-main">Qui fait quoi<small>Ajouter ou retirer un athlète d’une série</small></span><span className="chev" aria-hidden>›</span></Link>
         <Link to="/seances/import" className="row-item"><span className="row-main">Importer un plan Excel / Word</span><span className="chev" aria-hidden>›</span></Link>
         <Link to="/planning/export" className="row-item"><span className="row-main">Exporter en Excel</span><span className="chev" aria-hidden>›</span></Link>

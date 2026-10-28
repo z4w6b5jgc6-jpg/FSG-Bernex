@@ -21,6 +21,7 @@ import { Privacy } from './pages/Privacy'
 import { AssignmentDetail } from './pages/AssignmentDetail'
 import { ExportSessions } from './pages/ExportSessions'
 import { WhoDoesWhat } from './pages/WhoDoesWhat'
+import { Duplicates } from './pages/Duplicates'
 import { Messages } from './pages/Messages'
 import { feedbackToAnswer, unreadByAthlete, unreadByCoach } from './lib/messages'
 import { NotificationsSetup } from './pages/NotificationsSetup'
@@ -119,6 +120,7 @@ function CoachApp() {
         <Route path="/lundi/plan/:date" element={<MondayEdit />} />
         <Route path="/lundi/import" element={<MondayImport />} />
         <Route path="/planning/athletes" element={<WhoDoesWhat />} />
+        <Route path="/planning/doublons" element={<Duplicates />} />
         <Route path="/planning/export" element={<ExportSessions />} />
         <Route path="/planning/:id" element={<AssignmentDetail />} />
         <Route path="/seances" element={<Sessions />} />

@@ -1426,3 +1426,6 @@ i.grey, .group-dot.grey { background: color-mix(in srgb, var(--muted) 55%, var(-
 .micro-days span { display: inline-block; width: 2.4rem; }
 .week-phase { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 0.8rem; margin-bottom: 0.6rem; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); text-decoration: none; }
 .week-phase:hover { text-decoration: none; }
+.dup-row { cursor: pointer; }
+.dup-row input[type='radio'] { width: 20px; height: 20px; accent-color: var(--primary); flex-shrink: 0; }
+.check input[type='checkbox'] { flex-shrink: 0; width: 18px; height: 18px; }
