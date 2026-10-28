@@ -12,12 +12,9 @@ import { Join } from './pages/Join'
 import { CoachJoin } from './pages/CoachJoin'
 const DbUpdate = lazy(() => import('./pages/DbUpdate').then((m) => ({ default: m.DbUpdate })))
 import { Onboarding } from './pages/Onboarding'
-import {WeeklyReview} from './pages/WeeklyReview'
 import { Dashboard } from './pages/Dashboard'
-import { Cockpit } from './pages/Cockpit'
 import { More, MORE_ITEMS } from './pages/More'
 import { Planning } from './pages/Planning'
-import { Season } from './pages/Season'
 import { PublicPrivacy } from './pages/PublicPrivacy'
 import { Privacy } from './pages/Privacy'
 import { AssignmentDetail } from './pages/AssignmentDetail'
@@ -111,8 +108,6 @@ function CoachApp() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/planning" element={<Planning />} />
         <Route path="/plus" element={<More />} />
-        <Route path="/cockpit" element={<Cockpit />} />
-        <Route path="/saison" element={<Season />} /><Route path="/bilan" element={<WeeklyReview/>}/>
         <Route path="/messages" element={<Messages coach />} />
         <Route path="/notifications" element={<NotificationsSetup />} />
         <Route path="/confidentialite" element={<Privacy />} />

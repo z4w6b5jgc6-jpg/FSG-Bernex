@@ -44,11 +44,11 @@ export function Sessions() {
   return (
     <div className="training-library">
       <div className="row between wrap">
-        <div><h1>Séances</h1><p className="muted">Choisis ton entraînement, retrouve tes séances par date.</p></div>
+        <h1>Séances</h1>
         <div className="row gap wrap">
-          <Link className="btn" to="/exercices">Bibliothèque d’exercices</Link>
+          <Link className="btn" to="/exercices">Exercices</Link>
           <Link className="btn" to="/seances/import">Importer</Link>
-          <button className="btn primary" disabled={busy} onClick={() => create()}>Créer une séance</button>
+          <button className="btn primary" disabled={busy} onClick={() => create()}>+ Séance</button>
         </div>
       </div>
       <input className="search" aria-label="Rechercher une séance" placeholder="Rechercher une séance, un objectif…" value={q} onChange={e => setQ(e.target.value)} />
@@ -73,27 +73,20 @@ export function Sessions() {
               {!rows.length && <p className="muted small">{q ? 'Aucune séance ne correspond à cette recherche.' : 'Pas encore de séance dans cette catégorie.'}</p>}
               {dates.map(date => <section key={date || 'undated'} className="training-date-group">
                 <h2>{dateLabel(date)}</h2>
-                {rows.filter(row => row.date === date).map(({ session: s, assignment, source }) => <div className="training-session-row" key={assignment?.id ?? s.id}>
-                  <div className="training-session-description">
-                    <Link to={`/seances/${s.id}`}><strong>{s.title}</strong></Link>
-                    <p className="muted small">{source === 'scheduled' ? `Planifiée · ${assignment?.time || 'heure à définir'}` : source === 'imported' ? 'Date du programme importé · à planifier' : 'Modèle à planifier'}{s.duration_min ? ` · ${s.duration_min} min` : ''} · {s.blocks.reduce((n, b) => n + b.items.length, 0)} exercices</p>
-                    {s.objective && <p className="small muted">{s.objective}</p>}
-                  </div>
-                  <div className="row gap wrap">
-                    <Link className="btn small" to={assignment ? `/planning?date=${assignment.date}` : `/planning?seance=${s.id}`}>{assignment ? 'Planning' : 'Planifier'}</Link>
-                    <details className="row-menu"><summary className="btn small" aria-label={`Actions ${s.title}`}>•••</summary><div className="row-menu-content">
-                      <Link className="btn small" to={`/seances/${s.id}`}>Modifier</Link>
-                      <button className="btn small" onClick={() => duplicate(s.id).catch(e => alert(errorMessage(e)))}>Dupliquer</button>
-                      <button className="btn small ghost danger" onClick={() => del(s.id).catch(e => alert(errorMessage(e)))}>Supprimer</button>
-                    </div></details>
-                  </div>
-                </div>)}
+                <div className="rows">{rows.filter(row => row.date === date).map(({ session: s, assignment, source }) => <div className="row-item" key={assignment?.id ?? s.id}>
+                  <Link to={`/seances/${s.id}`} className="row-main">{s.title}<small>{source === 'scheduled' ? `Planifiée${assignment?.time ? ' · ' + assignment.time : ''}` : source === 'imported' ? 'À planifier' : 'Modèle'}{s.duration_min ? ` · ${s.duration_min} min` : ''}</small></Link>
+                  <Link className="btn small" to={assignment ? `/planning/${assignment.id}` : `/planning?seance=${s.id}`}>{assignment ? 'Voir' : 'Planifier'}</Link>
+                  <details className="row-menu"><summary className="btn small ghost" aria-label={`Actions ${s.title}`}>•••</summary><div className="row-menu-content">
+                    <Link className="btn small" to={`/seances/${s.id}`}>Modifier</Link>
+                    <button className="btn small" onClick={() => duplicate(s.id).catch(e => alert(errorMessage(e)))}>Dupliquer</button>
+                    <button className="btn small ghost danger" onClick={() => del(s.id).catch(e => alert(errorMessage(e)))}>Supprimer</button>
+                  </div></details>
+                </div>)}</div>
               </section>)}
             </div>
           </details>
         })}
       </div>
-      <p className="muted small">Classement d’après le titre et le thème. Les séances mêlant plusieurs disciplines sont dans « Autres séances ». Les dates affichées proviennent du planning ou du programme importé.</p>
     </div>
   )
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { disableLock, enableLock, lockEnabled, lockSupported } from '../lib/lock'
 import { setThemePref, themePref, type ThemePref } from '../lib/theme'
-import { APP_ICONS, appIcon, setAppIcon, setTileSize, setTileStyle, tileSize, tileStyle, usePrefsVersion } from '../lib/prefs'
+import { APP_ICONS, appIcon, setAppIcon, usePrefsVersion } from '../lib/prefs'
 import { errorMessage } from '../lib/utils'
 
 const THEMES: { v: ThemePref; label: string }[] = [
@@ -39,18 +39,6 @@ export function DevicePrefs({ email }: { email: string }) {
         <div className="tabs">
           {THEMES.map((t) => <button key={t.v} type="button" className={theme === t.v ? 'active' : ''} onClick={() => pick(t.v)}>{t.label}</button>)}
         </div>
-      </div>
-      <div>
-        <span className="field-label small">Tuiles de l’accueil</span>
-        <div className="tabs">
-          <button type="button" className={tileStyle() === 'sobre' ? 'active' : ''} onClick={() => setTileStyle('sobre')}>Sobres</button>
-          <button type="button" className={tileStyle() === 'couleur' ? 'active' : ''} onClick={() => setTileStyle('couleur')}>En couleur</button>
-        </div>
-        <div className="tabs" style={{ marginTop: '0.4rem' }}>
-          <button type="button" className={tileSize() === 'grande' ? 'active' : ''} onClick={() => setTileSize('grande')}>Grandes, avec infos</button>
-          <button type="button" className={tileSize() === 'compacte' ? 'active' : ''} onClick={() => setTileSize('compacte')}>Compactes</button>
-        </div>
-        <p className="tiny muted">L’ordre et les tuiles affichées se changent sur l’accueil : « Organiser l’accueil », sous les tuiles.</p>
       </div>
       <div>
         <span className="field-label small">Icône de l’app sur l’écran d’accueil</span>

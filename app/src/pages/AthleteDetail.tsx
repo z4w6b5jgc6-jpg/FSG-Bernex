@@ -1,4 +1,4 @@
-import {AvailabilityPanel,LoadChart,ExerciseResults,PerformanceHighlights} from '../components/AthleteMonitoring'
+import {AvailabilityPanel,LoadChart,ExerciseResults} from '../components/AthleteMonitoring'
 import { Avatar } from '../components/Avatar'
 import { useState } from 'react'
 import { BackLink } from '../components/BackLink'
@@ -77,47 +77,59 @@ export function AthleteDetail() {
         <button className="btn small" onClick={() => setEditing(true)}>Modifier / groupe</button>
       </div>
 
-      <Link className="btn" to={`/saison?athlete=${a.id}`}>Cycles et aide à l’adaptation →</Link>
-      <Link className="btn" to={`/bilan?athlete=${a.id}`}>Bilan individuel et semaine suivante →</Link>
-      <PerformanceHighlights athleteId={a.id}/>
-      <LoadChart athleteId={a.id} />
-      <AvailabilityPanel athleteId={a.id} />
-      <ExerciseResults athleteId={a.id} />
       <ProfileTiles athlete={a} coach />
 
       {hash === '#seances' && <AthleteSeriesCard athlete={a} />}
 
       <section>
-        <h2>Suivi</h2>
-        <div className="stats">
-          <div className="stat"><b>{done}</b><span>séances faites</span></div>
-          <div className="stat"><b>{past.length ? Math.round((fbs.length / past.length) * 100) : '—'}%</b><span>retours</span></div>
-          <div className="stat"><b>{avg}</b><span>effort moyen</span></div>
-          <div className="stat"><b>{feedbackStreak(mine, fbs)}</b><span>série</span></div>
+        <h2 className="section-title">Suivi</h2>
+        <div className="kpis">
+          <div><b>{done}</b><span>faites</span></div>
+          <div><b>{past.length ? Math.round((fbs.length / past.length) * 100) + '%' : '—'}</b><span>retours</span></div>
+          <div><b>{avg}</b><span>effort</span></div>
+          <div><b>{feedbackStreak(mine, fbs)}</b><span>série</span></div>
         </div>
-        <div className="card"><b className="small">Effort ressenti</b><EffortBars assignments={mine} feedback={fbs} /></div>
-        {well.length === 0 ? <p className="muted small">Pas encore de check-in bien-être.</p> : (
-          <>
-            <div className="card"><SleepBars wellness={well} /></div>
-            <div className="card">
-              <table className="table small">
-                <tbody>
-                  {lastWell.map((w) => (
-                    <tr key={w.id}>
-                      <td>{formatShort(w.date)}</td>
-                      <td>{w.sleep_hours ?? '–'} h</td>
-                      <td>{w.energy ? ENERGY[w.energy] : '–'}</td>
-                      <td className={(w.soreness ?? 0) >= 4 ? 'warn-text' : ''}>{w.soreness ? SORENESS[w.soreness] : '–'}</td>
-                      <td className={(w.stress ?? 0) >= 4 ? 'warn-text' : ''}>{w.stress ? STRESS[w.stress] : '–'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <p className="tiny muted">Sommeil · énergie · courbatures · stress</p>
+        {lastWell[0] && (
+          <div className="rows">
+            <div className="row-item">
+              <span className="row-main">Dernier ressenti<small>{formatShort(lastWell[0].date)}</small></span>
+              <span className="row-tags">
+                {lastWell[0].sleep_hours != null && <span className="status grey">{lastWell[0].sleep_hours} h</span>}
+                {lastWell[0].energy != null && <span className={`status ${lastWell[0].energy <= 2 ? 'orange' : 'green'}`}>{ENERGY[lastWell[0].energy]}</span>}
+                {lastWell[0].soreness != null && <span className={`status ${lastWell[0].soreness >= 4 ? 'orange' : 'grey'}`}>{SORENESS[lastWell[0].soreness]}</span>}
+                {lastWell[0].stress != null && lastWell[0].stress >= 4 && <span className="status blue">{STRESS[lastWell[0].stress]}</span>}
+              </span>
             </div>
-          </>
+          </div>
         )}
+        <div className="card"><b className="small">Effort ressenti</b><EffortBars assignments={mine} feedback={fbs} /></div>
       </section>
+
+      {well.length > 0 && (
+        <details className="section-fold">
+          <summary>Bien-être <span className="muted small">(7 derniers)</span></summary>
+          <div className="card"><SleepBars wellness={well} /></div>
+          <div className="card">
+            <table className="table small">
+              <tbody>
+                {lastWell.map((w) => (
+                  <tr key={w.id}>
+                    <td>{formatShort(w.date)}</td>
+                    <td>{w.sleep_hours ?? '–'} h</td>
+                    <td>{w.energy ? ENERGY[w.energy] : '–'}</td>
+                    <td className={(w.soreness ?? 0) >= 4 ? 'warn-text' : ''}>{w.soreness ? SORENESS[w.soreness] : '–'}</td>
+                    <td className={(w.stress ?? 0) >= 4 ? 'warn-text' : ''}>{w.stress ? STRESS[w.stress] : '–'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="tiny muted">Sommeil · énergie · courbatures · stress</p>
+          </div>
+        </details>
+      )}
+      <details className="section-fold"><summary>Charge déclarée</summary><LoadChart athleteId={a.id} /></details>
+      <details className="section-fold"><summary>Disponibilités et absences</summary><AvailabilityPanel athleteId={a.id} /></details>
+      <details className="section-fold"><summary>Carnet d’exercices</summary><ExerciseResults athleteId={a.id} /></details>
 
       {upcoming.length > 0 && (
         <details className="section-fold">

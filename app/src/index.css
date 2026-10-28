@@ -1389,3 +1389,17 @@ button.row-item { width: 100%; font: inherit; background: none; border: 0; borde
 .week-strip .is-planned i { background: var(--muted); } .week-strip .is-done i { background: #00a35c; }
 .week-strip .is-today { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
 .today-head.row { align-items: flex-start; }
+.week-nav { display: flex; align-items: center; gap: 0.5rem; margin: 0.6rem 0; }
+.week-label { flex: 1; font: inherit; font-weight: 700; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.45rem; color: var(--text); cursor: pointer; }
+.planning-filter { margin: 0.2rem 0 0.6rem; }
+.day-group .section-title { margin-top: 1rem; text-transform: capitalize; }
+.section-title.is-today { color: var(--primary); }
+.day-empty { display: flex; justify-content: space-between; align-items: center; padding: 0.55rem 0.2rem; color: var(--muted); font-size: 0.88rem; border-bottom: 1px dashed var(--border); text-transform: capitalize; }
+.day-empty.is-today { color: var(--primary); font-weight: 700; }
+.time-chip { width: 46px; flex-shrink: 0; font-weight: 700; font-size: 0.88rem; color: var(--muted); }
+.planning-tools { margin-top: 1.4rem; }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; margin-bottom: 0.6rem; }
+.kpis > div { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 0.55rem 0.3rem; text-align: center; }
+.kpis b { display: block; font-size: 1.35rem; line-height: 1.1; } .kpis span { font-size: 0.72rem; color: var(--muted); }
+.row-item > .row-tags { display: flex; gap: 0.25rem; flex-wrap: wrap; justify-content: flex-end; }
+.group-dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }

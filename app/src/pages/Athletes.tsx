@@ -6,7 +6,7 @@ import { InviteCard } from '../components/InviteCard'
 import { Empty, Field, Modal } from '../components/ui'
 import type { Athlete, Group } from '../types'
 import { api } from '../api'
-import { errorMessage, fullName } from '../lib/utils'
+import { addDays, errorMessage, fullName, todayISO } from '../lib/utils'
 import { ImportRoster } from '../components/ImportRoster'
 import { CoachesCard } from '../components/CoachesCard'
 import { SubgroupSelect } from '../components/SubgroupSelect'
@@ -14,15 +14,24 @@ import { SubgroupSelect } from '../components/SubgroupSelect'
 const COLORS = ['#2563eb', '#db2777', '#16a34a', '#ea580c', '#7c3aed', '#0891b2', '#ca8a04', '#64748b']
 
 export function Athletes() {
- const {athletes,groups,wellness,feedback,assignments}=useData()
+ const {athletes,groups,wellness,feedback}=useData()
  const [editAthlete,setEditAthlete]=useState<Partial<Athlete>|null>(null),[editGroup,setEditGroup]=useState<Partial<Group>|null>(null)
  const [importing,setImporting]=useState(false),[showInactive,setShowInactive]=useState(false),[q,setQ]=useState('')
  const visible=athletes.filter(a=>(showInactive||a.active)&&fullName(a).toLowerCase().includes(q.toLowerCase()))
  const sections=[...groups.map(group=>({group,list:visible.filter(a=>a.group_id===group.id)})),{group:null,list:visible.filter(a=>!a.group_id||!groups.some(g=>g.id===a.group_id))}]
- return <div><div className="workspace-title"><div><p className="eyebrow">SUIVI INDIVIDUEL</p><h1>Les athlètes</h1></div><button className="btn primary" onClick={()=>setEditAthlete({})}>+ Athlète</button></div>
+ return <div><div className="row between"><h1>Athlètes</h1><button className="btn primary" onClick={()=>setEditAthlete({})}>+ Athlète</button></div>
   <PendingSignups/>
   <input aria-label="Rechercher un athlète" placeholder="Rechercher un athlète…" value={q} onChange={e=>setQ(e.target.value)}/>
-  {sections.filter(s=>s.list.length).map(({group,list})=><section className="athlete-board" key={group?.id??'none'}><div className="row between"><h2 style={{color:group?.color}}>{group?.name??'Sans groupe'} <span className="muted small">{list.length}</span></h2>{group&&<button className="btn ghost small" onClick={()=>setEditGroup(group)}>Gérer le groupe</button>}</div><div className="board-scroll"><table className="table board-table"><thead><tr><th>Athlète</th><th>Disciplines et objectif</th><th>Dernière forme déclarée</th><th>Dernier retour</th><th></th></tr></thead><tbody>{list.map(a=>{const w=wellness.filter(w=>w.athlete_id===a.id).sort((a,b)=>b.date.localeCompare(a.date))[0];const f=feedback.filter(f=>f.athlete_id===a.id).sort((a,b)=>b.updated_at.localeCompare(a.updated_at))[0];return <tr key={a.id}><td><Link className="row gap" to={`/athletes/${a.id}`}><Avatar a={a} size="sm"/><b>{fullName(a)}</b></Link><span className={`tiny ${a.active?'muted':'warn-text'}`}>{a.active?(a.user_id?'Compte relié':'Invitation à envoyer'):'Inactif'}</span></td><td><span className="small">{a.events||'À préciser'}</span><p className="tiny muted">{a.goals||'Objectif à compléter'}</p></td><td>{w?<><span className={`pill ${(w.energy??5)<=2?'warn':''}`}>Énergie {w.energy??'—'}/5</span><p className="tiny muted">{w.date}</p></>:<span className="small muted">Non renseignée</span>}</td><td className="small">{f?assignments.find(x=>x.id===f.assignment_id)?.date??'Reçu':'En attente'}</td><td><div className="row gap"><Link className="btn small" to={`/athletes/${a.id}`}>Suivi</Link><button className="btn ghost small" onClick={()=>setEditAthlete(a)}>Modifier</button></div></td></tr>})}</tbody></table></div></section>)}
+  {sections.filter(s=>s.list.length).map(({group,list})=><section key={group?.id??'none'}><div className="row between"><h2 className="section-title"><span className="group-dot" style={{background:group?.color??'var(--muted)'}}/>{group?.name??'Sans groupe'} <span className="count">{list.length}</span></h2>{group&&<button className="btn ghost small" onClick={()=>setEditGroup(group)}>Gérer</button>}</div><div className="rows">{list.map(a=>{
+const w=wellness.filter(w=>w.athlete_id===a.id).sort((a,b)=>b.date.localeCompare(a.date))[0]
+const recent=w&&w.date>=addDays(todayISO(),-3)
+const pain=feedback.some(f=>f.athlete_id===a.id&&f.pain?.trim()&&f.updated_at.slice(0,10)>=addDays(todayISO(),-3))
+return <Link key={a.id} to={`/athletes/${a.id}`} className="row-item"><Avatar a={a} size="sm"/><span className="row-main">{fullName(a)}<small>{a.events||'Disciplines à préciser'}</small></span><span className="row-tags">
+{!a.active?<span className="status grey">Inactif</span>:!a.user_id&&<span className="status grey">Pas inscrit·e</span>}
+{pain&&<span className="status red">Douleur</span>}
+{recent&&(w.energy??5)<=2&&<span className="status orange">Fatigue</span>}
+{recent&&(w.soreness??0)>=4&&<span className="status orange">Courbatures</span>}
+</span><span className="chev" aria-hidden>›</span></Link>})}</div></section>)}
   {!visible.length&&<Empty>Aucun athlète pour ce filtre.</Empty>}
   <details className="card"><summary><b>Invitations et gestion du groupe</b></summary><InviteCard/><CoachesCard/><div className="row gap wrap"><button className="btn" onClick={()=>setImporting(true)}>Importer ma liste</button><Link className="btn" to="/athletes/questionnaire">Importer les profils</Link><button className="btn" onClick={()=>setEditGroup({})}>+ Groupe</button></div></details>
   <label className="check"><input type="checkbox" checked={showInactive} onChange={e=>setShowInactive(e.target.checked)}/>Afficher les athlètes inactifs</label>

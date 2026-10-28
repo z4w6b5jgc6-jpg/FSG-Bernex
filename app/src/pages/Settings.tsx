@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { BackLink } from '../components/BackLink'
 import { DevicePrefs } from '../components/DevicePrefs'
+import { TrainingInfo } from '../components/TrainingInfo'
 import { Field } from '../components/ui'
 import { api } from '../api'
 import { useData } from '../lib/data'
@@ -55,6 +56,8 @@ export function Settings() {
       <h1>Réglages de mon espace</h1>
       <p><Link className="btn" to="/confidentialite">Confidentialité, consentements et exports</Link></p>
       {me && <DevicePrefs email={me.email} />}
+
+      <TrainingInfo />
 
       <p className="small muted">Propres à ton groupe : les autres groupes du club ont leurs propres réglages et ne voient rien du tien.</p>
 

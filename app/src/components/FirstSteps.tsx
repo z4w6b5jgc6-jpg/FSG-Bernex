@@ -10,7 +10,7 @@ export function FirstSteps() {
   const [hidden, setHidden] = useState(() => { try { return localStorage.getItem(KEY) === '1' } catch { return false } })
   const steps = [
     { done: !!(me?.settings?.venues?.length || me?.settings?.group), to: '/reglages', label: 'Régler ton espace : lieux, saison, description du groupe' },
-    { done: !!me?.training_info, to: '/planning', label: 'Écrire l’organisation des entraînements (horaires, à prendre, absences)' },
+    { done: !!me?.training_info, to: '/reglages', label: 'Écrire l’organisation des entraînements (horaires, à prendre, absences)' },
     { done: groups.length > 0, to: '/athletes', label: 'Créer tes groupes' },
     { done: athletes.length > 0, to: '/athletes', label: 'Ajouter tes athlètes (liste à importer) et partager le lien d’inscription' },
     { done: tests.length > 0, to: '/tests', label: 'Choisir ta batterie de tests' },
