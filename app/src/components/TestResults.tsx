@@ -82,7 +82,7 @@ function HistoryChart({ s }: { s: TestSummary }) {
 }
 
 /** Résultats de tests d'un athlète : une tuile par test (meilleur essai, progression, record, évolution) */
-export function TestResults({ tests, results, onDelete }: { tests: TestDef[]; results: TestResult[]; onDelete?: (id: string) => void }) {
+export function TestResults({ tests, results, onDelete, canDelete = () => true }: { tests: TestDef[]; results: TestResult[]; onDelete?: (id: string) => void; canDelete?: (r: TestResult) => boolean }) {
   const [open, setOpen] = useState<string | null>(null)
   const summaries = tests.map((t) => summarize(t, results)).filter((s): s is TestSummary => s != null)
   if (summaries.length === 0) return <p className="muted small">Pas encore de résultat de test.</p>
@@ -136,7 +136,7 @@ export function TestResults({ tests, results, onDelete }: { tests: TestDef[]; re
                   <span>{formatShort(r.date)}{r.notes && <span className="muted small"> · {r.notes}</span>}</span>
                   <span className="row gap">
                     <b>{formatValue(r.value, current.test.unit)}</b>{r === current.best && ''}
-                    {onDelete && (
+                    {onDelete && canDelete(r) && (
                       <button className="btn ghost icon small danger" aria-label="Supprimer" onClick={() => { if (confirm('Supprimer ce résultat ?')) { onDelete(r.id); if (current.results.length === 1) setOpen(null) } }}>✕</button>
                     )}
                   </span>

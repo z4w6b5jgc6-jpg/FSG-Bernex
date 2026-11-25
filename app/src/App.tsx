@@ -7,6 +7,7 @@ import { applyAccent } from './lib/athlete'
 import { Logo } from './components/Logo'
 import { AppLock } from './components/AppLock'
 import { logout } from './lib/lock'
+import { syncPush } from './lib/push'
 import { Login } from './pages/Login'
 import { Join } from './pages/Join'
 import { CoachJoin } from './pages/CoachJoin'
@@ -14,36 +15,40 @@ const DbUpdate = lazy(() => import('./pages/DbUpdate').then((m) => ({ default: m
 import { Onboarding } from './pages/Onboarding'
 import { Dashboard } from './pages/Dashboard'
 import { More, MORE_ITEMS } from './pages/More'
-import { Season } from './pages/Season'
+const Season = lazy(() => import('./pages/Season').then((m) => ({ default: m.Season })))
 import { Planning } from './pages/Planning'
 import { PublicPrivacy } from './pages/PublicPrivacy'
-import { Privacy } from './pages/Privacy'
+const Privacy = lazy(() => import('./pages/Privacy').then((m) => ({ default: m.Privacy })))
 import { AssignmentDetail } from './pages/AssignmentDetail'
-import { ExportSessions } from './pages/ExportSessions'
-import { WhoDoesWhat } from './pages/WhoDoesWhat'
-import { Duplicates } from './pages/Duplicates'
+const ExportSessions = lazy(() => import('./pages/ExportSessions').then((m) => ({ default: m.ExportSessions })))
+const WhoDoesWhat = lazy(() => import('./pages/WhoDoesWhat').then((m) => ({ default: m.WhoDoesWhat })))
+const Duplicates = lazy(() => import('./pages/Duplicates').then((m) => ({ default: m.Duplicates })))
 import { Messages } from './pages/Messages'
 import { feedbackToAnswer, unreadByAthlete, unreadByCoach } from './lib/messages'
-import { NotificationsSetup } from './pages/NotificationsSetup'
-import { Settings } from './pages/Settings'
-import { MondayToday } from './pages/monday/MondayToday'
-import { MondayEdit, MondayPlan } from './pages/monday/MondayPlan'
-import { MondayImport } from './pages/monday/MondayImport'
+const NotificationsSetup = lazy(() => import('./pages/NotificationsSetup').then((m) => ({ default: m.NotificationsSetup })))
+const Settings = lazy(() => import('./pages/Settings').then((m) => ({ default: m.Settings })))
+const MondayToday = lazy(() => import('./pages/monday/MondayToday').then((m) => ({ default: m.MondayToday })))
+const MondayEdit = lazy(() => import('./pages/monday/MondayPlan').then((m) => ({ default: m.MondayEdit })))
+const MondayPlan = lazy(() => import('./pages/monday/MondayPlan').then((m) => ({ default: m.MondayPlan })))
+const MondayImport = lazy(() => import('./pages/monday/MondayImport').then((m) => ({ default: m.MondayImport })))
 import { Sessions } from './pages/Sessions'
 import { SessionEditor } from './pages/SessionEditor'
 import { Athletes } from './pages/Athletes'
 import { AthleteDetail } from './pages/AthleteDetail'
-import { Exercises } from './pages/Exercises'
+const Exercises = lazy(() => import('./pages/Exercises').then((m) => ({ default: m.Exercises })))
 import { Tips, TipDetail } from './pages/Tips'
-import { Tests, TestDetail, TestEntry, TestMatrix } from './pages/Tests'
-import { ImportResults } from './pages/ImportResults'
-import { ImportSessions } from './pages/ImportSessions'
-import { ImportProfiles } from './pages/ImportProfiles'
-import { Competitions } from './pages/Competitions'
-import { Imports } from './pages/Imports'
-import { Research } from './pages/Research'
-import { Assistant } from './pages/Assistant'
-import { SprintPaces } from './pages/SprintPaces'
+const Tests = lazy(() => import('./pages/Tests').then((m) => ({ default: m.Tests })))
+const TestDetail = lazy(() => import('./pages/Tests').then((m) => ({ default: m.TestDetail })))
+const TestEntry = lazy(() => import('./pages/Tests').then((m) => ({ default: m.TestEntry })))
+const TestMatrix = lazy(() => import('./pages/Tests').then((m) => ({ default: m.TestMatrix })))
+const ImportResults = lazy(() => import('./pages/ImportResults').then((m) => ({ default: m.ImportResults })))
+const ImportSessions = lazy(() => import('./pages/ImportSessions').then((m) => ({ default: m.ImportSessions })))
+const ImportProfiles = lazy(() => import('./pages/ImportProfiles').then((m) => ({ default: m.ImportProfiles })))
+const Competitions = lazy(() => import('./pages/Competitions').then((m) => ({ default: m.Competitions })))
+const Imports = lazy(() => import('./pages/Imports').then((m) => ({ default: m.Imports })))
+const Research = lazy(() => import('./pages/Research').then((m) => ({ default: m.Research })))
+const Assistant = lazy(() => import('./pages/Assistant').then((m) => ({ default: m.Assistant })))
+const SprintPaces = lazy(() => import('./pages/SprintPaces').then((m) => ({ default: m.SprintPaces })))
 import { AthleteHome } from './pages/athlete/AthleteHome'
 import { AthleteSessions, AthleteSessionDetail } from './pages/athlete/AthleteSessions'
 import { AthleteProgress } from './pages/athlete/AthleteProgress'
@@ -87,7 +92,7 @@ function Shell({ nav, top = nav, brand, right, children }: { nav: NavItem[]; top
       </header>
       {api.mode === 'demo' && <div className="demo-banner">Mode démo – données enregistrées sur cet appareil uniquement</div>}
       {error && <div className="alert danger container">Erreur de chargement : {error}</div>}
-      <main className="container">{children}</main>
+      <main className="container"><Suspense fallback={<p className="muted">Chargement…</p>}>{children}</Suspense></main>
       <nav className="bottomnav">
         {nav.map((n) => (
           <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => (isActive || (n.to === '/plus' && inMore) ? 'active' : '')}>
@@ -175,6 +180,9 @@ function AthleteApp() {
 
 function RoleGate() {
   const { me } = useData()
+  const role = me?.role, email = me?.email
+  // Notifications : l'abonnement de cet appareil suit le compte connecté
+  useEffect(() => { if (role === 'coach' || role === 'athlete') syncPush() }, [role, email])
   if (!me) return <Login />
   return (
     <AppLock key={me.email} email={me.email}>

@@ -1,5 +1,4 @@
 import { blockExternalAI } from '../lib/privacy'
-import { settings } from '../lib/settings'
 import { createClient } from '@supabase/supabase-js'
 import type { ClubInfo, Me, TableName } from '../types'
 import type { Api, Draft, Row } from './types'
@@ -21,7 +20,13 @@ const ERRORS: Record<string, string> = {
   club_coaches_pkey: 'Cet entraîneur est déjà ajouté.',
   'schema cache': `La base doit être mise à jour : ouvre ${window.location.host}/#/base et suis les étapes.`,
   club_coaches_email_check: 'Adresse email invalide.',
+  club_creation_closed: 'La création d’un espace entraîneur est fermée. Demande un lien d’invitation entraîneur au responsable du club.',
+  push_device_taken: 'Cet appareil reçoit déjà les notifications d’un autre compte. Désactive-les d’abord depuis ce compte.',
+  invalid_push_endpoint: 'Ce navigateur utilise un service de notifications non reconnu.',
 }
+
+/** Taille d'une page : Supabase renvoie au plus 1000 lignes par requête (réglage « Max rows ») */
+const PAGE = 1000
 
 function fail(message: string): never {
   const key = Object.keys(ERRORS).find((k) => message.includes(k))
@@ -106,7 +111,7 @@ export function createSupabaseApi(url: string, key: string): Api {
       const res=await fetch('/api/research',{method:'POST',headers:{'content-type':'application/json',authorization:`Bearer ${data.session?.access_token??''}`},body:JSON.stringify(options)})
       const out=await res.json();if(!res.ok)throw new Error(out.error??'Recherche indisponible');return out
     },
-    async chat(messages, session, library = []) { return (await assistantRequest('chat',{messages,session,library,groupe:settings().group})).reply },
+    async chat(messages, session, library = [], groupe = '') { return (await assistantRequest('chat',{messages,session,library,groupe})).reply },
     async readPlan(_texte) { return blockExternalAI() },
     async improveSession(session, library = []) { return assistantRequest('ameliorer',{session,library}) },
     async saveSettings(settings) {
@@ -136,9 +141,16 @@ export function createSupabaseApi(url: string, key: string): Api {
     },
 
     async list<K extends TableName>(table: K) {
-      if(table==='assignments')return check(await sb.rpc('visible_assignments')) as Row<K>[]
-      if(table==='competitions')return check(await sb.rpc('visible_competitions')) as Row<K>[]
-      return check(await sb.from(table).select('*').order(ORDER[table] ?? 'created_at', { ascending: true })) as Row<K>[]
+      // Lecture page par page : sans cela, au-delà de 1000 lignes, les plus récentes disparaîtraient sans erreur
+      const rows: Row<K>[] = []
+      for (let from = 0; ; from += PAGE) {
+        const query = table === 'assignments' ? sb.rpc('visible_assignments').order('date').order('id')
+          : table === 'competitions' ? sb.rpc('visible_competitions').order('date').order('id')
+          : sb.from(table).select('*').order(ORDER[table] ?? 'created_at', { ascending: true }).order('id')
+        const page = check(await query.range(from, from + PAGE - 1)) as Row<K>[]
+        rows.push(...page)
+        if (page.length < PAGE) return rows
+      }
     },
     async save<K extends TableName>(table: K, row: Draft<K>) {
       const { id, ...rest } = row as Draft<K> & { id?: string }
@@ -152,7 +164,9 @@ export function createSupabaseApi(url: string, key: string): Api {
       return check(await sb.from(table).insert(rows).select()) as Row<K>[]
     },
     async remove(table, id) {
-      check(await sb.from(table).delete().eq('id', id))
+      // Une ligne protégée par les règles de la base n'est pas supprimée, sans erreur : on le signale
+      const gone = check(await sb.from(table).delete().eq('id', id).select('id')) as unknown[]
+      if (!gone.length) throw new Error('Suppression impossible : cet élément n’existe plus ou ne peut pas être supprimé depuis ce compte.')
     },
     async retentionPreview(){return check(await sb.rpc('retention_preview')) as Record<string,number>},
     async purgeRetention(expected){return check(await sb.rpc('purge_expired_followup',{p_expected:expected})) as Record<string,number>},
@@ -161,8 +175,8 @@ export function createSupabaseApi(url: string, key: string): Api {
       const out = res?.ok ? await res.json().catch(() => null) : null
       return (out?.key as string | undefined) || null
     },
-    async savePush(endpoint) {
-      check(await sb.rpc('save_push', { p_endpoint: endpoint }))
+    async savePush(endpoint, auth) {
+      check(await sb.rpc('save_push', { p_endpoint: endpoint, p_auth: auth }))
     },
     async removePush(endpoint) {
       check(await sb.from('push_subscriptions').delete().eq('endpoint', endpoint))

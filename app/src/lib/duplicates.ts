@@ -2,7 +2,11 @@ import type { Assignment, Athlete, Feedback, Session } from '../types'
 import { athletesFor } from './utils'
 import { planOf } from './targets'
 
-export interface DupGroup { date: string; items: Assignment[]; keep: string }
+/** sure : doublon probable (mêmes athlètes, même séance ou même titre, ou lundi à temps cibles, et pas à des heures différentes).
+ *  Sinon le cas est seulement « à vérifier » : par défaut, on garde tout (ex. piste le matin et muscu le soir). */
+export interface DupGroup { date: string; items: Assignment[]; keep: string; sure: boolean }
+
+const norm = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
 
 const created = (a: Assignment) => (a as Assignment & { created_at?: string }).created_at ?? ''
 
@@ -34,7 +38,13 @@ export function findDuplicates(assignments: Assignment[], sessions: Session[], a
         const [a1, b1, c1] = score(p), [a2, b2, c2] = score(q)
         return a2 - a1 || b2 - b1 || c2.localeCompare(c1)
       })[0]
-      out.push({ date, items: group.sort((p, q) => (p.time || '').localeCompare(q.time || '')), keep: best.id })
+      const sessionOf = (g: Assignment) => sessions.find((x) => x.id === g.session_id)
+      const sets = group.map((g) => [...who.get(g.id)!].sort().join(','))
+      const titles = new Set(group.map((g) => norm(sessionOf(g)?.title ?? g.session_id)))
+      const times = new Set(group.map((g) => g.time).filter(Boolean))
+      const sure = new Set(sets).size === 1 && times.size <= 1
+        && (new Set(group.map((g) => g.session_id)).size === 1 || titles.size === 1 || group.some((g) => { const s = sessionOf(g); return !!s && !!planOf(s) }))
+      out.push({ date, items: group.sort((p, q) => (p.time || '').localeCompare(q.time || '')), keep: best.id, sure })
     }
   }
   return out.sort((a, b) => a.date.localeCompare(b.date))

@@ -15,13 +15,13 @@ test('la trame et la construction respectent extensif → intensif → explosif'
 const endpoint=await module('../functions/api/research.ts')
 test('le service documentaire refuse les profils et ne transmet que les publications publiques à l’IA',async()=>{
  const old=globalThis.fetch;const calls=[];let modelInput
- globalThis.fetch=async(url,init)=>{calls.push({url:String(url),init});if(String(url).endsWith('/rpc/whoami'))return{ok:true,json:async()=>({role:'coach'})};return{ok:true,json:async()=>({resultList:{result:[{id:'35044672',source:'MED',pubYear:'2022',firstPublicationDate:'2022-01-01',title:'Titre du fournisseur',abstractText:'Résumé du fournisseur'}]}})}}
+ globalThis.fetch=async(url,init)=>{calls.push({url:String(url),init});if(String(url).endsWith('/rpc/whoami'))return{ok:true,json:async()=>({role:'coach'})};if(String(url).endsWith('/rpc/ai_take_quota'))return{ok:true,status:200,json:async()=>({ok:true})};return{ok:true,json:async()=>({resultList:{result:[{id:'35044672',source:'MED',pubYear:'2022',firstPublicationDate:'2022-01-01',title:'Titre du fournisseur',abstractText:'Résumé du fournisseur'}]}})}}
  try{
   const env={AI:{run:async(_model,input)=>{modelInput=input;return{response:'{"ids":["35044672"]}'}}}}
   const req=value=>new Request('https://example.test/api/research',{method:'POST',headers:{authorization:'Bearer test-token','content-type':'application/json'},body:JSON.stringify(value)})
   const bad=await endpoint.onRequestPost({request:req({topic:'sprint',fromYear:2020,ai:true,athlete:'Donnée privée'}),env});assert.equal(bad.status,400);assert.equal(calls.length,1);assert.equal(modelInput,undefined)
   calls.length=0
   const response=await endpoint.onRequestPost({request:req({topic:'periodization',fromYear:2020,ai:true}),env});assert.equal(response.status,200)
-  const data=await response.json();assert.equal(data.ai_ranked,true);assert.equal(data.papers[0].title,'Titre du fournisseur');assert.equal(calls.length,2);assert.equal(JSON.stringify(modelInput).includes('test-token'),false);assert.equal(JSON.stringify(modelInput).includes('Donnée privée'),false)
+  const data=await response.json();assert.equal(data.ai_ranked,true);assert.equal(data.papers[0].title,'Titre du fournisseur');assert.equal(calls.length,3);assert.equal(JSON.stringify(modelInput).includes('test-token'),false);assert.equal(JSON.stringify(modelInput).includes('Donnée privée'),false)
  }finally{globalThis.fetch=old}
 })

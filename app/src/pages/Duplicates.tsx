@@ -10,13 +10,14 @@ import { athletesFor, errorMessage, formatDate } from '../lib/utils'
 
 /** Doublons du planning : même jour, mêmes athlètes ; on choisit la planification à garder par cas */
 export function Duplicates() {
-  const { assignments, sessions, athletes, feedback, removeMany, remove, save, reload } = useData()
+  const { assignments, sessions, athletes, feedback, removeMany, save } = useData()
   const groups = useMemo(() => findDuplicates(assignments, sessions, athletes, feedback), [assignments, sessions, athletes, feedback])
   const [choice, setChoice] = useState<Record<string, string>>({}) // date+premier id → id gardé, ou 'all'
   const [cleanLibrary, setCleanLibrary] = useState(true)
   const [busy, setBusy] = useState(false), [err, setErr] = useState<string | null>(null), [done, setDone] = useState<string | null>(null)
   const key = (g: { date: string; items: Assignment[] }) => g.date + g.items[0].id
-  const kept = (g: (typeof groups)[number]) => choice[key(g)] ?? g.keep
+  // Par défaut : on ne propose de supprimer que les doublons probables ; les autres cas gardent tout
+  const kept = (g: (typeof groups)[number]) => choice[key(g)] ?? (g.sure ? g.keep : 'all')
   const title = (a: Assignment) => sessions.find((s) => s.id === a.session_id)?.title ?? 'Séance supprimée'
   // date et heure d'ajout de la planification (enregistrées par la base)
   const added = (a: Assignment) => {
@@ -31,8 +32,9 @@ export function Duplicates() {
   const merges = groups.flatMap((g) => {
     const k = g.items.find((a) => a.id === kept(g)), ks = k && sessions.find((s) => s.id === k.session_id)
     if (!ks || !planOf(ks)) return []
-    const donor = g.items.filter((a) => a.id !== k.id && !planOf(sessions.find((s) => s.id === a.session_id)!)).sort((x, y) => items(y.session_id) - items(x.session_id))[0]
-    return donor && items(donor.session_id) > items(ks.id) ? [{ target: ks, from: sessions.find((s) => s.id === donor.session_id)! }] : []
+    const donor = g.items.filter((a) => { const s = sessions.find((x) => x.id === a.session_id); return a.id !== k.id && !!s && !planOf(s) }).sort((x, y) => items(y.session_id) - items(x.session_id))[0]
+    const from = donor && sessions.find((s) => s.id === donor.session_id)
+    return from && items(from.id) > items(ks.id) ? [{ target: ks, from }] : []
   })
   const [merge, setMerge] = useState(true)
 
@@ -51,10 +53,10 @@ export function Duplicates() {
           const s = sessions.find((x) => x.id === sid)
           return s && !planOf(s) && !assignments.some((a) => a.session_id === sid && !ids.has(a.id))
         })
-        for (const sid of orphan) await remove('sessions', sid)
+        // une seule suppression groupée (et un seul rechargement) au lieu d'une par séance
+        if (orphan.length) await removeMany('sessions', orphan)
         removed = orphan.length
       }
-      await reload()
       setDone(`${ids.size} planification(s) supprimée(s)${removed ? `, ${removed} séance(s) inutilisée(s) retirée(s) de la bibliothèque` : ''}.`)
       setChoice({})
     } catch (e) { setErr(errorMessage(e)) } finally { setBusy(false) }
@@ -67,10 +69,10 @@ export function Duplicates() {
       {done && <div className="alert info">{done}</div>}
       {err && <div className="alert warn">{err}</div>}
       {groups.length === 0 ? <Empty>Aucun doublon : chaque athlète a au plus une séance par jour.</Empty> : <>
-        <p className="small muted">{groups.length} jour(s) où les mêmes athlètes ont plusieurs séances. La planification proposée à garder est cochée : la séance à temps cibles pour les lundis, sinon celle qui a des retours, sinon la plus récente.</p>
+        <p className="small muted">{groups.length} jour(s) où des athlètes ont plusieurs séances. Pour les doublons probables (mêmes athlètes, même séance), la planification à garder est cochée : la séance à temps cibles pour les lundis, sinon celle qui a des retours, sinon la plus récente. Les autres cas (ex. piste et muscu le même jour) sont marqués « À vérifier » et tout est gardé par défaut.</p>
         {groups.map((g) => (
           <section key={key(g)}>
-            <h2 className="section-title">{formatDate(g.date, { weekday: 'long', day: 'numeric', month: 'short' })}</h2>
+            <h2 className="section-title">{formatDate(g.date, { weekday: 'long', day: 'numeric', month: 'short' })} {g.sure ? <span className="status red">Doublon probable</span> : <span className="status">À vérifier</span>}</h2>
             <div className="rows">
               {g.items.map((a) => {
                 const s = sessions.find((x) => x.id === a.session_id)

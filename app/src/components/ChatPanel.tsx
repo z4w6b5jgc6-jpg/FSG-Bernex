@@ -4,6 +4,7 @@ import { api } from '../api'
 import { useData } from '../lib/data'
 import { redactNames, redactSession } from '../lib/redact'
 import { libraryForAI } from '../lib/aiLibrary'
+import { settings } from '../lib/settings'
 import { parseSessionText } from '../lib/sessionText'
 import type { ChatMessage, Session } from '../types'
 import { errorMessage, todayISO } from '../lib/utils'
@@ -56,7 +57,7 @@ export function ChatPanel({ session, storageKey }: { session?: Session | null; s
     const nextMsgs: ChatMessage[] = [...messages, { role: 'user', content }]
     setMessages(nextMsgs); setInput(''); setErr(null); setBusy(true)
     try {
-      const reply = await api.chat(nextMsgs, session ? redactSession(session, athletes) : null, libraryForAI(evidence_library))
+      const reply = await api.chat(nextMsgs, session ? redactSession(session, athletes) : null, libraryForAI(evidence_library, athletes), redactNames(settings().group ?? '', athletes).text)
       setMessages([...nextMsgs, { role: 'assistant', content: reply }])
     } catch (e) {
       setErr(errorMessage(e))

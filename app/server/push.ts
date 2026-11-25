@@ -19,6 +19,17 @@ const fromB64u = (s: string) => Uint8Array.from(atob(s.replace(/-/g, '+').replac
 
 export const pushReady = (env: PushEnv) => !!(env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY)
 
+/** Services de notification reconnus (Chrome/Android, Apple, Firefox, Edge) : aucun envoi vers une autre adresse */
+export const isPushService = (endpoint: string) => {
+  try {
+    const { protocol, hostname } = new URL(endpoint)
+    return protocol === 'https:' && (/^(fcm|android)\.googleapis\.com$/.test(hostname) || /(^|\.)push\.apple\.com$/.test(hostname)
+      || /(^|\.)push\.services\.mozilla\.com$/.test(hostname) || /(^|\.)notify\.windows\.com$/.test(hostname))
+  } catch {
+    return false
+  }
+}
+
 /** Appel d'une fonction de la base avec le jeton de l'utilisateur (ses droits à lui) */
 export async function rpc<T>(req: Request, env: PushEnv, fn: string, args: unknown): Promise<T | null> {
   const token = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
@@ -63,8 +74,8 @@ export async function sendPush(env: PushEnv, endpoints: string[], contact: strin
   }
   const results = await Promise.all([...new Set(endpoints)].map(async (ep) => {
     try {
+      if (!isPushService(ep)) return false
       const url = new URL(ep)
-      if (url.protocol !== 'https:') return false
       const res = await fetch(ep, {
         method: 'POST',
         headers: { TTL: '86400', Urgency: 'high', Authorization: `vapid t=${await jwtFor(url.origin)}, k=${env.VAPID_PUBLIC_KEY}`, 'Content-Length': '0' },

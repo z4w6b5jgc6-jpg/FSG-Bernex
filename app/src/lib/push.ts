@@ -25,7 +25,22 @@ export async function enablePush(): Promise<void> {
   const reg = await navigator.serviceWorker.ready
   let sub = await reg.pushManager.getSubscription()
   if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: fromB64u(key) })
-  await api.savePush(sub.endpoint)
+  await api.savePush(sub.endpoint, authOf(sub))
+}
+
+/** Clé secrète de l'abonnement, connue seulement de ce navigateur (la base n'en garde qu'une empreinte) */
+const authOf = (sub: PushSubscription) => {
+  const key = sub.getKey('auth')
+  return key ? btoa(String.fromCharCode(...new Uint8Array(key))) : ''
+}
+
+/** Au démarrage : rattache l'abonnement existant de cet appareil au compte connecté (silencieux) */
+export async function syncPush(): Promise<void> {
+  try {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || Notification.permission !== 'granted') return
+    const sub = await (await navigator.serviceWorker.getRegistration())?.pushManager.getSubscription()
+    if (sub) await api.savePush(sub.endpoint, authOf(sub))
+  } catch { /* sans conséquence : l'appareil reste tel quel */ }
 }
 
 export async function disablePush(): Promise<void> {

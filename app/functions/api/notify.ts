@@ -11,7 +11,7 @@ export const onRequestPost = async ({ request, env }: { request: Request; env: P
     if ((kind !== 'message' && kind !== 'feedback') || !/^[0-9a-f-]{36}$/i.test(id ?? '')) return json({ error: 'Requête invalide' }, 400)
     const targets = (await rpc<string[]>(request, env, 'push_targets', { p_kind: kind, p_id: id })) ?? []
     return json({ sent: await sendPush(env, targets, contact), configured: true })
-  } catch (e) {
-    return json({ error: e instanceof Error ? e.message : String(e) }, 500)
+  } catch {
+    return json({ error: 'Notification non envoyée.' }, 500)
   }
 }

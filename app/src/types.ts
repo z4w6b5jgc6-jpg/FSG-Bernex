@@ -47,6 +47,8 @@ export interface TestResult {
   /** tous les essais (vide si un seul) */
   trials: number[]
   notes: string
+  /** compte qui a saisi le résultat (l'athlète ne modifie que les siens) */
+  entered_by?: string | null
 }
 
 export interface TestReport {
