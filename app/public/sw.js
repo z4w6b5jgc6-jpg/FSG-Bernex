@@ -1,11 +1,12 @@
 // Service worker : rend l'app installable et utilisable avec un réseau faible.
-// - fichiers de l'app (JS/CSS/icônes) : cache d'abord ; version du cache renouvelée au déploiement
+// - fichiers de l'app (JS/CSS/icônes) : cache d'abord ; version du cache renouvelée à chaque build
+//   (scripts/build-connected.mjs remplace « dev » par l'empreinte de la version publiée)
 // - page HTML : réseau d'abord, cache si hors-ligne
 // - données (Supabase) : jamais mises en cache ici
-const CACHE = 'coach-athle-v18'
+const CACHE = 'coach-athle-dev'
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html', './manifest.webmanifest', './icon-192.png'])))
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html', './theme-init.js', './manifest.webmanifest', './icon-192.png'])))
   self.skipWaiting()
 })
 
@@ -28,8 +29,11 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(
       fetch(req)
         .then((res) => {
-          const copy = res.clone()
-          caches.open(CACHE).then((c) => c.put('./index.html', copy))
+          // seule une vraie page de l'app sert de copie hors-ligne (jamais une erreur 404 / 500)
+          if (res.ok) {
+            const copy = res.clone()
+            caches.open(CACHE).then((c) => c.put('./index.html', copy))
+          }
           return res
         })
         .catch(() => caches.match('./index.html')),

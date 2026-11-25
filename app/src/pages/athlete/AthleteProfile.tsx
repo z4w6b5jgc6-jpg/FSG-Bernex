@@ -26,8 +26,8 @@ export function AthleteProfile() {
   const persist = async () => {
     try {
       await save('athletes', {
-        id: me.id, first_name: p.first_name, last_name: p.last_name, events: p.events, goals: p.goals,
-        phone: p.phone, avatar: p.avatar, color: p.color, birth_year: p.birth_year,
+        id: me.id, events: p.events, goals: p.goals,
+        phone: p.phone, avatar: p.avatar, color: p.color,
       })
       setSaved(true)
     } catch (e) {
@@ -62,13 +62,14 @@ export function AthleteProfile() {
 
       <section className="card form">
         <div className="grid2">
-          <Field label="Prénom"><input value={p.first_name ?? ''} onChange={(e) => set({ first_name: e.target.value })} /></Field>
-          <Field label="Nom"><input value={p.last_name ?? ''} onChange={(e) => set({ last_name: e.target.value })} /></Field>
+          <Field label="Prénom"><input value={p.first_name ?? ''} readOnly /></Field>
+          <Field label="Nom"><input value={p.last_name ?? ''} readOnly /></Field>
         </div>
+        <p className="tiny muted">Prénom, nom et année de naissance : demande à ton coach de les corriger si besoin.</p>
         <Field label="Mes disciplines"><input value={p.events ?? ''} onChange={(e) => set({ events: e.target.value })} placeholder="Ex. 100 m, longueur" /></Field>
         <Field label="Mon objectif de la saison"><textarea rows={2} value={p.goals ?? ''} onChange={(e) => set({ goals: e.target.value })} placeholder="Ex. Passer sous les 13 secondes au 100 m" /></Field>
         <div className="grid2">
-          <Field label="Année de naissance"><input type="number" inputMode="numeric" value={p.birth_year ?? ''} onChange={(e) => set({ birth_year: e.target.value ? Number(e.target.value) : null })} /></Field>
+          <Field label="Année de naissance"><input type="number" value={p.birth_year ?? ''} readOnly /></Field>
           <Field label="Téléphone"><input type="tel" inputMode="tel" value={p.phone ?? ''} onChange={(e) => set({ phone: e.target.value })} /></Field>
         </div>
         <button className="btn primary block" onClick={persist}>{saved ? '✓ Enregistré' : 'Enregistrer'}</button>

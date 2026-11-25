@@ -27,3 +27,22 @@ export async function isCoach(req: Request, env: Env): Promise<boolean> {
   return ((await res.json()) as { role?: string }).role === 'coach'
 }
 
+/** Accès à l'IA : entraîneur connecté et quota du jour disponible (compté par la base, par entraîneur et par club).
+ *  Renvoie null si l'appel est autorisé, sinon la réponse d'erreur à renvoyer. */
+export async function aiAccess(req: Request, env: Env): Promise<Response | null> {
+  const denied = json({ error: 'Réservé aux entraîneurs connectés.' }, 401)
+  const token = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
+  if (!token) return denied
+  const res = await fetch(`${env.COACH_SUPABASE_URL || SUPABASE_URL}/rest/v1/rpc/ai_take_quota`, {
+    method: 'POST',
+    headers: { apikey: env.COACH_SUPABASE_ANON_KEY || SUPABASE_KEY, authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    body: '{}',
+  })
+  if (res.status === 404) return json({ error: 'La base doit être mise à jour (script 4 sur la page /#/base) avant d’utiliser l’assistant.' }, 503)
+  if (!res.ok) return denied
+  const quota = (await res.json()) as { ok?: boolean; reason?: string }
+  if (quota.ok) return null
+  if (quota.reason === 'quota') return json({ error: 'Limite quotidienne de l’assistant atteinte pour ce club. Réessaie demain.' }, 429)
+  return denied
+}
+

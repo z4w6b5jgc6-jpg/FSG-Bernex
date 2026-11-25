@@ -15,7 +15,7 @@ const FIELD_LABELS:Record<AIField,string>={name:'Exercice',sets:'Séries',reps:'
 /** Deux entrées, un même moteur : propositions sourcées et discussion, puis choix du coach. */
 export function AiAdvicePanel({session,onApplyBlocks}:{session:Session;onApplyBlocks:(blocks:Block[])=>void}){
  const {athletes,assignments,evidence_library}=useData()
- const library=libraryForAI(evidence_library)
+ const library=libraryForAI(evidence_library,athletes)
  const [input,setInput]=useState(''),[messages,setMessages]=useState<ChatMessage[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState('')
  const [result,setResult]=useState<{advice:AiAdvice;snapshot:string}|null>(null),[selected,setSelected]=useState<number[]>([]),[applied,setApplied]=useState(false)
  const current=useRef(session);useEffect(()=>{current.current=session},[session])

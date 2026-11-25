@@ -1,6 +1,6 @@
 // Discussion libre avec l'assistant entraîneur (page Assistant) : sans séance jointe.
 // L'app masque les noms d'athlètes avant l'envoi ; aucune fiche ni donnée de santé n'est transmise.
-import { cut, isCoach, json, type Env } from './ai'
+import { aiAccess, cut, json, type Env } from './ai'
 import { parseLibrary, type LibraryRef } from '../src/lib/aiLibrary'
 
 const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
@@ -78,9 +78,13 @@ const libraryText = (lib: LibraryRef[]) => lib.length ? `\nPublications retenues
 
 export async function coachChat({ request, env }: { request: Request; env: Env }) {
   try {
-    if (!(await isCoach(request, env))) return json({ error: 'Réservé aux entraîneurs connectés.' }, 401)
+    if (!request.headers.get('authorization')) return json({ error: 'Réservé aux entraîneurs connectés.' }, 401)
     if (!env.AI) return json({ error: 'L’IA n’est pas activée sur ce site (liaison « AI » manquante dans Cloudflare).' }, 503)
-    const body = (await request.json()) as { messages?: { role: string; content: string }[]; groupe?: string; library?: unknown }
+    const raw = await request.text()
+    if (raw.length > 60000) return json({ error: 'Discussion trop longue : ouvre une nouvelle discussion.' }, 413)
+    const refused = await aiAccess(request, env)
+    if (refused) return refused
+    const body = JSON.parse(raw) as { messages?: { role: string; content: string }[]; groupe?: string; library?: unknown }
     const history = (body.messages ?? [])
       .filter((m) => (m.role === 'user' || m.role === 'assistant') && m.content)
       .slice(-12)

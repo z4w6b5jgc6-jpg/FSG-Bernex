@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import {rolldown} from 'rolldown'
 const bundle=await rolldown({input:new URL('../server/pages-worker.ts',import.meta.url).pathname,platform:'node',transform:{define:{PUBLIC_SUPABASE_URL:JSON.stringify('https://public-test.supabase.co'),PUBLIC_SUPABASE_ANON_KEY:JSON.stringify('sb_publishable_test')}}}),out=await bundle.generate({format:'esm'}),worker=(await import('data:text/javascript;base64,'+Buffer.from(out.output.find(x=>x.isEntry).code).toString('base64'))).default
 // coach connecté simulé (whoami) et IA simulée qui capture le contexte reçu
-globalThis.fetch=async()=>new Response(JSON.stringify({role:'coach'}),{headers:{'content-type':'application/json'}})
+globalThis.fetch=async()=>new Response(JSON.stringify({role:'coach',ok:true}),{headers:{'content-type':'application/json'}})
 const pub={id:'pub-12345',title:'Sprint training in youth',year:2023,journal:'Sports Med',note:'U16-U18',summary:'Revue sur le sprint.'}
 const session={title:'S',objective:'',focus:'',duration_min:null,blocks:[{id:'b1',title:'Vitesse',items:[{id:'i1',name:'30 m',sets:'3',reps:'2',distance:'30 m',duration:'',recovery:'3\'',intensity:'',notes:'',load_kg:''}]}]}
 const call=(path,body,ai)=>worker.fetch(new Request('https://club.test'+path,{method:'POST',headers:{authorization:'Bearer x','content-type':'application/json'},body:JSON.stringify(body)}),{ASSETS:{fetch:async()=>new Response('')},AI:ai})

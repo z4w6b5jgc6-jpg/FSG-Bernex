@@ -18,6 +18,8 @@ interface DataCtx extends Store {
 }
 
 const TABLES: TableName[] = ['import_history','exercise_logs','evidence_library','attendance', 'session_adjustments', 'availability', 'privacy_acceptances', 'groups', 'athletes', 'athlete_notes', 'exercises', 'sessions', 'assignments', 'feedback', 'tips', 'records', 'wellness', 'tests', 'test_results', 'test_reports', 'competitions', 'messages', 'session_notes']
+/** Tables dont la suppression entraîne d'autres suppressions (ou mises à jour) dans la base */
+const CASCADES: TableName[] = ['groups', 'athletes', 'sessions', 'assignments', 'tests', 'competitions']
 const empty = Object.fromEntries(TABLES.map((t) => [t, []])) as unknown as Store
 const Ctx = createContext<DataCtx | null>(null)
 
@@ -101,16 +103,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return saved
   }, [me?.email])
 
+  // Retire des lignes de l'état local ; pour les tables dont d'autres dépendent (suppressions en cascade
+  // gérées par la base), on recharge tout, sinon on évite de relire les 23 tables
+  const dropLocal = useCallback(async (table: TableName, ids: string[]) => {
+    if (CASCADES.includes(table)) return reload()
+    const gone = new Set(ids), owner = me?.email ?? null
+    setSnapshot((current) => current.owner !== owner ? current
+      : { owner, data: { ...current.data, [table]: (current.data[table] as { id: string }[]).filter((r) => !gone.has(r.id)) } })
+  }, [reload, me?.email])
+
   const remove = useCallback(async (table: TableName, id: string) => {
     await api.remove(table, id)
-    // Les suppressions en cascade sont gérées par la base : on recharge tout
-    await reload()
-  }, [reload])
+    await dropLocal(table, [id])
+  }, [dropLocal])
 
   const removeMany = useCallback(async (table: TableName, ids: string[]) => {
     if (ids.length) await api.removeMany(table, ids)
-    await reload()
-  }, [reload])
+    await dropLocal(table, ids)
+  }, [dropLocal])
 
   // réglages de l'espace (lieux, saison, description du groupe) lus par les fonctions qui en dépendent
   applySettings(me?.settings)

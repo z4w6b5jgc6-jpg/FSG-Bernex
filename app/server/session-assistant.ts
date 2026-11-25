@@ -1,4 +1,4 @@
-import {isCoach,json,type Env} from './ai'
+import {aiAccess,json,type Env} from './ai'
 import {TRAINING_KNOWLEDGE} from '../src/data/trainingKnowledge'
 import {SOURCES} from '../src/lib/season'
 import {sessionForAI,validateSessionAdvice,AI_FIELDS,type AISession} from '../src/lib/sessionAI'
@@ -20,9 +20,10 @@ function parseSession(value:unknown):AISession {
  return sessionForAI(s)
 }
 export async function sessionAssistant({request,env}:{request:Request;env:Env},mode:'direct'|'discussion'){
- if(!(await isCoach(request,env)))return json({error:'Réservé aux coachs connectés.'},401)
+ if(!request.headers.get('authorization'))return json({error:'Réservé aux coachs connectés.'},401)
  if(!env.AI)return json({error:'IA Cloudflare non configurée sur ce site. Dans Cloudflare → fsg-bernex-athle → Settings → Bindings, ajoute un binding Workers AI nommé AI, puis redéploie. Aucun abonnement IA ni clé privée à saisir dans l’application.'},503)
  const raw=await request.text();if(raw.length>90000)return json({error:'Séance ou discussion trop volumineuse. Raccourcis le périmètre.'},413)
+ const refused=await aiAccess(request,env);if(refused)return refused
  let session:AISession,messages:{role:string;content:string}[],library:LibraryRef[]=[]
  try{
   const data=JSON.parse(raw);session=parseSession(data.session);messages=data.messages??[];library=parseLibrary(data.library)

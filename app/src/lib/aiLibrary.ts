@@ -1,15 +1,17 @@
-import type { EvidenceRecord } from '../types'
+import type { Athlete, EvidenceRecord } from '../types'
+import { redactNames } from './redact'
 
 /** Publication retenue par le coach, telle qu'envoyée à l'IA comme référence (texte public, aucune donnée d'athlète) */
 export interface LibraryRef { id: string; title: string; year: number; journal: string; note: string; summary: string }
 
 export const MAX_LIBRARY = 10
 
-export function libraryForAI(records: EvidenceRecord[]): LibraryRef[] {
+/** Les notes du coach passent par le même masquage des noms que les questions */
+export function libraryForAI(records: EvidenceRecord[], athletes: Pick<Athlete, 'first_name' | 'last_name'>[] = []): LibraryRef[] {
   return records.filter((r) => r.reviewed && r.paper?.id).sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? '')).slice(0, MAX_LIBRARY)
     .map((r) => ({
       id: `pub-${String(r.paper.id).slice(0, 30)}`, title: String(r.paper.title ?? '').slice(0, 400), year: Number(r.paper.year) || 0,
-      journal: String(r.paper.journal ?? '').slice(0, 200), note: (r.review_note ?? '').slice(0, 800), summary: String(r.paper.abstract ?? '').slice(0, 1500),
+      journal: String(r.paper.journal ?? '').slice(0, 200), note: redactNames(r.review_note ?? '', athletes).text.slice(0, 800), summary: String(r.paper.abstract ?? '').slice(0, 1500),
     }))
 }
 

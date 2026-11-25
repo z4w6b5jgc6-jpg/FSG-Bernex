@@ -6,21 +6,27 @@ const pattern = (word: string) =>
     .map((ch) => (ACCENTS[ch] ? `[${ACCENTS[ch]}]` : ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
     .join('')
 
+// Mots courants de deux lettres : jamais pris pour un nom (« De », « Le »… comme nom de famille)
+const COMMON = new Set(['de', 'du', 'la', 'le', 'un', 'en', 'et', 'ou', 'au', 'il', 'je', 'tu', 'on', 'ne', 'se', 'ce', 'sa', 'ma', 'ta', 'me', 'te', 'ni', 'si', 'va', 'vu', 'an', 'as', 'os', 'us', 'vs', 'km', 'kg', 'ok', 'to', 'of', 'in', 'is', 'it', 'at', 'by', 'no', 'or', 'so', 'up'])
+const strip = (w: string) => w.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+
 /** Remplace les prénoms et noms des athlètes du club par « [athlète] » avant tout envoi à l'IA */
 export function redactNames(text: string, athletes: Pick<Athlete, 'first_name' | 'last_name'>[]): { text: string; count: number } {
-  const words = new Set<string>()
+  const words = new Set<string>(), short = new Set<string>()
   for (const a of athletes) {
-    for (const w of [a.first_name, a.last_name, `${a.first_name} ${a.last_name}`]) {
+    for (const w of [a.first_name ?? '', a.last_name ?? '', `${a.first_name ?? ''} ${a.last_name ?? ''}`]) {
       const t = w.trim()
       if (t.length >= 3) words.add(t)
+      // Noms de deux lettres (Li, Bo…) : seulement écrits avec la majuscule, pour ne pas masquer les mots courants
+      else if (t.length === 2 && !COMMON.has(strip(t))) short.add(t[0].toUpperCase() + t.slice(1).toLowerCase())
     }
   }
+  let count = 0
+  const swap = () => { count++; return '[athlète]' }
   // Les noms complets d'abord, puis les mots seuls
   const list = [...words].sort((a, b) => b.length - a.length)
-  if (!list.length) return { text, count: 0 }
-  const re = new RegExp(`(?<![\\p{L}])(${list.map(pattern).join('|')})(?![\\p{L}])`, 'giu')
-  let count = 0
-  const out = text.replace(re, () => { count++; return '[athlète]' })
+  let out = list.length ? text.replace(new RegExp(`(?<![\\p{L}])(${list.map(pattern).join('|')})(?![\\p{L}])`, 'giu'), swap) : text
+  if (short.size) out = out.replace(new RegExp(`(?<![\\p{L}])(${[...short].map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})(?![\\p{L}])`, 'gu'), swap)
   return { text: out, count }
 }
 

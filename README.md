@@ -73,8 +73,11 @@ La connexion à Supabase est définie dans [`app/.env.production`](app/.env.prod
 
 Mise à jour de la base après une nouvelle version : ouvrir **`<adresse du site>/#/base`**, copier le script et l'exécuter dans le *SQL Editor* de Supabase.
 
+> **Mise à jour de sécurité (novembre 2026)** : sur un projet existant, exécuter le script **« 4 · Correctifs de sécurité »** de la page `/#/base` (rejouable). Vérifier aussi dans Supabase, *Authentication → Sign In / Providers → Email*, que **« Confirm email »** est activé. L'assistant IA est limité à 100 demandes par jour et par entraîneur (300 par club).
+
 ### 3. Créer son compte entraîneur
 1. Ouvrir le site → **Créer un compte**, confirmer via l'email reçu, se connecter, puis **« Je suis entraîneur »** et donner le nom du club.
+   Seul le **premier** espace entraîneur de la base se crée ainsi. Les autres entraîneurs rejoignent le club par un **lien d'invitation entraîneur** (Réglages). Pour autoriser exceptionnellement un autre club sur la même base : dans le *SQL Editor*, `insert into club_creators (email) values ('adresse@exemple.ch');`.
 2. Dans Supabase, **Authentication → URL Configuration** : mettre l'adresse du site comme *Site URL* (pour les emails de confirmation).
 3. Importer ta liste d'athlètes (onglet Athlètes → « Importer ma liste », les groupes sont créés automatiquement), puis partager le **lien d'inscription de chaque groupe** dans le groupe WhatsApp correspondant.
 

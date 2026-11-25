@@ -53,7 +53,8 @@ export function ProfileTiles({ athlete, coach }: { athlete: Athlete; coach: bool
           {tests.length === 0 ? (
             <p className="muted small">{coach ? <>Définis d’abord les tests dans <Link to="/tests">Tests physiques</Link>.</> : 'Ton coach n’a pas encore défini de tests.'}</p>
           ) : (
-            <TestResults tests={tests} results={results} onDelete={(id) => confirm('Supprimer ce résultat ?') && remove('test_results', id)} />
+            <TestResults tests={tests} results={results} onDelete={(id) => remove('test_results', id)}
+              canDelete={(r) => coach || (!!r.entered_by && r.entered_by === athlete.user_id)} />
           )}
         </div>
       )}

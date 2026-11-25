@@ -28,7 +28,7 @@ export interface Api {
   /** Lecture intelligente d'un morceau de plan (noms déjà masqués) */
   readPlan(texte: string): Promise<import('../lib/smartImport').RawSeance[]>
   /** Conversation avec l'assistant (noms déjà masqués), éventuellement à propos d'une séance */
-  chat(messages: ChatMessage[], session?: Pick<Session, 'title' | 'objective' | 'focus' | 'duration_min' | 'blocks'> | null, library?: import('../lib/aiLibrary').LibraryRef[]): Promise<string>
+  chat(messages: ChatMessage[], session?: Pick<Session, 'title' | 'objective' | 'focus' | 'duration_min' | 'blocks'> | null, library?: import('../lib/aiLibrary').LibraryRef[], groupe?: string): Promise<string>
   /** Relie une inscription (from) au profil créé par l'entraîneur (into) et supprime le doublon */
   mergeAthletes(fromId: string, intoId: string): Promise<void>
 
@@ -54,7 +54,8 @@ export interface Api {
   // Notifications sur le téléphone (Web Push, sans contenu : seulement « nouveau message »)
   /** clé publique du serveur, null si les notifications ne sont pas configurées */
   pushKey(): Promise<string | null>
-  savePush(endpoint: string): Promise<void>
+  /** auth : clé secrète de l'abonnement (prouve que l'appareil appartient bien à ce navigateur) */
+  savePush(endpoint: string, auth: string): Promise<void>
   removePush(endpoint: string): Promise<void>
   /** prévient les destinataires d'un message ou d'un retour qu'on vient d'écrire (sans erreur si indisponible) */
   notify(kind: 'message' | 'feedback' | 'test', id?: string): Promise<void>

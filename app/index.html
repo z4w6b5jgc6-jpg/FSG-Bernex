@@ -12,12 +12,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Coach Athlé" />
     <title>Coach Athlé</title>
-    <script>
-      // thème avant le premier affichage (évite un flash clair en mode sombre)
-      try { var t = localStorage.getItem('athle-theme') } catch (e) {}
-      document.documentElement.dataset.theme = t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'
-      try { document.documentElement.dataset.tiles = JSON.parse(localStorage.getItem('athle-tile-style')) || 'sobre'; document.documentElement.dataset.density = JSON.parse(localStorage.getItem('athle-tile-size')) || 'grande' } catch (e) {}
-    </script>
+    <!-- thème avant le premier affichage (fichier séparé : autorisé par la politique de sécurité du site) -->
+    <script src="./theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>
